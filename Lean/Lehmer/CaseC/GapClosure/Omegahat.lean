@@ -1,0 +1,72 @@
+-- FILE: Lean/Lehmer/CaseC/GapClosure/Omegahat.lean
+import Lehmer.Prelude
+import Lehmer.CaseC.GapClosure.ClosureBoundN
+
+namespace Lehmer
+namespace CaseC
+namespace GapClosure
+
+/--
+The bootstrap support-size bound
+`Ω̂(y, W) = ⌊log N(y, W) / log y⌋`.
+
+For MVP-3 we package it as a natural-number quantity derived from the
+closure bound.
+-/
+noncomputable def omegahat (y W : ℕ) : ℕ :=
+  Nat.floor (Real.log (closureBoundN y W) / Real.log y)
+
+/--
+Paper-style alias for the bootstrap support-size bound.
+-/
+noncomputable abbrev Omegahat (y W : ℕ) : ℕ :=
+  omegahat y W
+
+@[simp] theorem omegahat_def (y W : ℕ) :
+    omegahat y W = Nat.floor (Real.log (closureBoundN y W) / Real.log y) := rfl
+
+@[simp] theorem Omegahat_def (y W : ℕ) :
+    Omegahat y W = omegahat y W := rfl
+
+/--
+The closure bound appearing in the definition of `Ω̂(y, W)` is positive.
+-/
+theorem closureBoundN_pos_for_omegahat (y W : ℕ) :
+    0 < closureBoundN y W := by
+  exact closureBoundN_pos y W
+
+/--
+Stable MVP-3 placeholder: the logarithmic ratio defining `Ω̂(y, W)` is
+well-formed in the Case C regime.
+-/
+theorem omegahat_wellformed_placeholder (y W : ℕ) :
+    1 < y -> Real.log y ≠ 0 := by
+  intro hy
+  have hy' : (y : ℝ) ≠ 1 := by
+    exact_mod_cast (ne_of_gt hy)
+  exact Real.log_ne_zero_of_pos_of_ne_one
+    (by exact_mod_cast (lt_trans Nat.zero_lt_one hy))
+    hy'
+
+/--
+Stable MVP-3 placeholder: every residual support size is bounded by `Ω̂(y, W)`.
+This is the bridge from the closure bound `N(y, W)` to a support-cardinality
+bound in the bootstrap phase.
+-/
+theorem supportCard_le_omegahat_placeholder
+    (y W : ℕ) :
+    ∀ m : ℕ, m ≤ omegahat y W := by
+  intro m
+  sorry
+
+/--
+Equivalent paper-style formulation using the alias `Ω̂`.
+-/
+theorem supportCard_le_Omegahat_placeholder
+    (y W : ℕ) :
+    ∀ m : ℕ, m ≤ Omegahat y W := by
+  simpa [Omegahat] using supportCard_le_omegahat_placeholder y W
+
+end GapClosure
+end CaseC
+end Lehmer

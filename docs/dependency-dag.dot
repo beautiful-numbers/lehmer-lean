@@ -1,0 +1,39 @@
+digraph LehmerDAG {
+  rankdir=LR;
+  splines=true;
+  overlap=false;
+  fontname="Arial";
+
+  graph [
+    fontsize=12,
+    labelloc="t",
+    label="Lehmer Lean Dependency DAG (current files only)"
+  ];
+
+  node [
+    shape=box,
+    style="rounded,filled",
+    fillcolor="white",
+    color="#444444",
+    fontname="Arial",
+    fontsize=10
+  ];
+
+  edge [
+    color="#666666",
+    arrowsize=0.7
+  ];
+
+  subgraph cluster_basic {
+    label="Basic";
+    color="#cfd8dc";
+    style="rounded";
+
+    "Basic.Defs";
+    "Basic.Totient";
+    "Basic.OddSquarefree";
+  }
+
+  "Basic.Defs" -> "Basic.Totient";
+  "Basic.Defs" -> "Basic.OddSquarefree";
+}
