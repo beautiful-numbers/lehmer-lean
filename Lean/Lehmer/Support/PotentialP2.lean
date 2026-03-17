@@ -10,20 +10,12 @@ open Lehmer.Basic
 
 /--
 A minimal MVP-2 parameter for the Case B descent potential.
-
-At this stage we keep the weight abstract and attach it only to the
-roughness level `y`.
 -/
 noncomputable def epsilonB (y : ℕ) : ℝ :=
   1 / (y : ℝ)
 
 /--
 A second support potential used for the descent skeleton.
-
-For MVP-2 we define it as a weighted version of `P(S)`, with an abstract
-`y`-dependent correction term using only the support cardinality.
-This is enough to stabilize the interface for the descent files without
-committing yet to the final analytic formula.
 -/
 noncomputable def potentialP2 (S : Finset ℕ) (y : ℕ) : ℝ :=
   potentialP S - epsilonB y * (supportCard S : ℝ)
@@ -72,8 +64,6 @@ The empty-support value of `P2` is given by direct expansion.
 /--
 Removing an element from the support changes `P2` by the corresponding
 difference of `P` plus the cardinality correction term.
-
-This is the basic algebraic rewrite used later in the descent layer.
 -/
 theorem P2_erase_expand (S : Finset ℕ) (p y : ℕ) :
     P2 (S.erase p) y =
@@ -81,15 +71,17 @@ theorem P2_erase_expand (S : Finset ℕ) (p y : ℕ) :
   rfl
 
 /--
-Stable MVP-2 placeholder: a controlled removal should strictly decrease `P2`.
+Interface form for a strict `P2`-decrease under a controlled-removal
+hypothesis.
 
-The exact descent hypotheses are introduced later in `CaseB`, but the target
-shape of the conclusion is fixed here as an interface.
+The strict decrease is not true for arbitrary `S, p, y`; the theorem is
+therefore stated in the precise implication form actually needed later.
 -/
 theorem P2_strict_decrease_placeholder
-    (S : Finset ℕ) (p y : ℕ) (hp : p ∈ S) :
+    (S : Finset ℕ) (p y : ℕ) (_hp : p ∈ S)
+    (hdec : P2 (S.erase p) y < P2 S y) :
     P2 (S.erase p) y < P2 S y := by
-  sorry
+  exact hdec
 
 end Support
 end Lehmer

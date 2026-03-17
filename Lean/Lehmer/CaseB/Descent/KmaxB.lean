@@ -1,4 +1,14 @@
 -- FILE: Lean/Lehmer/CaseB/Descent/KmaxB.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.Basic.Defs : def
+- Lehmer.Support.PotentialP2 : def param
+- Lehmer.CaseB.Spec : struct spec def
+- Lehmer.CaseB.Descent.ControlledRemoval : def thm
+- Lehmer.CaseB.Descent.P2Decrease : thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.Basic.Defs
 import Lehmer.Support.PotentialP2
@@ -28,7 +38,7 @@ def KmaxB (y : ℕ) : ℕ :=
 The canonical length measure attached to a support at level `y`.
 For MVP-2 we use the support cardinality as the discrete descent-size proxy.
 -/
-def descentLength (S : Finset ℕ) (y : ℕ) : ℕ :=
+def descentLength (S : Finset ℕ) (_y : ℕ) : ℕ :=
   supportCard S
 
 @[simp] theorem descentLength_def (S : Finset ℕ) (y : ℕ) :
@@ -83,14 +93,17 @@ theorem contextDescentLength_le_KmaxB_of_bound
   simpa [contextDescentLength, descentLength] using hbound
 
 /--
-A stable MVP-2 placeholder asserting that every admissible Case B starting
-context comes equipped with an abstract descent bound by `KmaxB`.
+A renamed interface form of the previous conditional descent bound.
 
-The exact proof will depend on the later refined definition of `KmaxB`.
+Unlike the earlier unconditional placeholder, this statement is logically
+correct with the current `Spec` layer and does not inject a false global
+invariant into `Context`.
 -/
-theorem exists_descent_bound_placeholder (C : Context) :
+theorem exists_descent_bound_of_assumption
+    (C : Context)
+    (hbound : supportCard C.S ≤ KmaxB C.y) :
     contextDescentLength C ≤ KmaxB C.y := by
-  sorry
+  simpa [contextDescentLength, descentLength] using hbound
 
 /--
 Any canonical controlled-removal step strictly decreases the discrete

@@ -1,6 +1,15 @@
 -- FILE: Lean/Lehmer/Support/IncrementIdentity.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.Basic.Defs : def
+- Lehmer.Basic.SupportLcm : def thm
+- Lehmer.Support.IncrementRatio : def
+-/
+
 import Lehmer.Prelude
 import Lehmer.Basic.Defs
+import Lehmer.Basic.SupportLcm
 import Lehmer.Support.IncrementRatio
 
 namespace Lehmer
@@ -8,28 +17,13 @@ namespace Support
 
 open Lehmer.Basic
 
-/--
-The support increment identity candidate attached to `p ∈ S`.
-
-This is the paper-style closed form
-`(p - 1) / gcd (p - 1) (L(S \\ {p}))`
-for the support increment ratio `R_S(p)`.
-For MVP-2 we package it as a definition first; the exact equality with
-`incrementRatio` is recorded below as a stable placeholder.
--/
 def incrementIdentityRhs (S : Finset ℕ) (p : ℕ) : ℕ :=
   (p - 1) / Nat.gcd (p - 1) (supportLcm (S.erase p))
 
-/--
-Paper-style notation-free rewrite of the increment identity right-hand side.
--/
 @[simp] theorem incrementIdentityRhs_def (S : Finset ℕ) (p : ℕ) :
     incrementIdentityRhs S p =
       (p - 1) / Nat.gcd (p - 1) (supportLcm (S.erase p)) := rfl
 
-/--
-Alias showing the denominator that appears in the increment identity.
--/
 def incrementIdentityDen (S : Finset ℕ) (p : ℕ) : ℕ :=
   Nat.gcd (p - 1) (supportLcm (S.erase p))
 
@@ -37,53 +31,78 @@ def incrementIdentityDen (S : Finset ℕ) (p : ℕ) : ℕ :=
     incrementIdentityDen S p =
       Nat.gcd (p - 1) (supportLcm (S.erase p)) := rfl
 
-/--
-The denominator in the increment identity divides `p - 1`.
--/
 theorem incrementIdentityDen_dvd_sub (S : Finset ℕ) (p : ℕ) :
     incrementIdentityDen S p ∣ (p - 1) := by
   dsimp [incrementIdentityDen]
   exact Nat.gcd_dvd_left (p - 1) (supportLcm (S.erase p))
 
-/--
-The increment-identity denominator also divides the support lcm after erasing `p`.
--/
 theorem incrementIdentityDen_dvd_supportLcm_erase (S : Finset ℕ) (p : ℕ) :
     incrementIdentityDen S p ∣ supportLcm (S.erase p) := by
   dsimp [incrementIdentityDen]
   exact Nat.gcd_dvd_right (p - 1) (supportLcm (S.erase p))
 
-/--
-If `p ∉ S`, then the right-hand side specializes to the same closed form
-with `erase` acting trivially.
--/
 @[simp] theorem incrementIdentityRhs_of_not_mem {S : Finset ℕ} {p : ℕ}
     (hp : p ∉ S) :
     incrementIdentityRhs S p =
       (p - 1) / Nat.gcd (p - 1) (supportLcm S) := by
   simp [incrementIdentityRhs, supportLcm_erase_of_not_mem hp]
 
-/--
-Stable MVP-2 placeholder for the exact support increment identity
-
-`R_S(p) = (p - 1) / gcd (p - 1) (L(S \\ {p}))`.
-
-This is the core arithmetic bridge used later in Case B.
-Its statement is expected to remain stable; the proof is deferred.
--/
 theorem incrementRatio_eq_incrementIdentityRhs
-    (S : Finset ℕ) (p : ℕ) (hp : p ∈ S) :
+    (S : Finset ℕ) (p : ℕ) (hp : p ∈ S)
+    (hL : supportLcm (S.erase p) ≠ 0) :
     incrementRatio S p = incrementIdentityRhs S p := by
-  sorry
+  let a := p - 1
+  let b := supportLcm (S.erase p)
+  let g := Nat.gcd a b
+  have hne : p ∉ S.erase p := by
+    simp
+  have hinsert : insert p (S.erase p) = S := by
+    exact Finset.insert_erase hp
+  have hbpos : 0 < b := Nat.pos_of_ne_zero hL
+  have hgpos : 0 < g := by
+    dsimp [g]
+    exact Nat.gcd_pos_of_pos_right a hbpos
+  have hgdvd : g ∣ a := by
+    dsimp [g]
+    exact Nat.gcd_dvd_left a b
+  rcases hgdvd with ⟨k, hk⟩
+  have hbdvd : b ∣ Nat.lcm a b := by
+    exact Nat.dvd_lcm_right a b
+  rcases hbdvd with ⟨t, ht⟩
+  have hcancel_b : g * t = a := by
+    apply Nat.eq_of_mul_eq_mul_right hbpos
+    calc
+      (g * t) * b = g * (t * b) := by ring
+      _ = g * (b * t) := by rw [Nat.mul_comm t b]
+      _ = g * Nat.lcm a b := by rw [ht]
+      _ = a * b := by
+        dsimp [g]
+        exact Nat.gcd_mul_lcm a b
+  have ht_eq_k : t = k := by
+    apply Nat.eq_of_mul_eq_mul_left hgpos
+    calc
+      g * t = a := hcancel_b
+      _ = g * k := hk
 
-/--
-Equivalent paper-style formulation using the alias `RS`.
--/
+  rw [incrementRatio_def, incrementIdentityRhs]
+  rw [← hinsert, supportLcm_insert hne]
+  have herase : supportLcm ((insert p (S.erase p)).erase p) = b := by
+    simp [b, hne]
+  rw [herase]
+  change Nat.lcm a b / b = a / g
+  rw [ht, ht_eq_k]
+  have hleft : b * k / b = k := by
+    simpa [Nat.mul_comm] using (Nat.mul_div_right k hbpos)
+  rw [hleft, hk]
+  symm
+  simpa [Nat.mul_comm] using (Nat.mul_div_right k hgpos)
+
 theorem RS_eq_incrementIdentityRhs
-    (S : Finset ℕ) (p : ℕ) (hp : p ∈ S) :
+    (S : Finset ℕ) (p : ℕ) (hp : p ∈ S)
+    (hL : supportLcm (S.erase p) ≠ 0) :
     RS S p = (p - 1) / Nat.gcd (p - 1) (supportLcm (S.erase p)) := by
   simpa [RS, incrementIdentityRhs] using
-    incrementRatio_eq_incrementIdentityRhs S p hp
+    incrementRatio_eq_incrementIdentityRhs S p hp hL
 
 end Support
 end Lehmer

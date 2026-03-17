@@ -27,13 +27,15 @@ theorem supportProd_pos {S : Finset ℕ}
     (hS : ∀ p ∈ S, 0 < p) :
     0 < supportProd S := by
   classical
-  refine Finset.induction_on S ?base ?step
-  · simp [supportProd]
-  · intro a T ha hT
+  revert hS
+  refine Finset.induction_on S ?_ ?_
+  · intro _
+    simp [supportProd]
+  · intro a T ha ih hS
     rw [supportProd_insert ha]
     have ha' : 0 < a := hS a (Finset.mem_insert_self a T)
     have hT' : 0 < supportProd T := by
-      apply hT
+      apply ih
       intro p hp
       exact hS p (Finset.mem_insert_of_mem hp)
     exact Nat.mul_pos ha' hT'
@@ -48,21 +50,12 @@ theorem supportProd_ne_zero {S : Finset ℕ}
 theorem one_le_supportProd {S : Finset ℕ}
     (hS : ∀ p ∈ S, 1 ≤ p) :
     1 ≤ supportProd S := by
-  classical
-  refine Finset.induction_on S ?base ?step
-  · simp [supportProd]
-  · intro a T ha hT
-    rw [supportProd_insert ha]
-    have ha' : 1 ≤ a := hS a (Finset.mem_insert_self a T)
-    have hT' : 1 ≤ supportProd T := by
-      apply hT
-      intro p hp
-      exact hS p (Finset.mem_insert_of_mem hp)
-    exact Nat.one_le_mul ha' hT'
+  have hpos : ∀ p ∈ S, 0 < p := by
+    intro p hp
+    exact lt_of_lt_of_le (by decide : 0 < 1) (hS p hp)
+  exact Nat.succ_le_of_lt (supportProd_pos hpos)
 
-/-- If every element of `S` divides `m`, then the support product divides a suitable power of `m`.
-This placeholder-free version keeps only the basic divisibility API actually needed later:
-each member contributes a divisor to the total product. -/
+/-- A useful API lemma duplicating `dvd_supportProd`. -/
 theorem dvd_supportProd_of_mem {S : Finset ℕ} {p : ℕ} (hp : p ∈ S) :
     p ∣ supportProd S := by
   exact dvd_supportProd hp

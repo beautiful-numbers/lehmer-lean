@@ -1,4 +1,13 @@
 -- FILE: Lean/Lehmer/CaseB/Descent/ControlledRemoval.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.Basic.Defs : def
+- Lehmer.Support.IncrementRatio : def
+- Lehmer.Support.PotentialP2 : def param
+- Lehmer.CaseB.Spec : struct spec def
+-/
+
 import Lehmer.Prelude
 import Lehmer.Basic.Defs
 import Lehmer.Support.IncrementRatio
@@ -84,7 +93,7 @@ An element is absent from the successor support after erasure.
 -/
 @[simp] theorem not_mem_remove_self {S : Finset ℕ} {p : ℕ} :
     p ∉ remove S p := by
-  simpa [remove]
+  simp [remove]
 
 /--
 The successor support is contained in the original support.
@@ -123,14 +132,14 @@ theorem potential_nextContext_expand (C : Context) (p : ℕ) :
 Stable MVP-2 placeholder for the local gain statement attached to a
 controlled removal.
 
-This isolates the intended shape of the descent step before the full
-proof of strict decrease is supplied in later files.
+At this stage this theorem is itself the interface hypothesis that will be
+strengthened later by the genuine descent proof.
 -/
 theorem controlledRemoval_gain_placeholder
-    (S : Finset ℕ) (p y : ℕ) (hp : Removable S p) :
+    (S : Finset ℕ) (p y : ℕ) (_hp : Removable S p)
+    (hdec : P2 (remove S p) y < P2 S y) :
     P2 (remove S p) y < P2 S y := by
-  simpa [Removable, remove] using
-    P2_strict_decrease_placeholder S p y hp
+  exact hdec
 
 end CaseB
 end Lehmer

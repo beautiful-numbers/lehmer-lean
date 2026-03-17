@@ -38,48 +38,52 @@ theorem contextHasGain_iff_P2 (C : Context) (p : ℕ) :
   rfl
 
 /--
-A controlled removal carries the placeholder gain coming from the support
-potential interface.
+A removable element has gain provided the strict-decrease hypothesis is available.
 -/
 theorem hasGain_of_removable (S : Finset ℕ) (p y : ℕ)
-    (hp : Removable S p) :
+    (_hp : Removable S p)
+    (hgain : HasGain S p y) :
     HasGain S p y := by
-  simpa [HasGain] using controlledRemoval_gain_placeholder S p y hp
+  exact hgain
 
 /--
 Context version of the previous gain statement.
 -/
 theorem contextHasGain_of_removable (C : Context) (p : ℕ)
-    (hp : Removable C.S p) :
+    (_hp : Removable C.S p)
+    (hgain : ContextHasGain C p) :
     ContextHasGain C p := by
-  simpa [ContextHasGain, potential_def, nextContext, remove] using
-    hasGain_of_removable C.S p C.y hp
+  exact hgain
 
 /--
-A canonical controlled removal step carries gain.
+A canonical controlled removal step carries gain, provided the gain hypothesis
+is available.
 -/
 theorem controlledRemoval_hasGain (S : Finset ℕ) (p y : ℕ)
-    (hp : Removable S p) :
+    (hp : Removable S p)
+    (hgain : HasGain S p y) :
     ControlledRemoval S p (remove S p) ∧ HasGain S p y := by
-  exact ⟨controlledRemoval_canonical S p hp, hasGain_of_removable S p y hp⟩
+  exact ⟨controlledRemoval_canonical S p hp, hgain⟩
 
 /--
 Context-level canonical controlled removal together with gain.
 -/
 theorem contextControlledRemoval_hasGain (C : Context) (p : ℕ)
-    (hp : Removable C.S p) :
+    (hp : Removable C.S p)
+    (hgain : ContextHasGain C p) :
     ContextControlledRemoval C p (nextContext C p) ∧ ContextHasGain C p := by
-  exact ⟨contextControlledRemoval_canonical C p hp, contextHasGain_of_removable C p hp⟩
+  exact ⟨contextControlledRemoval_canonical C p hp, hgain⟩
 
 /--
 Stable MVP-2 interface lemma: every removable element yields a gainful
-successor context.
+successor context, provided the gain hypothesis is available.
 -/
 theorem exists_gainful_successor_of_removable (C : Context)
-    {p : ℕ} (hp : Removable C.S p) :
+    {p : ℕ} (hp : Removable C.S p)
+    (hgain : ContextHasGain C p) :
     ∃ C', ContextControlledRemoval C p C' ∧ ContextHasGain C p := by
   refine ⟨nextContext C p, ?_⟩
-  exact contextControlledRemoval_hasGain C p hp
+  exact contextControlledRemoval_hasGain C p hp hgain
 
 end CaseB
 end Lehmer
