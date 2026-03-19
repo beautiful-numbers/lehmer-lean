@@ -1,4 +1,10 @@
 -- FILE: Lean/Lehmer/CaseC/GapClosure/Bootstrap.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.GapClosure.Omegahat : def thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.GapClosure.Omegahat
 
@@ -35,19 +41,21 @@ theorem omegahat_lt_of_bootstrapConsistent {y W : ℕ}
   exact h
 
 /--
-Stable MVP-3 placeholder: the parameters `(y, W)` arising in the Case C
-pipeline satisfy bootstrap consistency.
+Interface form: once bootstrap consistency has been established, it can be
+reused under the canonical file-local name.
 -/
-theorem bootstrapConsistency_placeholder (y W : ℕ) :
+theorem bootstrapConsistency_of_assumption (y W : ℕ)
+    (h : BootstrapConsistent y W) :
     BootstrapConsistent y W := by
-  sorry
+  exact h
 
 /--
-Equivalent paper-style form of the bootstrap consistency placeholder.
+Equivalent paper-style form of the previous interface lemma.
 -/
-theorem omegahat_lt_W_placeholder (y W : ℕ) :
+theorem omegahat_lt_W_of_assumption (y W : ℕ)
+    (h : BootstrapConsistent y W) :
     Omegahat y W < W := by
-  exact bootstrapConsistency_placeholder y W
+  exact h
 
 /--
 A weak numerical consequence of bootstrap consistency.

@@ -1,4 +1,18 @@
 -- FILE: Lean/Lehmer/CaseC/GapClosure/GapToClosure.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.GapClosure.Rigidity : thm
+- Lehmer.CaseC.GapClosure.SupportProfiles : def thm
+- Lehmer.CaseC.GapClosure.NonIntegrality : def thm
+- Lehmer.CaseC.GapClosure.TruncatedFamily : def thm
+- Lehmer.CaseC.GapClosure.DeltaStar : def thm
+- Lehmer.CaseC.GapClosure.KmaxGap : def thm
+- Lehmer.CaseC.GapClosure.ClosureBoundN : def thm
+- Lehmer.CaseC.GapClosure.Omegahat : def thm
+- Lehmer.CaseC.GapClosure.Bootstrap : def thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.GapClosure.Rigidity
 import Lehmer.CaseC.GapClosure.SupportProfiles
@@ -48,9 +62,9 @@ def profileGap {y W : ℕ} (G : GapProfile y W) : ℚ :=
 /--
 The Case C gap-to-closure condition at parameters `(y, W)`.
 
-It packages the three abstract ingredients of the MVP-3 pipeline:
-a positive gap floor `Δ*`, an upper profile bound `KmaxGap`, and the
-bootstrap consistency condition `Ω̂(y, W) < W`.
+It packages the two abstract ingredients actually used in the current
+skeleton: a positive gap floor `Δ*` and the bootstrap consistency
+condition `Ω̂(y, W) < W`.
 -/
 def GapToClosureReady (y W : ℕ) : Prop :=
   0 < DeltaStar y W ∧ BootstrapConsistent y W
@@ -59,63 +73,62 @@ def GapToClosureReady (y W : ℕ) : Prop :=
     GapToClosureReady y W = (0 < DeltaStar y W ∧ BootstrapConsistent y W) := rfl
 
 /--
-Every gap profile has support gap bounded below by `Δ*(y, W)`.
+Every gap profile has support gap bounded below by `Δ*(y, W)` once that lower
+bound has been established for the given support.
 -/
-theorem profileGap_lower_bound {y W : ℕ} (G : GapProfile y W) :
+theorem profileGap_lower_bound_of_assumption {y W : ℕ} (G : GapProfile y W)
+    (hbound : DeltaStar y W ≤ profileGap G) :
     DeltaStar y W ≤ profileGap G := by
-  simpa [profileGap] using
-    DeltaStar_lower_bound_placeholder (y := y) (W := W) G.hTrunc G.hNonInt
+  exact hbound
 
 /--
-Every gap profile has support profile bounded above by `KmaxGap(y, W)`.
+Every gap profile has support profile bounded above by `KmaxGap(y, W)` once
+that upper bound has been established for the given support.
 -/
-theorem profileIndex_upper_bound {y W : ℕ} (G : GapProfile y W) :
+theorem profileIndex_upper_bound_of_assumption {y W : ℕ} (G : GapProfile y W)
+    (hbound : profileIndex G ≤ KmaxGap y W) :
     profileIndex G ≤ KmaxGap y W := by
-  simpa [profileIndex] using
-    supportIndex_le_KmaxGap_placeholder (y := y) (W := W) G.hTrunc
+  exact hbound
 
 /--
-At MVP-3, readiness follows from the abstract positivity of `Δ*`
-and the bootstrap consistency placeholder.
+Interface form: readiness follows once positivity of `Δ*` and bootstrap
+consistency are supplied explicitly.
 -/
-theorem gapToClosureReady_placeholder (y W : ℕ) :
+theorem gapToClosureReady_of_assumption (y W : ℕ)
+    (hpos : 0 < DeltaStar y W)
+    (hboot : BootstrapConsistent y W) :
     GapToClosureReady y W := by
-  refine ⟨?_, ?_⟩
-  · simpa [DeltaStar] using deltaStar_pos_placeholder y W
-  · exact bootstrapConsistency_placeholder y W
+  exact ⟨hpos, hboot⟩
 
 /--
-Main MVP-3 bridge:
-once the gap and bootstrap side are ready, the closure bound `N(y, W)`
-acts as the abstract finite bound produced by the gap-to-closure pipeline.
+Main bridge interface:
+once readiness and a witness bound by `N(y, W)` are supplied, the closure
+bound can be reused under the canonical file-local name.
 -/
-theorem gapToClosure_bound_placeholder (y W : ℕ)
-    (h : GapToClosureReady y W) :
+theorem gapToClosure_bound_of_assumption (y W : ℕ)
+    (_h : GapToClosureReady y W)
+    (hbound : ∀ n : ℕ, n ≤ N y W) :
     ∀ n : ℕ, n ≤ N y W := by
-  simpa [N] using closureBoundN_controls_witness_placeholder y W
-
-/--
-Equivalent formulation specialized to the placeholder readiness theorem.
--/
-theorem gapToClosure_bound (y W : ℕ) :
-    ∀ n : ℕ, n ≤ N y W := by
-  exact gapToClosure_bound_placeholder y W (gapToClosureReady_placeholder y W)
+  exact hbound
 
 /--
 Bootstrap consequence recorded in the final Case C gap skeleton.
 -/
-theorem gapToClosure_bootstrap (y W : ℕ) :
+theorem gapToClosure_bootstrap_of_assumption (y W : ℕ)
+    (hboot : BootstrapConsistent y W) :
     Omegahat y W < W := by
-  exact omegahat_lt_W_placeholder y W
+  exact hboot
 
 /--
-Combined MVP-3 output:
-the Case C gap pipeline provides both a finite closure bound `N(y, W)`
-and the bootstrap consistency inequality `Ω̂(y, W) < W`.
+Combined output interface:
+once the closure bound and bootstrap consistency are supplied, they can be
+packaged together under the canonical gap-to-closure name.
 -/
-theorem gapToClosure_skeleton (y W : ℕ) :
+theorem gapToClosure_skeleton_of_assumption (y W : ℕ)
+    (hbound : ∀ n : ℕ, n ≤ N y W)
+    (hboot : Omegahat y W < W) :
     (∀ n : ℕ, n ≤ N y W) ∧ Omegahat y W < W := by
-  exact ⟨gapToClosure_bound y W, gapToClosure_bootstrap y W⟩
+  exact ⟨hbound, hboot⟩
 
 end GapClosure
 end CaseC

@@ -1,4 +1,12 @@
 -- FILE: Lean/Lehmer/CaseC/GapClosure/KmaxGap.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.GapClosure.SupportProfiles : def
+- Lehmer.CaseC.GapClosure.TruncatedFamily : def
+- Lehmer.CaseC.GapClosure.DeltaStar : def thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.GapClosure.SupportProfiles
 import Lehmer.CaseC.GapClosure.TruncatedFamily
@@ -41,53 +49,50 @@ theorem kmaxGap_nonneg (y W : ℕ) :
   positivity
 
 /--
-Stable MVP-3 placeholder: every support profile in the truncated family is
-bounded above by `KmaxGap(y, W)`.
+Interface form: if one has established an upper bound by `kmaxGap`,
+it can be used under the canonical file-local name.
 -/
-theorem supportIndex_le_kmaxGap_placeholder
+theorem supportIndex_le_kmaxGap_of_assumption
     {y W : ℕ} {S : Finset ℕ}
-    (hS : InTruncatedFamily y W S) :
+    (hbound : supportIndex S ≤ kmaxGap y W) :
     supportIndex S ≤ kmaxGap y W := by
-  sorry
+  exact hbound
 
 /--
 Equivalent paper-style formulation with the alias `KmaxGap`.
 -/
-theorem supportIndex_le_KmaxGap_placeholder
+theorem supportIndex_le_KmaxGap_of_assumption
     {y W : ℕ} {S : Finset ℕ}
-    (hS : InTruncatedFamily y W S) :
+    (hbound : supportIndex S ≤ kmaxGap y W) :
     supportIndex S ≤ KmaxGap y W := by
-  simpa [KmaxGap] using
-    supportIndex_le_kmaxGap_placeholder (y := y) (W := W) hS
+  simpa [KmaxGap] using hbound
 
 /--
-Stable MVP-3 placeholder: every truncated-family gap is bounded above by
-`KmaxGap(y, W)`.
+Interface form for gap upper bounds by `kmaxGap`.
 -/
-theorem Delta_le_kmaxGap_placeholder
+theorem Delta_le_kmaxGap_of_assumption
     {y W : ℕ} {S : Finset ℕ}
-    (hS : InTruncatedFamily y W S) :
+    (hbound : Delta S ≤ kmaxGap y W) :
     Delta S ≤ kmaxGap y W := by
-  sorry
+  exact hbound
 
 /--
 Equivalent paper-style formulation of the previous upper bound.
 -/
-theorem Delta_le_KmaxGap_placeholder
+theorem Delta_le_KmaxGap_of_assumption
     {y W : ℕ} {S : Finset ℕ}
-    (hS : InTruncatedFamily y W S) :
+    (hbound : Delta S ≤ kmaxGap y W) :
     Delta S ≤ KmaxGap y W := by
-  simpa [KmaxGap] using
-    Delta_le_kmaxGap_placeholder (y := y) (W := W) hS
+  simpa [KmaxGap] using hbound
 
 /--
-Stable MVP-3 placeholder: the ratio `KmaxGap / DeltaStar` is well-formed in
-the positive-gap regime relevant to Case C.
+The ratio `KmaxGap / DeltaStar` is well-formed under the explicit
+positive-gap hypothesis.
 -/
-theorem kmaxGap_div_deltaStar_wellformed_placeholder
-    (y W : ℕ) :
+theorem kmaxGap_div_deltaStar_wellformed_of_pos
+    (y W : ℕ)
+    (hpos : 0 < deltaStar y W) :
     deltaStar y W ≠ 0 := by
-  have hpos := deltaStar_pos_placeholder y W
   linarith
 
 end GapClosure

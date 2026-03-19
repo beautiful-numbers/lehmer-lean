@@ -1,6 +1,14 @@
 -- FILE: Lean/Lehmer/Basic/Totient.lean
+/-
+IMPORT CLASSIFICATION
+- Mathlib : meta
+- Lehmer.Basic.Defs : def
+- Lehmer.Basic.PrimeSupport : thm
+-/
+
 import Mathlib
 import Lehmer.Basic.Defs
+import Lehmer.Basic.PrimeSupport
 
 namespace Lehmer
 namespace Basic
@@ -24,6 +32,38 @@ def totientQ (n : ℕ) : ℚ :=
 /-- Rewriting `K(n)` through `φ(n)` in the auxiliary notation `totientQ`. -/
 @[simp] theorem lehmerQuotient_eq (n : ℕ) :
     lehmerQuotient n = ((n - 1 : ℕ) : ℚ) / totientQ n := rfl
+
+/--
+For a squarefree integer, `φ(n)` is the product of `(p - 1)` over the prime support.
+-/
+theorem totient_eq_prod_sub_one_of_squarefree {n : ℕ}
+    (hsq : Squarefree n) :
+    Nat.totient n = (primeSupport n).prod (fun p => p - 1) := by
+  have hn : n ≠ 0 := by
+    intro hn0
+    subst hn0
+    simp at hsq
+  have hpos : 0 < n := Nat.pos_of_ne_zero hn
+  rw [primeSupport_eq_primeFactors_of_squarefree hsq]
+  rw [Nat.totient_eq_div_primeFactors_mul]
+  have hprod : ∏ p ∈ n.primeFactors, p = n := by
+    simpa using Nat.prod_primeFactors_of_squarefree hsq
+  rw [hprod, Nat.div_self hpos, one_mul]
+
+/--
+Rational-cast form of the squarefree totient product formula.
+-/
+theorem totientQ_eq_prod_sub_one_of_squarefree {n : ℕ}
+    (hsq : Squarefree n) :
+    totientQ n = ((primeSupport n).prod (fun p => p - 1) : ℚ) := by
+  rw [totientQ_def, totient_eq_prod_sub_one_of_squarefree hsq]
+  norm_num
+  refine Finset.prod_congr rfl ?_
+  intro p hp
+  have hp2 : 2 ≤ p := two_le_of_mem_primeSupport hp
+  have hp1 : 1 ≤ p := le_trans (by decide : 1 ≤ 2) hp2
+  rw [Nat.cast_sub hp1]
+  norm_num
 
 /-- The basic rigidity identity `I(n) - K(n) = 1 / φ(n)` in `ℚ`. -/
 theorem totientIndex_sub_lehmerQuotient (n : ℕ) :

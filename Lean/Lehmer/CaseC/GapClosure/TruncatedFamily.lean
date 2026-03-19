@@ -1,4 +1,11 @@
 -- FILE: Lean/Lehmer/CaseC/GapClosure/TruncatedFamily.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.Basic.Defs : def
+- Lehmer.CaseC.GapClosure.SupportProfiles : def
+-/
+
 import Lehmer.Prelude
 import Lehmer.Basic.Defs
 import Lehmer.CaseC.GapClosure.SupportProfiles
@@ -99,19 +106,26 @@ The support profile attached to a support in the truncated family.
 This is just a named wrapper around `supportIndex`, useful for the later
 gap-optimization files.
 -/
-def truncatedProfile (y W : ℕ) (S : Finset ℕ) : ℚ :=
+def truncatedProfile (_y _W : ℕ) (S : Finset ℕ) : ℚ :=
   supportIndex S
 
 @[simp] theorem truncatedProfile_def (y W : ℕ) (S : Finset ℕ) :
     truncatedProfile y W S = supportIndex S := rfl
 
 /--
-Stable MVP-3 placeholder: the truncated family at `(y, W)` is finite in the
-sense needed later for the Case C gap optimization pipeline.
+The raw family `InTruncatedFamily y W` is not finite in general:
+there is no upper bound on the elements of `S`, only a lower bound and
+a cardinality cap.
+
+So finiteness must be introduced only after restricting to a fixed finite
+ambient domain.
 -/
-theorem truncatedFamily_finite_placeholder (y W : ℕ) :
-    Set.Finite {S : Finset ℕ | InTruncatedFamily y W S} := by
-  sorry
+theorem truncatedFamily_finite_within
+    (y W : ℕ) (U : Finset ℕ) :
+    Set.Finite {S : Finset ℕ | InTruncatedFamily y W S ∧ S ⊆ U} := by
+  refine (U.powerset.finite_toSet).subset ?_
+  intro S hS
+  exact Finset.mem_powerset.mpr hS.2
 
 end GapClosure
 end CaseC

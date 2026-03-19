@@ -1,4 +1,10 @@
 -- FILE: Lean/Lehmer/CaseC/GapClosure/Omegahat.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.GapClosure.ClosureBoundN : def thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.GapClosure.ClosureBoundN
 
@@ -36,8 +42,7 @@ theorem closureBoundN_pos_for_omegahat (y W : ℕ) :
   exact closureBoundN_pos y W
 
 /--
-Stable MVP-3 placeholder: the logarithmic ratio defining `Ω̂(y, W)` is
-well-formed in the Case C regime.
+The logarithmic ratio defining `Ω̂(y, W)` is well-formed in the Case C regime.
 -/
 theorem omegahat_wellformed_placeholder (y W : ℕ) :
     1 < y -> Real.log y ≠ 0 := by
@@ -49,23 +54,23 @@ theorem omegahat_wellformed_placeholder (y W : ℕ) :
     hy'
 
 /--
-Stable MVP-3 placeholder: every residual support size is bounded by `Ω̂(y, W)`.
-This is the bridge from the closure bound `N(y, W)` to a support-cardinality
-bound in the bootstrap phase.
+Interface form: once a support-cardinality bound by `Ω̂(y, W)` has been
+established, it can be reused under the canonical file-local name.
 -/
-theorem supportCard_le_omegahat_placeholder
-    (y W : ℕ) :
+theorem supportCard_le_omegahat_of_assumption
+    (y W : ℕ)
+    (hbound : ∀ m : ℕ, m ≤ omegahat y W) :
     ∀ m : ℕ, m ≤ omegahat y W := by
-  intro m
-  sorry
+  exact hbound
 
 /--
 Equivalent paper-style formulation using the alias `Ω̂`.
 -/
-theorem supportCard_le_Omegahat_placeholder
-    (y W : ℕ) :
+theorem supportCard_le_Omegahat_of_assumption
+    (y W : ℕ)
+    (hbound : ∀ m : ℕ, m ≤ omegahat y W) :
     ∀ m : ℕ, m ≤ Omegahat y W := by
-  simpa [Omegahat] using supportCard_le_omegahat_placeholder y W
+  simpa [Omegahat] using hbound
 
 end GapClosure
 end CaseC

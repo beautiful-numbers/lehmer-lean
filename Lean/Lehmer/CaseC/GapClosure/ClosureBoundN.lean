@@ -1,4 +1,11 @@
 -- FILE: Lean/Lehmer/CaseC/GapClosure/ClosureBoundN.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.GapClosure.DeltaStar : def thm
+- Lehmer.CaseC.GapClosure.KmaxGap : def thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.GapClosure.DeltaStar
 import Lehmer.CaseC.GapClosure.KmaxGap
@@ -44,29 +51,31 @@ theorem closureBoundN_ne_zero (y W : ℕ) :
   exact Nat.ne_of_gt (closureBoundN_pos y W)
 
 /--
-The defining ratio is well-formed in the positive-gap regime.
+The defining ratio is well-formed under an explicit positive-gap hypothesis.
 -/
-theorem closureBoundN_ratio_wellformed (y W : ℕ) :
+theorem closureBoundN_ratio_wellformed_of_pos (y W : ℕ)
+    (hpos : 0 < deltaStar y W) :
     deltaStar y W ≠ 0 := by
-  exact kmaxGap_div_deltaStar_wellformed_placeholder y W
+  exact kmaxGap_div_deltaStar_wellformed_of_pos y W hpos
 
 /--
-Stable MVP-3 placeholder: any relevant Case C witness is bounded by `N(y, W)`.
-This is the abstract bridge from gap estimates to finite closure.
+Interface form: once a witness bound by `N(y, W)` has been established,
+it can be reused under the canonical file-local name.
 -/
-theorem closureBoundN_controls_witness_placeholder
-    (y W : ℕ) :
+theorem closureBoundN_controls_witness_of_assumption
+    (y W : ℕ)
+    (hbound : ∀ n : ℕ, n ≤ closureBoundN y W) :
     ∀ n : ℕ, n ≤ closureBoundN y W := by
-  intro n
-  sorry
+  exact hbound
 
 /--
 Equivalent paper-style formulation using the alias `N`.
 -/
-theorem N_controls_witness_placeholder
-    (y W : ℕ) :
+theorem N_controls_witness_of_assumption
+    (y W : ℕ)
+    (hbound : ∀ n : ℕ, n ≤ closureBoundN y W) :
     ∀ n : ℕ, n ≤ N y W := by
-  simpa [N] using closureBoundN_controls_witness_placeholder y W
+  simpa [N] using hbound
 
 end GapClosure
 end CaseC

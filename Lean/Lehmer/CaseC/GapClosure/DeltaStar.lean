@@ -1,4 +1,12 @@
 -- FILE: Lean/Lehmer/CaseC/GapClosure/DeltaStar.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.GapClosure.SupportProfiles : def
+- Lehmer.CaseC.GapClosure.NonIntegrality : def
+- Lehmer.CaseC.GapClosure.TruncatedFamily : def
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.GapClosure.SupportProfiles
 import Lehmer.CaseC.GapClosure.NonIntegrality
@@ -32,8 +40,8 @@ def PositiveGapAt (y W : ℕ) (S : Finset ℕ) : Prop :=
 /--
 The abstract minimal positive gap attached to the truncated family at `(y, W)`.
 
-For MVP-3 we package this as a parameter in `ℚ`; the actual optimization /
-minimization proof is deferred to later files.
+At this stage it is only a placeholder datum; positivity must be supplied
+explicitly before using it in a denominator.
 -/
 def deltaStar (y W : ℕ) : ℚ :=
   0
@@ -51,7 +59,7 @@ abbrev DeltaStar (y W : ℕ) : ℚ :=
     DeltaStar y W = deltaStar y W := rfl
 
 /--
-At MVP-3, `Δ*` is definitionally nonnegative.
+At this placeholder stage, `Δ*` is definitionally nonnegative.
 -/
 theorem deltaStar_nonneg (y W : ℕ) :
     0 ≤ deltaStar y W := by
@@ -67,35 +75,37 @@ theorem Delta_mem_truncatedGapSet {y W : ℕ} {S : Finset ℕ}
   refine ⟨S, hS, rfl⟩
 
 /--
-Stable MVP-3 placeholder: every nonintegral support profile in the truncated
-family has gap bounded below by `Δ*(y, W)`.
+Interface form: once a lower bound by `Δ*(y, W)` has been established for a
+given nonintegral truncated-family support, it can be reused under the
+canonical file-local name.
 -/
-theorem deltaStar_lower_bound_placeholder
+theorem deltaStar_lower_bound_of_assumption
     {y W : ℕ} {S : Finset ℕ}
-    (hS : InTruncatedFamily y W S)
-    (hNI : NonIntegral S) :
+    (_hS : InTruncatedFamily y W S)
+    (_hNI : NonIntegral S)
+    (hbound : deltaStar y W ≤ Delta S) :
     deltaStar y W ≤ Delta S := by
-  sorry
+  exact hbound
 
 /--
-Stable MVP-3 placeholder: the minimal positive gap is strictly positive once
-the truncated family is restricted to the nonintegral support profiles relevant
-to Case C.
+Paper-style alias form of the previous interface lemma.
 -/
-theorem deltaStar_pos_placeholder (y W : ℕ) :
-    0 < deltaStar y W := by
-  sorry
-
-/--
-Equivalent paper-style formulation using the alias `Δ*`.
--/
-theorem DeltaStar_lower_bound_placeholder
+theorem DeltaStar_lower_bound_of_assumption
     {y W : ℕ} {S : Finset ℕ}
-    (hS : InTruncatedFamily y W S)
-    (hNI : NonIntegral S) :
+    (_hS : InTruncatedFamily y W S)
+    (_hNI : NonIntegral S)
+    (hbound : deltaStar y W ≤ Delta S) :
     DeltaStar y W ≤ Delta S := by
-  simpa [DeltaStar] using
-    deltaStar_lower_bound_placeholder (y := y) (W := W) hS hNI
+  simpa [DeltaStar] using hbound
+
+/--
+Explicit positivity interface for `Δ*`.
+-/
+theorem deltaStar_pos_of_assumption
+    (y W : ℕ)
+    (hpos : 0 < deltaStar y W) :
+    0 < deltaStar y W := by
+  exact hpos
 
 end GapClosure
 end CaseC

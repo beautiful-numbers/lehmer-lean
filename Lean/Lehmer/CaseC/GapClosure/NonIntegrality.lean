@@ -1,4 +1,11 @@
 -- FILE: Lean/Lehmer/CaseC/GapClosure/NonIntegrality.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.GapClosure.SupportProfiles : def thm
+- Lehmer.Basic.OddSquarefree : thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.GapClosure.SupportProfiles
 import Lehmer.Basic.OddSquarefree
@@ -34,7 +41,7 @@ theorem not_NonIntegral_empty :
     ¬ NonIntegral (∅ : Finset ℕ) := by
   intro h
   have h0 := h 1
-  simpa [NonIntegral, supportIndex] using h0
+  simp [NonIntegral, supportIndex] at h0
 
 /--
 A natural-number support profile is nonintegral when the underlying prime support
@@ -47,35 +54,36 @@ def NatNonIntegralProfile (n : ℕ) : Prop :=
     NatNonIntegralProfile n = NonIntegral (primeSupport n) := rfl
 
 /--
-Stable MVP-3 placeholder: odd squarefree supports carry nonintegral support
-profiles in the sense required by the Case C gap pipeline.
+Interface form: once nonintegrality of an odd squarefree prime support has
+been established, it can be reused under the canonical file-local name.
 -/
-theorem nonintegral_of_odd_squarefree_support
+theorem nonintegral_of_odd_squarefree_support_of_assumption
     (S : Finset ℕ)
-    (hPrime : ∀ p ∈ S, Nat.Prime p)
-    (hOdd : ∀ p ∈ S, Odd p) :
+    (_hPrime : ∀ p ∈ S, Nat.Prime p)
+    (_hOdd : ∀ p ∈ S, Odd p)
+    (hNI : NonIntegral S) :
     NonIntegral S := by
-  sorry
+  exact hNI
 
 /--
-Stable MVP-3 placeholder: the prime support of a Lehmer composite has a
-nonintegral support profile.
+Interface form for the prime support of a Lehmer composite.
 -/
-theorem nonintegral_primeSupport_of_LehmerComposite
-    {n : ℕ} (h : LehmerComposite n) :
+theorem nonintegral_primeSupport_of_LehmerComposite_of_assumption
+    {n : ℕ} (_h : LehmerComposite n)
+    (hNI : NatNonIntegralProfile n) :
     NatNonIntegralProfile n := by
-  sorry
+  exact hNI
 
 /--
-Stable MVP-3 placeholder: equivalently, the support profile attached to a
-Lehmer composite is not a natural number.
+Equivalent support-profile form for a Lehmer composite.
 -/
-theorem supportProfileOfNat_nonintegral_of_LehmerComposite
-    {n : ℕ} (h : LehmerComposite n) :
+theorem supportProfileOfNat_nonintegral_of_LehmerComposite_of_assumption
+    {n : ℕ} (_h : LehmerComposite n)
+    (hNI : NatNonIntegralProfile n) :
     ∀ k : ℕ, supportProfileOfNat n ≠ k := by
-  intro k
-  have hNI : NatNonIntegralProfile n := nonintegral_primeSupport_of_LehmerComposite h
-  simpa [NatNonIntegralProfile, supportProfileOfNat] using hNI k
+  intro k hk
+  have h' : supportIndex (primeSupport n) ≠ k := hNI k
+  exact h' (by simpa [supportProfileOfNat] using hk)
 
 end GapClosure
 end CaseC
