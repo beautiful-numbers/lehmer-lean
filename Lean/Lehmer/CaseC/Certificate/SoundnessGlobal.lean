@@ -1,6 +1,12 @@
 -- FILE: Lean/Lehmer/CaseC/Certificate/SoundnessGlobal.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.Certificate.CheckerGlobal : def thm
+- Lehmer.CaseC.Certificate.SoundnessLocal : def thm
+-/
+
 import Lehmer.Prelude
-import Lehmer.CaseC.Certificate.Coverage
 import Lehmer.CaseC.Certificate.CheckerGlobal
 import Lehmer.CaseC.Certificate.SoundnessLocal
 
@@ -11,9 +17,9 @@ namespace Certificate
 /--
 A semantic global-validity predicate for a certificate list.
 
-For MVP-4, global validity is stated recursively:
-- each head record resolves to a child list,
-- that local instance is semantically valid,
+At the current stage, global validity is stated recursively:
+- each head record resolves to a child list;
+- that local instance is semantically valid;
 - and the tail is globally valid.
 -/
 def ValidCertificate : List Record → Prop
@@ -52,35 +58,43 @@ theorem checkRecordGlobal_sound_of_resolved
   exact checkRecordLocal_sound R children hlocal
 
 /--
-Stable MVP-4 placeholder: if the global checker accepts a nonempty certificate,
-then the head record's children can be resolved.
+If the global checker accepts a nonempty certificate, then the head record's
+children resolve successfully.
 -/
-theorem checkCertificate_head_resolves_placeholder
+theorem checkCertificate_head_resolves_of_true
     (R : Record) (Rs : List Record)
     (h : checkCertificate (R :: Rs) = true) :
     ∃ children, localChildren? (R :: Rs) R = some children := by
-  sorry
+  have hpair : checkRecordGlobal (R :: Rs) R = true ∧ checkCertificate Rs = true := by
+    simpa [checkCertificate] using h
+  have hhead : checkRecordGlobal (R :: Rs) R = true := hpair.1
+  cases hloc : localChildren? (R :: Rs) R with
+  | none =>
+      rw [checkRecordGlobal_none (R :: Rs) R hloc] at hhead
+      cases hhead
+  | some children =>
+      exact ⟨children, rfl⟩
 
 /--
-Main global soundness theorem for MVP-4:
+Main global soundness theorem:
 if the global checker returns `true`, then the certificate is semantically valid.
 -/
 theorem checkCertificate_sound : ∀ cert : List Record,
     checkCertificate cert = true → ValidCertificate cert
-  | [] , _ => by
+  | [], _ => by
       simp [ValidCertificate]
   | R :: Rs, h => by
-      have hsplit : checkRecordGlobal (R :: Rs) R = true ∧ checkCertificate Rs = true := by
+      have hpair : checkRecordGlobal (R :: Rs) R = true ∧ checkCertificate Rs = true := by
         simpa [checkCertificate] using h
-      rcases checkCertificate_head_resolves_placeholder R Rs h with ⟨children, hres⟩
+      rcases checkCertificate_head_resolves_of_true R Rs h with ⟨children, hres⟩
       refine ⟨?_, ?_⟩
       · refine ⟨children, hres, ?_⟩
-        exact checkRecordGlobal_sound_of_resolved (R :: Rs) R children hres hsplit.1
-      · exact checkCertificate_sound Rs hsplit.2
+        exact checkRecordGlobal_sound_of_resolved (R :: Rs) R children hres hpair.1
+      · exact checkCertificate_sound Rs hpair.2
 
 /--
-A globally coherent certificate is semantically valid once the global checker
-is known to accept it.
+A checker-facing globally coherent certificate is semantically valid once the
+global checker is known to accept it.
 -/
 theorem globallyCoherent_implies_valid_of_checker
     (cert : List Record)

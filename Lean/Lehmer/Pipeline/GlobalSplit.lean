@@ -1,160 +1,301 @@
-import Mathlib
+-- FILE: Lean/Lehmer/Pipeline/GlobalSplit.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.Basic.Defs : def
+- Lehmer.Pivot.Defs : def thm
+- Lehmer.Pivot.CaseAContradiction : def thm
+-/
+
+import Lehmer.Prelude
 import Lehmer.Basic.Defs
-import Lehmer.Pivot.LowerBoundAbstract
-import Lehmer.CaseB.Spec
-import Lehmer.CaseC.Spec
+import Lehmer.Pivot.Defs
+import Lehmer.Pivot.CaseAContradiction
 
 namespace Lehmer
 namespace Pipeline
 
 open Lehmer.Basic
-open Lehmer.Pivot
 
 /--
-Global pivot-range split used in the paper.
+Global branches of the pipeline-level classification.
 
-- `small` corresponds to the finite Case C range `3 ≤ y < Y₁`,
-- `mid` corresponds to the intermediate analytic range `Y₁ ≤ y < Y₀`,
-- `large` corresponds to the large-range Case B regime `Y* ≤ y`.
-
-At the specification level, we keep only the three logical branches.
+This remains the normative taxonomic split used by the pipeline layer.
+In the long-term architecture, each branch must consume a mathematically
+defined branch predicate coming from the corresponding proof layer.
 -/
-inductive PivotRange
-  | small
-  | mid
-  | large
+inductive GlobalBranch
+  | caseA
+  | caseB
+  | intermediate
+  | caseC
   deriving DecidableEq, Repr
 
 /--
-Global thresholds used by the paper.
+Pipeline-facing pivot alias.
 
-They are kept abstract at the pipeline level; explicit values/tables are handled elsewhere.
+Unlike the MVP version, this is no longer an opaque pipeline-only object:
+it is the canonical pivot imported from the pivot layer.
 -/
-opaque Y1 : ℕ
-opaque Y0 : ℕ
-opaque YStar : ℕ
+def pivotOf (n : ℕ) : ℕ :=
+  Lehmer.Pivot.pivotVal n
+
+@[simp] theorem pivotOf_def (n : ℕ) :
+    pivotOf n = Lehmer.Pivot.pivotVal n := rfl
 
 /--
-Standing threshold relations.
+Global thresholds used by the range-based part of the pipeline split.
 
-These encode the architectural assumptions of the global split.
+At this stage, B / intermediate / C still use the range taxonomy from the MVP
+pipeline.  Only Case A has been upgraded to its mathematical pivot-contradiction
+form.
 -/
-axiom three_le_Y1 : 3 ≤ Y1
-axiom Y1_le_Y0 : Y1 ≤ Y0
-axiom Y0_le_YStar : Y0 ≤ YStar
+opaque YA : ℕ
+opaque YC : ℕ
+opaque YB : ℕ
 
 /--
-A pivot `y` lies in the finite Case C range.
+Standing threshold relations for the range-based part of the global split.
 -/
-def InSmallRange (y : ℕ) : Prop :=
-  3 ≤ y ∧ y < Y1
+axiom three_le_YA : 3 ≤ YA
+axiom YA_le_YC : YA ≤ YC
+axiom YC_le_YB : YC ≤ YB
 
 /--
-A pivot `y` lies in the intermediate analytic range.
+Legacy small-pivot range.
+
+This is the old MVP "Case A range" kept explicitly as a separate notion so that
+the range taxonomy for the remaining branches is not lost during the Case A
+refactor.
 -/
-def InMidRange (y : ℕ) : Prop :=
-  Y1 ≤ y ∧ y < Y0
+def InSmallPivotRange (n : ℕ) : Prop :=
+  3 ≤ pivotOf n ∧ pivotOf n < YA
 
 /--
-A pivot `y` lies in the large Case B range.
+Mathematical Case A branch.
+
+This is no longer a pivot-range condition.  It is the actual pivot
+contradiction imported from `Lehmer.Pivot.CaseAContradiction`.
 -/
-def InLargeRange (y : ℕ) : Prop :=
-  YStar ≤ y
+def InCaseA (n : ℕ) : Prop :=
+  Lehmer.Pivot.InCaseA n
 
 /--
-Abstract classifier for pivots.
-
-At this stage we do not compute the branch; we only expose the existence of a total
-classification compatible with the three regimes.
+A candidate lies in the global Case C branch when its pivot is in the second
+range.
 -/
-opaque classifyPivot : ℕ → PivotRange
+def InCaseC (n : ℕ) : Prop :=
+  YA ≤ pivotOf n ∧ pivotOf n < YC
 
 /--
-Soundness of the classifier on the small range.
+A candidate lies in the intermediate branch when its pivot is in the third
+range.
 -/
-axiom classify_small {y : ℕ} :
-    InSmallRange y → classifyPivot y = PivotRange.small
+def InIntermediate (n : ℕ) : Prop :=
+  YC ≤ pivotOf n ∧ pivotOf n < YB
 
 /--
-Soundness of the classifier on the intermediate range.
+A candidate lies in the global Case B branch when its pivot is in the large
+range.
 -/
-axiom classify_mid {y : ℕ} :
-    InMidRange y → classifyPivot y = PivotRange.mid
+def InCaseB (n : ℕ) : Prop :=
+  YB ≤ pivotOf n
+
+@[simp] theorem InSmallPivotRange_def (n : ℕ) :
+    InSmallPivotRange n = (3 ≤ pivotOf n ∧ pivotOf n < YA) := rfl
+
+@[simp] theorem InCaseA_def (n : ℕ) :
+    InCaseA n = Lehmer.Pivot.InCaseA n := rfl
+
+@[simp] theorem InCaseC_def (n : ℕ) :
+    InCaseC n = (YA ≤ pivotOf n ∧ pivotOf n < YC) := rfl
+
+@[simp] theorem InIntermediate_def (n : ℕ) :
+    InIntermediate n = (YC ≤ pivotOf n ∧ pivotOf n < YB) := rfl
+
+@[simp] theorem InCaseB_def (n : ℕ) :
+    InCaseB n = (YB ≤ pivotOf n) := rfl
 
 /--
-Soundness of the classifier on the large range.
+Audit-facing relation saying that a Lehmer candidate falls in a named global
+branch.
+
+Case A now uses its mathematical pivot contradiction.
 -/
-axiom classify_large {y : ℕ} :
-    InLargeRange y → classifyPivot y = PivotRange.large
+def FallsInGlobalBranch (n : ℕ) : GlobalBranch → Prop
+  | .caseA => InCaseA n
+  | .caseB => InCaseB n
+  | .intermediate => InIntermediate n
+  | .caseC => InCaseC n
+
+@[simp] theorem FallsInGlobalBranch_caseA (n : ℕ) :
+    FallsInGlobalBranch n GlobalBranch.caseA = InCaseA n := rfl
+
+@[simp] theorem FallsInGlobalBranch_caseB (n : ℕ) :
+    FallsInGlobalBranch n GlobalBranch.caseB = InCaseB n := rfl
+
+@[simp] theorem FallsInGlobalBranch_intermediate (n : ℕ) :
+    FallsInGlobalBranch n GlobalBranch.intermediate = InIntermediate n := rfl
+
+@[simp] theorem FallsInGlobalBranch_caseC (n : ℕ) :
+    FallsInGlobalBranch n GlobalBranch.caseC = InCaseC n := rfl
 
 /--
-Exhaustive trichotomy for pivots in the paper regime `3 ≤ y`.
+Pipeline assumption: the canonical pivot attached to a Lehmer candidate is
+always in the paper regime `3 ≤ y`.
 
-This is the architectural case split used to assemble the final contradiction.
+This keeps the existing B / intermediate / C range split stable while Case A is
+migrated to its mathematical closure form.
 -/
-axiom pivot_range_trichotomy {y : ℕ} :
-    3 ≤ y →
-      InSmallRange y ∨ InMidRange y ∨ InLargeRange y
+axiom pivot_ge_three_of_LehmerComposite {n : ℕ} :
+    LehmerComposite n → 3 ≤ pivotOf n
 
 /--
-The three pivot ranges are pairwise disjoint.
+Range trichotomy above the threshold `YA`.
+
+This is the part of the old range split still used verbatim by Case C,
+intermediate, and Case B.
 -/
-theorem small_not_mid {y : ℕ} (hs : InSmallRange y) : ¬ InMidRange y := by
-  intro hm
-  exact not_lt_of_ge hm.1 hs.2
-
-theorem small_not_large {y : ℕ} (hs : InSmallRange y) : ¬ InLargeRange y := by
-  intro hl
-  have hY1YStar : Y1 ≤ YStar := le_trans Y1_le_Y0 Y0_le_YStar
-  exact not_lt_of_ge (le_trans hY1YStar hl) hs.2
-
-theorem mid_not_large {y : ℕ} (hm : InMidRange y) : ¬ InLargeRange y := by
-  intro hl
-  have : Y0 ≤ y := le_trans Y0_le_YStar hl
-  exact not_lt_of_ge this hm.2
+theorem pivot_range_trichotomy_from_YA {y : ℕ}
+    (hy : YA ≤ y) :
+    (YA ≤ y ∧ y < YC) ∨
+    (YC ≤ y ∧ y < YB) ∨
+    (YB ≤ y) := by
+  by_cases hC : y < YC
+  · exact Or.inl ⟨hy, hC⟩
+  · have hYC : YC ≤ y := le_of_not_gt hC
+    by_cases hB : y < YB
+    · exact Or.inr <| Or.inl ⟨hYC, hB⟩
+    · exact Or.inr <| Or.inr (le_of_not_gt hB)
 
 /--
-A `y`-rough Lehmer composite with pivot `y` enters exactly one global branch.
+Legacy range quadrichotomy.
+
+This is retained only as a range decomposition tool.  It is no longer the
+definition of the mathematical Case A branch.
 -/
-theorem pivot_range_partition {y n : ℕ}
-    (hy : 3 ≤ y) (hrough : YRough y n) :
-    InSmallRange y ∨ InMidRange y ∨ InLargeRange y := by
-  exact pivot_range_trichotomy hy
+theorem pivot_range_quadrichotomy {y : ℕ}
+    (hy : 3 ≤ y) :
+    (3 ≤ y ∧ y < YA) ∨
+    (YA ≤ y ∧ y < YC) ∨
+    (YC ≤ y ∧ y < YB) ∨
+    (YB ≤ y) := by
+  by_cases hA : y < YA
+  · exact Or.inl ⟨hy, hA⟩
+  · have hYA : YA ≤ y := le_of_not_gt hA
+    rcases pivot_range_trichotomy_from_YA hYA with hC | hI | hB
+    · exact Or.inr <| Or.inl hC
+    · exact Or.inr <| Or.inr <| Or.inl hI
+    · exact Or.inr <| Or.inr <| Or.inr hB
 
 /--
-Abstract global contradiction principle.
+Range-based coverage theorem for the old pivot interval split.
 
-To finish the proof, it is enough to provide:
-- impossibility on the large range (Case B),
-- impossibility on the intermediate analytic range,
-- impossibility on the small finite range (Case C).
+This theorem is intentionally kept separate from the new mathematical
+`FallsInGlobalBranch ... caseA`, because Case A has been upgraded from a range
+predicate to a genuine contradiction predicate.
 -/
-theorem global_split_reduction
-    (Hlarge : ∀ {y n : ℕ}, InLargeRange y → YRough y n → LehmerComposite n → False)
-    (Hmid   : ∀ {y n : ℕ}, InMidRange y   → YRough y n → LehmerComposite n → False)
-    (Hsmall : ∀ {y n : ℕ}, InSmallRange y → YRough y n → LehmerComposite n → False)
-    {y n : ℕ}
-    (hy : 3 ≤ y) (hrough : YRough y n) (hL : LehmerComposite n) :
-    False := by
-  rcases pivot_range_trichotomy hy with hs | hm | hl
-  · exact Hsmall hs hrough hL
-  · exact Hmid hm hrough hL
-  · exact Hlarge hl hrough hL
+theorem global_range_split_exhaustive {n : ℕ}
+    (h : LehmerComposite n) :
+    InSmallPivotRange n ∨
+    InCaseC n ∨
+    InIntermediate n ∨
+    InCaseB n := by
+  have hy : 3 ≤ pivotOf n := pivot_ge_three_of_LehmerComposite h
+  simpa [InSmallPivotRange, InCaseC, InIntermediate, InCaseB] using
+    (pivot_range_quadrichotomy hy)
 
 /--
-Classifier-driven form of the previous theorem.
+Existential form of the range-only classification theorem.
 -/
-theorem global_split_reduction_by_classifier
-    (Hlarge : ∀ {y n : ℕ}, classifyPivot y = PivotRange.large → YRough y n → LehmerComposite n → False)
-    (Hmid   : ∀ {y n : ℕ}, classifyPivot y = PivotRange.mid   → YRough y n → LehmerComposite n → False)
-    (Hsmall : ∀ {y n : ℕ}, classifyPivot y = PivotRange.small → YRough y n → LehmerComposite n → False)
-    {y n : ℕ}
-    (hy : 3 ≤ y) (hrough : YRough y n) (hL : LehmerComposite n) :
-    False := by
-  rcases pivot_range_trichotomy hy with hs | hm | hl
-  · exact Hsmall (classify_small hs) hrough hL
-  · exact Hmid (classify_mid hm) hrough hL
-  · exact Hlarge (classify_large hl) hrough hL
+theorem every_LehmerComposite_is_range_classified {n : ℕ}
+    (h : LehmerComposite n) :
+    InSmallPivotRange n ∨
+    InCaseC n ∨
+    InIntermediate n ∨
+    InCaseB n := by
+  exact global_range_split_exhaustive h
+
+/--
+The legacy small-pivot range is disjoint from the Case C range.
+-/
+theorem smallPivotRange_not_caseC {n : ℕ}
+    (hA : InSmallPivotRange n) :
+    ¬ InCaseC n := by
+  intro hC
+  exact not_lt_of_ge hC.1 hA.2
+
+/--
+The legacy small-pivot range is disjoint from the intermediate range.
+-/
+theorem smallPivotRange_not_intermediate {n : ℕ}
+    (hA : InSmallPivotRange n) :
+    ¬ InIntermediate n := by
+  intro hI
+  have hAYC : YA ≤ YC := YA_le_YC
+  exact not_lt_of_ge (le_trans hAYC hI.1) hA.2
+
+/--
+The legacy small-pivot range is disjoint from the Case B range.
+-/
+theorem smallPivotRange_not_caseB {n : ℕ}
+    (hA : InSmallPivotRange n) :
+    ¬ InCaseB n := by
+  intro hB
+  have hAYB : YA ≤ YB := le_trans YA_le_YC YC_le_YB
+  exact not_lt_of_ge (le_trans hAYB hB) hA.2
+
+/--
+The Case C branch is disjoint from the intermediate branch.
+-/
+theorem caseC_not_intermediate {n : ℕ}
+    (hC : InCaseC n) :
+    ¬ InIntermediate n := by
+  intro hI
+  exact not_lt_of_ge hI.1 hC.2
+
+/--
+The Case C branch is disjoint from the Case B branch.
+-/
+theorem caseC_not_caseB {n : ℕ}
+    (hC : InCaseC n) :
+    ¬ InCaseB n := by
+  intro hB
+  have hCYB : YC ≤ YB := YC_le_YB
+  exact not_lt_of_ge (le_trans hCYB hB) hC.2
+
+/--
+The intermediate branch is disjoint from the Case B branch.
+-/
+theorem intermediate_not_caseB {n : ℕ}
+    (hI : InIntermediate n) :
+    ¬ InCaseB n := by
+  intro hB
+  exact not_lt_of_ge hB hI.2
+
+/--
+Range-only formulation of the remaining range taxonomy exhaustivity.
+
+This is the stable theorem for the untouched B / intermediate / C part of the
+pipeline while Case A is being rebuilt mathematically.
+-/
+def RangeTaxonomyExhaustive : Prop :=
+  ∀ n : ℕ, LehmerComposite n →
+    InSmallPivotRange n ∨ InCaseC n ∨ InIntermediate n ∨ InCaseB n
+
+@[simp] theorem RangeTaxonomyExhaustive_def :
+    RangeTaxonomyExhaustive =
+      (∀ n : ℕ, LehmerComposite n →
+        InSmallPivotRange n ∨ InCaseC n ∨ InIntermediate n ∨ InCaseB n) := rfl
+
+/--
+Main range-only exhaustivity theorem for the still range-based part of the
+pipeline taxonomy.
+-/
+theorem range_taxonomy_exhaustive :
+    RangeTaxonomyExhaustive := by
+  intro n h
+  exact every_LehmerComposite_is_range_classified h
 
 end Pipeline
 end Lehmer

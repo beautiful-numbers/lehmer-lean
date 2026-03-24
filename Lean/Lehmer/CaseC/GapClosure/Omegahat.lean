@@ -44,7 +44,7 @@ theorem closureBoundN_pos_for_omegahat (y W : ℕ) :
 /--
 The logarithmic ratio defining `Ω̂(y, W)` is well-formed in the Case C regime.
 -/
-theorem omegahat_wellformed_placeholder (y W : ℕ) :
+theorem omegahat_wellformed_placeholder (y : ℕ) (_W : ℕ) :
     1 < y -> Real.log y ≠ 0 := by
   intro hy
   have hy' : (y : ℝ) ≠ 1 := by

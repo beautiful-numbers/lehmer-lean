@@ -1,4 +1,9 @@
 -- FILE: Lean/Lehmer/CaseC/Certificate/Format.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+-/
+
 import Lehmer.Prelude
 
 namespace Lehmer
@@ -7,9 +12,6 @@ namespace Certificate
 
 /--
 The syntactic kind of a certificate node in the Case C witness layer.
-
-For MVP-4, this is kept intentionally lightweight: it records only the
-high-level role played by a node in the certificate tree.
 -/
 inductive NodeKind where
   | terminal
@@ -21,42 +23,26 @@ inductive NodeKind where
 
 /--
 A minimal guard / prefix descriptor attached to a certificate node.
-
-At MVP-4, we model it as a list of natural numbers. Later refinements may
-replace this with a richer state-prefix structure once the residual machine
-is connected.
 -/
 abbrev Guard := List ℕ
 
 /--
 A minimal local justification payload.
-
-For MVP-4 this is just a textual tag naming the local reason attached to the
-node. Later files may refine this into a structured justification datatype.
 -/
 abbrev Justification := String
 
 /--
 A local descent measure attached to a certificate node.
-
-For MVP-4 this is just a natural-number placeholder for the expected
-decreasing quantity used by the checker.
 -/
 abbrev Measure := ℕ
 
 /--
 A priority label used to order child records.
-
-For MVP-4 this is a natural number; smaller values can later be interpreted
-as higher priority if needed by the checker semantics.
 -/
 abbrev Priority := ℕ
 
 /--
 The minimal raw format of a certificate node.
-
-This is the core syntactic object used by the later record semantics,
-coverage, and checker layers.
 -/
 structure NodeFormat where
   kind : NodeKind
@@ -67,41 +53,23 @@ structure NodeFormat where
   measure : Measure
   deriving Repr
 
-/--
-Accessor-style alias for the node kind.
--/
-abbrev nodeKind (N : NodeFormat) : NodeKind :=
-  N.kind
+/-- Accessor-style alias for the node kind. -/
+abbrev nodeKind (N : NodeFormat) : NodeKind := N.kind
 
-/--
-Accessor-style alias for the node guard.
--/
-abbrev nodeGuard (N : NodeFormat) : Guard :=
-  N.guard
+/-- Accessor-style alias for the node guard. -/
+abbrev nodeGuard (N : NodeFormat) : Guard := N.guard
 
-/--
-Accessor-style alias for the node priority.
--/
-abbrev nodePriority (N : NodeFormat) : Priority :=
-  N.priority
+/-- Accessor-style alias for the node priority. -/
+abbrev nodePriority (N : NodeFormat) : Priority := N.priority
 
-/--
-Accessor-style alias for the node children.
--/
-abbrev nodeChildren (N : NodeFormat) : List ℕ :=
-  N.children
+/-- Accessor-style alias for the node children. -/
+abbrev nodeChildren (N : NodeFormat) : List ℕ := N.children
 
-/--
-Accessor-style alias for the node justification.
--/
-abbrev nodeJustification (N : NodeFormat) : Justification :=
-  N.justification
+/-- Accessor-style alias for the node justification. -/
+abbrev nodeJustification (N : NodeFormat) : Justification := N.justification
 
-/--
-Accessor-style alias for the node measure.
--/
-abbrev nodeMeasure (N : NodeFormat) : Measure :=
-  N.measure
+/-- Accessor-style alias for the node measure. -/
+abbrev nodeMeasure (N : NodeFormat) : Measure := N.measure
 
 @[simp] theorem nodeKind_def (N : NodeFormat) :
     nodeKind N = N.kind := rfl
@@ -123,14 +91,12 @@ abbrev nodeMeasure (N : NodeFormat) : Measure :=
 
 /--
 Terminal nodes have no children in the intended certificate format.
-This is kept as a semantic predicate rather than built into the structure.
 -/
 def IsTerminalShape (N : NodeFormat) : Prop :=
   N.kind = NodeKind.terminal → N.children = []
 
 /--
 Split nodes are intended to branch.
-This is a minimal shape predicate used later by the checker.
 -/
 def IsSplitShape (N : NodeFormat) : Prop :=
   N.kind = NodeKind.split → N.children ≠ []
@@ -164,21 +130,21 @@ theorem wellFormed_terminal
         justification := j
         measure := m } := by
   constructor
-  · intro hkind
+  · intro _
     rfl
-  · intro hkind
-    cases hkind
+  · intro h
+    cases h
 
 /--
 A split node with at least one child satisfies the split-shape condition.
 -/
 theorem splitShape_of_children_nonempty
     (N : NodeFormat)
-    (hkind : N.kind = NodeKind.split)
+    (_hkind : N.kind = NodeKind.split)
     (hchildren : N.children ≠ []) :
     IsSplitShape N := by
-  intro hkind'
-  simpa [hkind] using hchildren
+  intro _
+  exact hchildren
 
 end Certificate
 end CaseC

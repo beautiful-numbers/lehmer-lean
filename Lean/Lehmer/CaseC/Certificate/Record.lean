@@ -1,4 +1,10 @@
 -- FILE: Lean/Lehmer/CaseC/Certificate/Record.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.Certificate.Format : def thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.Certificate.Format
 
@@ -8,63 +14,35 @@ namespace Certificate
 
 /--
 A certificate record is a formatted node together with its own identifier.
-
-For MVP-4, child references are stored as identifiers in the underlying
-`NodeFormat`, so the record itself only needs to package an id with the raw
-node data.
 -/
 structure Record where
   id : ℕ
   data : NodeFormat
   deriving Repr
 
-/--
-Accessor-style alias for the record identifier.
--/
-abbrev recordId (R : Record) : ℕ :=
-  R.id
+/-- Accessor-style alias for the record identifier. -/
+abbrev recordId (R : Record) : ℕ := R.id
 
-/--
-Accessor-style alias for the underlying node format.
--/
-abbrev recordData (R : Record) : NodeFormat :=
-  R.data
+/-- Accessor-style alias for the underlying node format. -/
+abbrev recordData (R : Record) : NodeFormat := R.data
 
-/--
-Accessor-style alias for the record kind.
--/
-abbrev recordKind (R : Record) : NodeKind :=
-  R.data.kind
+/-- Accessor-style alias for the record kind. -/
+abbrev recordKind (R : Record) : NodeKind := R.data.kind
 
-/--
-Accessor-style alias for the record guard.
--/
-abbrev recordGuard (R : Record) : Guard :=
-  R.data.guard
+/-- Accessor-style alias for the record guard. -/
+abbrev recordGuard (R : Record) : Guard := R.data.guard
 
-/--
-Accessor-style alias for the record priority.
--/
-abbrev recordPriority (R : Record) : Priority :=
-  R.data.priority
+/-- Accessor-style alias for the record priority. -/
+abbrev recordPriority (R : Record) : Priority := R.data.priority
 
-/--
-Accessor-style alias for the child references of the record.
--/
-abbrev recordChildren (R : Record) : List ℕ :=
-  R.data.children
+/-- Accessor-style alias for the child references of the record. -/
+abbrev recordChildren (R : Record) : List ℕ := R.data.children
 
-/--
-Accessor-style alias for the local justification tag.
--/
-abbrev recordJustification (R : Record) : Justification :=
-  R.data.justification
+/-- Accessor-style alias for the local justification tag. -/
+abbrev recordJustification (R : Record) : Justification := R.data.justification
 
-/--
-Accessor-style alias for the local descent measure.
--/
-abbrev recordMeasure (R : Record) : Measure :=
-  R.data.measure
+/-- Accessor-style alias for the local descent measure. -/
+abbrev recordMeasure (R : Record) : Measure := R.data.measure
 
 @[simp] theorem recordId_def (R : Record) :
     recordId R = R.id := rfl
@@ -100,13 +78,13 @@ def WellFormedRecordFormat (R : Record) : Prop :=
     WellFormedRecordFormat R = WellFormedFormat R.data := rfl
 
 /--
-A terminal record has no children in the intended certificate syntax.
+A terminal record is a record whose node kind is terminal.
 -/
 def IsTerminalRecord (R : Record) : Prop :=
   R.data.kind = NodeKind.terminal
 
 /--
-A split record is a branching record in the intended certificate syntax.
+A split record is a record whose node kind is split.
 -/
 def IsSplitRecord (R : Record) : Prop :=
   R.data.kind = NodeKind.split
@@ -154,8 +132,6 @@ theorem splitShape_record_of_children_nonempty
 
 /--
 Two records are id-disjoint if they do not share the same identifier.
-This lightweight relation is useful later when formulating global certificate
-well-formedness.
 -/
 def IdDisjoint (R₁ R₂ : Record) : Prop :=
   R₁.id ≠ R₂.id

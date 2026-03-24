@@ -16,20 +16,9 @@ import Lehmer.CaseB.Main
 
 import Lehmer.CaseC.Main
 
+import Lehmer.Final.MainTheorem
+import Lehmer.Final.NoCompositeLehmer
+
 namespace Lehmer
-
-/-!
-# Lehmer.Main
-
-Root import for the current MVP-4 stage of the Lehmer formalization.
-
-This file currently assembles:
-- the MVP-1 basic layer,
-- the MVP-2 support and Case B descent skeleton,
-- the MVP-3 Case C gap-to-closure skeleton,
-- the MVP-4 Case C certificate format, checker, and soundness layer.
-
-It is intended to grow gradually as additional modules become stable.
--/
 
 end Lehmer

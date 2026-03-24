@@ -41,7 +41,7 @@ theorem not_NonIntegral_empty :
     ¬ NonIntegral (∅ : Finset ℕ) := by
   intro h
   have h0 := h 1
-  simp [NonIntegral, supportIndex] at h0
+  simp [supportIndex] at h0
 
 /--
 A natural-number support profile is nonintegral when the underlying prime support

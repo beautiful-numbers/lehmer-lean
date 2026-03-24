@@ -1,4 +1,10 @@
 -- FILE: Lean/Lehmer/CaseC/Certificate/Priority.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.Certificate.Record : def thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.Certificate.Record
 
@@ -28,7 +34,9 @@ def PriorityLt (R₁ R₂ : Record) : Prop :=
 
 /--
 A list of records is priority-sorted if priorities are nondecreasing.
-This is the minimal global priority discipline used by the MVP-4 checker.
+
+This is the basic proposition-level priority discipline used by the local
+checker layer.
 -/
 def PrioritySorted : List Record → Prop
   | [] => True
@@ -92,19 +100,19 @@ theorem childrenRespectPriority_nil_of_no_children
     (R : Record) (h : recordChildren R = []) :
     ChildrenRespectPriority R [] := by
   constructor
-  · simpa [recordChildren_def] using h.symm
+  · simpa using h.symm
   · simp
 
 /--
-Stable MVP-4 placeholder: a syntactically valid child list produced by the
-certificate format should respect the declared priority discipline.
+If the supplied child ids match the declared ids and the child list is already
+priority-sorted, then the declared priority discipline is respected.
 -/
-theorem childrenRespectPriority_placeholder
+theorem childrenRespectPriority_of_ids_and_sorted
     (R : Record) (children : List Record)
-    (hIds : children.map recordId = recordChildren R) :
+    (hIds : children.map recordId = recordChildren R)
+    (hSorted : PrioritySorted children) :
     ChildrenRespectPriority R children := by
-  refine ⟨hIds, ?_⟩
-  sorry
+  exact ⟨hIds, hSorted⟩
 
 end Certificate
 end CaseC

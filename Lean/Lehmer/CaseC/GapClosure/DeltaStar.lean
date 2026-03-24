@@ -43,7 +43,7 @@ The abstract minimal positive gap attached to the truncated family at `(y, W)`.
 At this stage it is only a placeholder datum; positivity must be supplied
 explicitly before using it in a denominator.
 -/
-def deltaStar (y W : ℕ) : ℚ :=
+def deltaStar (_y _W : ℕ) : ℚ :=
   0
 
 /--

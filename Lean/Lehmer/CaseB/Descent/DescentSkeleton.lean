@@ -36,14 +36,14 @@ For MVP-2 this is now expressed conditionally: the abstract length proxy
 is bounded once the support cardinality is known to be dominated by `KmaxB`.
 -/
 def HasBoundedDescent (C : Context) : Prop :=
-  ∃ hbound : supportCard C.S ≤ KmaxB C.y, contextDescentLength C ≤ KmaxB C.y
+  ∃ _hbound : supportCard C.S ≤ KmaxB C.y, contextDescentLength C ≤ KmaxB C.y
 
 @[simp] theorem HasDescentStep_def (C : Context) :
     HasDescentStep C = ∃ p : ℕ, Removable C.S p := rfl
 
 @[simp] theorem HasBoundedDescent_def (C : Context) :
     HasBoundedDescent C =
-      ∃ hbound : supportCard C.S ≤ KmaxB C.y, contextDescentLength C ≤ KmaxB C.y := rfl
+      ∃ _hbound : supportCard C.S ≤ KmaxB C.y, contextDescentLength C ≤ KmaxB C.y := rfl
 
 /--
 If a context is descent-eligible, then it has a removable element.

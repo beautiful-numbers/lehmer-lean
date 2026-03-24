@@ -1,85 +1,125 @@
-import Mathlib
+-- FILE: Lean/Lehmer/Pivot/Mreq.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.Pivot.UBm : def thm
+-/
+
+import Lehmer.Prelude
 import Lehmer.Pivot.UBm
 
 namespace Lehmer
 namespace Pivot
 
-/--
-`mreq y` is the least envelope length at which the pivot envelope exceeds `2`.
+open Classical
 
-At the specification stage, we keep this as an abstract function together with
-its defining API theorems, rather than committing immediately to a concrete
-search implementation.
+/--
+Conditional threshold definition.
+
+If there exists some index `m` with `UBm y m > 2`, then `mreq y` is the least
+such index. Otherwise, we set `mreq y = 0`.
+
+This avoids any global analytic existence theorem at the definition level while
+still recovering the exact minimal-threshold behavior whenever a witness exists.
 -/
-opaque mreq (y : ℕ) : ℕ
+noncomputable def mreq (y : ℕ) : ℕ :=
+  if h : ∃ m : ℕ, (2 : ℚ) < UBm y m then
+    Nat.find h
+  else
+    0
 
 /--
-Defining threshold property: the pivot envelope at `mreq y` is strictly greater than `2`.
+If the threshold-exceeding set is nonempty, `mreq y` is exactly its `Nat.find`.
 -/
-axiom UBm_gt_two_at_mreq (y : ℕ) :
-    (2 : ℚ) < UBm y (mreq y)
+theorem mreq_eq_find_of_exists {y : ℕ} (h : ∃ m : ℕ, (2 : ℚ) < UBm y m) :
+    mreq y = Nat.find h := by
+  unfold mreq
+  simp [h]
 
 /--
-Minimality property: every smaller envelope length stays at or below `2`.
+If no index exceeds the threshold, then `mreq y = 0`.
 -/
-axiom UBm_le_two_before_mreq {y m : ℕ} :
-    m < mreq y → UBm y m ≤ 2
+theorem mreq_eq_zero_of_not_exists {y : ℕ}
+    (h : ¬ ∃ m : ℕ, (2 : ℚ) < UBm y m) :
+    mreq y = 0 := by
+  unfold mreq
+  simp [h]
 
 /--
-Equivalent packaged form of the minimality property.
+At the defining threshold, the envelope exceeds `2`, provided existence holds.
+-/
+theorem UBm_gt_two_at_mreq_of_exists {y : ℕ}
+    (h : ∃ m : ℕ, (2 : ℚ) < UBm y m) :
+    (2 : ℚ) < UBm y (mreq y) := by
+  rw [mreq_eq_find_of_exists h]
+  exact Nat.find_spec h
+
+/--
+Below the threshold, the envelope stays at or below `2`.
+This is globally valid for the conditional definition.
+-/
+theorem UBm_le_two_before_mreq {y m : ℕ} (hm : m < mreq y) :
+    UBm y m ≤ 2 := by
+  unfold mreq at hm ⊢
+  split_ifs with h
+  · exact le_of_not_lt (Nat.find_min h hm)
+  · exfalso
+    omega
+
+/--
+Equivalent negated-strict form below the threshold.
 -/
 theorem UBm_not_gt_two_before_mreq {y m : ℕ} (hm : m < mreq y) :
     ¬ (2 : ℚ) < UBm y m := by
   exact not_lt_of_ge (UBm_le_two_before_mreq hm)
 
 /--
-At the threshold itself, the envelope is not at most `2`.
+Minimality: any witness `m` with `UBm y m > 2` dominates `mreq y`.
 -/
-theorem UBm_not_le_two_at_mreq (y : ℕ) :
-    ¬ UBm y (mreq y) ≤ 2 := by
-  exact not_le_of_lt (UBm_gt_two_at_mreq y)
+theorem mreq_le_of_UBm_gt_two {y m : ℕ} (hm : (2 : ℚ) < UBm y m) :
+    mreq y ≤ m := by
+  unfold mreq
+  split_ifs with h
+  · exact Nat.find_min' h hm
+  · exact False.elim (h ⟨m, hm⟩)
 
 /--
-The threshold characterization of `mreq y`.
+Re-export of minimality under the same name.
 -/
-theorem mreq_spec {y : ℕ} :
+theorem mreq_minimal {y m : ℕ} (hm : (2 : ℚ) < UBm y m) :
+    mreq y ≤ m := by
+  exact mreq_le_of_UBm_gt_two hm
+
+/--
+Bundled threshold characterization, assuming existence.
+-/
+theorem mreq_spec_of_exists {y : ℕ}
+    (h : ∃ m : ℕ, (2 : ℚ) < UBm y m) :
     ((2 : ℚ) < UBm y (mreq y)) ∧
       (∀ m < mreq y, UBm y m ≤ 2) := by
-  refine ⟨UBm_gt_two_at_mreq y, ?_⟩
+  refine ⟨UBm_gt_two_at_mreq_of_exists h, ?_⟩
   intro m hm
   exact UBm_le_two_before_mreq hm
 
 /--
-No smaller index can satisfy the threshold inequality.
--/
-theorem mreq_minimal {y m : ℕ} (hm : (2 : ℚ) < UBm y m) :
-    mreq y ≤ m := by
-  by_contra h
-  have hm' : m < mreq y := Nat.lt_of_not_ge h
-  exact (not_lt_of_ge (UBm_le_two_before_mreq hm')) hm
-
-/--
-The threshold index is unique with its minimality property.
+Uniqueness from threshold attainment plus minimality below.
 -/
 theorem mreq_unique {y k : ℕ}
     (hk1 : (2 : ℚ) < UBm y k)
     (hk2 : ∀ m < k, UBm y m ≤ 2) :
     mreq y = k := by
   apply le_antisymm
-  · exact mreq_minimal hk1
+  · exact mreq_le_of_UBm_gt_two hk1
   · by_contra hlt
-    have : UBm y (mreq y) ≤ 2 := hk2 (mreq y) (Nat.lt_of_not_ge hlt)
-    exact (not_le_of_lt (UBm_gt_two_at_mreq y)) this
+    have hm : mreq y < k := Nat.lt_of_not_ge hlt
+    have hle : UBm y (mreq y) ≤ 2 := hk2 (mreq y) hm
+    have hgt : (2 : ℚ) < UBm y (mreq y) := by
+      have hex : ∃ m : ℕ, (2 : ℚ) < UBm y m := ⟨k, hk1⟩
+      exact UBm_gt_two_at_mreq_of_exists hex
+    exact (not_lt_of_ge hle) hgt
 
 /--
-If the envelope already exceeds `2` at index `m`, then the pivot threshold is at most `m`.
--/
-theorem mreq_le_of_UBm_gt_two {y m : ℕ} (hm : (2 : ℚ) < UBm y m) :
-    mreq y ≤ m := by
-  exact mreq_minimal hm
-
-/--
-If `m < mreq y`, then the envelope has not yet crossed the threshold `2`.
+Convenient re-export of the below-threshold bound.
 -/
 theorem UBm_le_two_of_lt_mreq {y m : ℕ} (hm : m < mreq y) :
     UBm y m ≤ 2 := by
@@ -92,21 +132,17 @@ theorem mreq_nonneg (y : ℕ) : 0 ≤ mreq y := by
   exact Nat.zero_le _
 
 /--
-At index `0`, being below threshold forces `mreq y` to be positive.
+If a threshold witness exists, then `mreq y` is positive.
 -/
-theorem mreq_pos_of_UBm_zero_le_two {y : ℕ} (h0 : UBm y 0 ≤ 2) :
+theorem mreq_pos_of_exists {y : ℕ}
+    (h : ∃ m : ℕ, (2 : ℚ) < UBm y m) :
     0 < mreq y := by
-  by_contra h
-  have hm : mreq y = 0 := Nat.eq_zero_of_not_pos h
-  have : (2 : ℚ) < UBm y 0 := by simpa [hm] using UBm_gt_two_at_mreq y
-  exact (not_lt_of_ge h0) this
-
-/--
-Since `UBm y 0 = 1`, the threshold is always positive.
--/
-theorem mreq_pos (y : ℕ) : 0 < mreq y := by
-  apply mreq_pos_of_UBm_zero_le_two
-  simpa [UBm_zero y] using (show (UBm y 0 : ℚ) ≤ 2 by norm_num [UBm_zero y])
+  have hgt : (2 : ℚ) < UBm y (mreq y) := UBm_gt_two_at_mreq_of_exists h
+  have hm0 : mreq y ≠ 0 := by
+    intro hm
+    rw [hm, UBm_zero] at hgt
+    norm_num at hgt
+  exact Nat.pos_iff_ne_zero.mpr hm0
 
 end Pivot
 end Lehmer

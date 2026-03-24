@@ -1,14 +1,19 @@
 -- FILE: Lean/Lehmer/Basic/OddSquarefree.lean
-import Mathlib
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.Basic.Defs : def
+-/
+
+import Lehmer.Prelude
 import Lehmer.Basic.Defs
-import Lehmer.Basic.LehmerBasic
 
 namespace Lehmer
 namespace Basic
 
 /--
 A Lehmer composite is not prime.
-This is just the first projection of the definition.
+This is the first field of the structure.
 -/
 theorem LehmerComposite.not_prime {n : ℕ} (h : LehmerComposite n) : ¬ Nat.Prime n := by
   exact h.1
@@ -53,68 +58,93 @@ theorem LehmerComposite.totient_dvd_pred {n : ℕ} (h : LehmerComposite n) :
 /--
 A Lehmer composite is odd.
 
-This is a standard structural fact in Lehmer's problem.
-The proof uses that `φ(n)` is even for `n > 2`, while `φ(n) ∣ (n-1)`.
+Reason:
+- if `n` were even, then `n ≠ 2` because a Lehmer composite is not prime,
+- hence `2 < n`, so `Nat.totient n` is even,
+- since `φ(n) ∣ (n-1)`, the integer `n-1` is even,
+- but an even integer minus `1` is odd, contradiction.
 -/
 theorem LehmerComposite.odd {n : ℕ} (h : LehmerComposite n) : Odd n := by
   rcases Nat.even_or_odd n with hEven | hOdd
   · exfalso
-    have hnot2 : n ≠ 2 := by
+    have hn_ne_two : n ≠ 2 := by
       intro hn2
       apply h.not_prime
       simpa [hn2] using Nat.prime_two
-    have hn_gt2 : 2 < n := lt_of_le_of_ne h.two_le hnot2.symm
-    have hphiEven : Even (Nat.totient n) := Nat.totient_even hn_gt2
-    rcases hphiEven with ⟨k, hk⟩
+
+    have hn_gt_two : 2 < n := by
+      exact lt_of_le_of_ne h.two_le hn_ne_two.symm
+
+    have hphi_even : Even (Nat.totient n) := by
+      exact Nat.totient_even hn_gt_two
+
+    rcases hphi_even with ⟨k, hk⟩
     rcases h.totient_dvd_pred with ⟨m, hm⟩
-    have hEvenPred : Even (n - 1) := by
+
+    have hpred_even : Even (n - 1) := by
       refine ⟨k * m, ?_⟩
-      rw [hm, hk]
-      ring
+      calc
+        n - 1 = Nat.totient n * m := by simpa [Nat.mul_comm] using hm.symm
+        _ = (2 * k) * m := by rw [hk]
+        _ = 2 * (k * m) := by ring
+
     rcases hEven with ⟨a, ha⟩
-    rcases hEvenPred with ⟨b, hb⟩
+    rcases hpred_even with ⟨b, hb⟩
     omega
   · exact hOdd
 
 /--
-A Lehmer composite is squarefree.
+If `p^2 ∣ n` for a prime `p`, then `p ∣ φ(n)`.
 
-If `p^2 ∣ n` for a prime `p`, then `φ(p^2) ∣ φ(n)`, hence `p ∣ φ(n)`.
-Since `φ(n) ∣ (n-1)`, this gives `p ∣ (n-1)`, while already `p ∣ n`,
-which is impossible.
+This is the key local ingredient for squarefreeness:
+`φ(p^2) = p(p-1)` is divisible by `p`, and `φ(p^2) ∣ φ(n)` whenever `p^2 ∣ n`.
 -/
-theorem LehmerComposite.squarefree {n : ℕ} (h : LehmerComposite n) :
-    Squarefree n := by
-  rw [Nat.squarefree_iff_prime_squarefree]
-  intro p hp hpp
+theorem prime_dvd_totient_of_sq_dvd {n p : ℕ} (hp : Nat.Prime p) (hpp : p * p ∣ n) :
+    p ∣ Nat.totient n := by
   have hpp_tot : Nat.totient (p * p) ∣ Nat.totient n := by
     exact Nat.totient_dvd_of_dvd hpp
   have hp_dvd_phi_pp : p ∣ Nat.totient (p * p) := by
     rw [Nat.totient_mul_of_prime_of_dvd hp (dvd_rfl : p ∣ p)]
     refine ⟨Nat.totient p, ?_⟩
     ring
-  have hp_dvd_phi_n : p ∣ Nat.totient n := by
-    exact dvd_trans hp_dvd_phi_pp hpp_tot
-  have hp_dvd_pred : p ∣ n - 1 := by
-    exact dvd_trans hp_dvd_phi_n h.totient_dvd_pred
-  have hpn : p ∣ n := by
-    exact dvd_trans (dvd_mul_right p p) hpp
-  have hp_dvd_one : p ∣ n - (n - 1) := by
-    exact Nat.dvd_sub hpn hp_dvd_pred
-  have hs : n = 1 + (n - 1) := by
-    calc
-      n = (n - 1) + 1 := by
-        exact (Nat.succ_pred_eq_of_pos h.pos).symm
-      _ = 1 + (n - 1) := by
-        rw [Nat.add_comm]
-  have hsub : n - (n - 1) = 1 := by
-    exact Nat.sub_eq_of_eq_add hs
-  have : p ∣ 1 := by
-    simpa [hsub] using hp_dvd_one
-  exact hp.not_dvd_one this
+  exact dvd_trans hp_dvd_phi_pp hpp_tot
 
 /--
-Main structural lemma: a Lehmer composite is odd and squarefree.
+A Lehmer composite is squarefree.
+
+If `p^2 ∣ n` for a prime `p`, then `p ∣ φ(n)`.
+Since `φ(n) ∣ (n-1)`, we get `p ∣ (n-1)`.
+But already `p ∣ n`, so `p ∣ 1`, impossible.
+-/
+theorem LehmerComposite.squarefree {n : ℕ} (h : LehmerComposite n) :
+    Squarefree n := by
+  rw [Nat.squarefree_iff_prime_squarefree]
+  intro p hp hpp
+
+  have hp_dvd_phi_n : p ∣ Nat.totient n := by
+    exact prime_dvd_totient_of_sq_dvd hp hpp
+
+  have hp_dvd_pred : p ∣ (n - 1) := by
+    exact dvd_trans hp_dvd_phi_n h.totient_dvd_pred
+
+  have hp_dvd_n : p ∣ n := by
+    exact dvd_trans (dvd_mul_right p p) hpp
+
+  have hsub : n - (n - 1) = 1 := by
+    have hs : n = (n - 1) + 1 := by
+      exact Nat.succ_pred_eq_of_pos h.pos
+    omega
+
+  have hp_dvd_one : p ∣ 1 := by
+    have hp_dvd_diff : p ∣ n - (n - 1) := by
+      exact Nat.dvd_sub hp_dvd_n hp_dvd_pred
+    simpa [hsub] using hp_dvd_diff
+
+  exact hp.not_dvd_one hp_dvd_one
+
+/--
+Main structural package used later:
+a Lehmer composite is both odd and squarefree.
 -/
 theorem LehmerComposite.odd_and_squarefree {n : ℕ} (h : LehmerComposite n) :
     Odd n ∧ Squarefree n := by

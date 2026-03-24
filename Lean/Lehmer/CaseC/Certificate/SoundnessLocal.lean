@@ -1,4 +1,12 @@
 -- FILE: Lean/Lehmer/CaseC/Certificate/SoundnessLocal.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.Certificate.Record : def thm
+- Lehmer.CaseC.Certificate.Coverage : def thm
+- Lehmer.CaseC.Certificate.CheckerLocal : def thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.Certificate.Record
 import Lehmer.CaseC.Certificate.Coverage
@@ -11,43 +19,70 @@ namespace Certificate
 /--
 A semantic local-validity predicate for a record together with a supplied child list.
 
-For MVP-4, local soundness is stated against:
-- raw format well-formedness,
-- local coverage,
-- and the strengthened well-covered condition.
+At the current stage, local validity is stated exactly at the checker-facing level:
+- raw format well-formedness;
+- local coverage.
 -/
 def ValidLocalRecord (R : Record) (children : List Record) : Prop :=
-  WellFormedRecordFormat R ∧ WellCovered R children
+  WellFormedRecordFormat R ∧ LocallyCovered R children
 
 @[simp] theorem ValidLocalRecord_def (R : Record) (children : List Record) :
     ValidLocalRecord R children =
-      (WellFormedRecordFormat R ∧ WellCovered R children) := rfl
+      (WellFormedRecordFormat R ∧ LocallyCovered R children) := rfl
 
 /--
 If the boolean raw-format checker succeeds, then the record shape is valid.
-
-This is the local shape-soundness interface for MVP-4.
 -/
-theorem checkRecordShape_sound_placeholder
+theorem checkRecordShape_sound
     (R : Record)
     (h : checkRecordShape R = true) :
     WellFormedRecordFormat R := by
-  sorry
+  cases R with
+  | mk rid data =>
+      cases data with
+      | mk kind guard priority children justification measure =>
+          cases kind
+          · -- terminal
+            have hchildren : children = [] := by
+              simpa [checkRecordShape, checkFormat] using h
+            constructor
+            · intro _
+              exact hchildren
+            · intro hsplit
+              cases hsplit
+          · -- gatepass
+            constructor <;> intro hkind <;> cases hkind
+          · -- split
+            have hchildren : children ≠ [] := by
+              simpa [checkRecordShape, checkFormat, List.isEmpty_eq_false_iff] using h
+            constructor
+            · intro hterm
+              cases hterm
+            · intro _
+              exact hchildren
+          · -- excluded
+            constructor <;> intro hkind <;> cases hkind
+          · -- residual
+            constructor <;> intro hkind <;> cases hkind
 
 /--
-If the boolean child checker succeeds, then the supplied children satisfy the
-intended local coverage and priority discipline.
-
-This is the local child-soundness interface for MVP-4.
+If the boolean child checker succeeds, then the supplied children are locally covered.
 -/
-theorem checkLocalChildren_sound_placeholder
+theorem checkLocalChildren_sound
     (R : Record) (children : List Record)
     (h : checkLocalChildren R children = true) :
-    WellCovered R children := by
-  sorry
+    LocallyCovered R children := by
+  have hsplit :
+      children.map recordId = recordChildren R ∧
+      checkPrioritySorted children = true := by
+    simpa [checkLocalChildren] using h
+  have hprio : ChildrenRespectPriority R children := by
+    exact childrenRespectPriority_of_ids_and_sorted R children hsplit.1
+      (checkPrioritySorted_true_implies children hsplit.2)
+  exact locallyCovered_of_match_and_priority R children hsplit.1 hprio
 
 /--
-Main local soundness theorem for the MVP-4 checker:
+Main local soundness theorem:
 if the local checker returns `true`, then the record is semantically valid
 with respect to the supplied child list.
 -/
@@ -58,8 +93,8 @@ theorem checkRecordLocal_sound
   have hsplit : checkRecordShape R = true ∧ checkLocalChildren R children = true := by
     simpa [checkRecordLocal] using h
   exact ⟨
-    checkRecordShape_sound_placeholder R hsplit.1,
-    checkLocalChildren_sound_placeholder R children hsplit.2
+    checkRecordShape_sound R hsplit.1,
+    checkLocalChildren_sound R children hsplit.2
   ⟩
 
 /--
@@ -79,7 +114,7 @@ theorem validLocalRecord_terminal_nil
       [] := by
   refine ⟨?_, ?_⟩
   · exact wellFormed_terminal g p j m
-  · exact wellCovered_terminal_nil
+  · exact locallyCovered_terminal_nil
       { id := i
         data :=
           { kind := NodeKind.terminal

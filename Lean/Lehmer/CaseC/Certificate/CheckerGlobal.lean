@@ -1,4 +1,12 @@
 -- FILE: Lean/Lehmer/CaseC/Certificate/CheckerGlobal.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.Certificate.Record : def thm
+- Lehmer.CaseC.Certificate.Coverage : def thm
+- Lehmer.CaseC.Certificate.CheckerLocal : def thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.Certificate.Record
 import Lehmer.CaseC.Certificate.Coverage
@@ -11,7 +19,8 @@ namespace Certificate
 /--
 Lookup of a record by identifier inside a certificate list.
 
-For MVP-4 this is the basic retrieval mechanism used by the global checker.
+For the current global checker, this is the basic retrieval mechanism used to
+resolve child references.
 -/
 def findRecord? (cid : ℕ) : List Record → Option Record
   | [] => none
@@ -91,26 +100,6 @@ def checkCertificate : List Record → Bool
       (checkRecordGlobal (R :: Rs) R && checkCertificate Rs) := rfl
 
 /--
-A certificate is locally coherent if each record is well-covered by the
-children resolved from the ambient certificate list.
--/
-def GloballyCoherent : List Record → Prop
-  | [] => True
-  | R :: Rs =>
-      (∃ children, localChildren? (R :: Rs) R = some children ∧ WellCovered R children)
-        ∧ GloballyCoherent Rs
-
-@[simp] theorem GloballyCoherent_nil :
-    GloballyCoherent [] := by
-  trivial
-
-@[simp] theorem GloballyCoherent_cons (R : Record) (Rs : List Record) :
-    GloballyCoherent (R :: Rs) ↔
-      (∃ children, localChildren? (R :: Rs) R = some children ∧ WellCovered R children)
-        ∧ GloballyCoherent Rs := by
-  rfl
-
-/--
 If a record has no children, then resolving its children succeeds with the
 empty list.
 -/
@@ -140,14 +129,48 @@ theorem checkRecordGlobal_terminal_nil
     checkRecordShape, checkFormat, checkLocalChildren, checkPrioritySorted]
 
 /--
-Stable MVP-4 placeholder: a globally coherent certificate should be accepted by
-the global checker.
+Checker-facing global coherence predicate.
+
+At the current stage, a certificate is globally coherent if every head record:
+- resolves its declared children inside the ambient certificate,
+- is well-formed at the raw local shape level,
+- is locally covered by the resolved child list,
+and the tail is recursively globally coherent.
 -/
-theorem checkCertificate_true_placeholder
-    (cert : List Record)
-    (h : GloballyCoherent cert) :
-    checkCertificate cert = true := by
-  sorry
+def GloballyCoherent : List Record → Prop
+  | [] => True
+  | R :: Rs =>
+      (∃ children,
+        localChildren? (R :: Rs) R = some children ∧
+        WellFormedRecordFormat R ∧
+        LocallyCovered R children) ∧
+      GloballyCoherent Rs
+
+@[simp] theorem GloballyCoherent_nil :
+    GloballyCoherent [] := by
+  trivial
+
+@[simp] theorem GloballyCoherent_cons (R : Record) (Rs : List Record) :
+    GloballyCoherent (R :: Rs) ↔
+      (∃ children,
+        localChildren? (R :: Rs) R = some children ∧
+        WellFormedRecordFormat R ∧
+        LocallyCovered R children) ∧
+      GloballyCoherent Rs := by
+  rfl
+
+/--
+If the child references resolve and the head record satisfies the exact local
+conditions checked by the local checker, then the global checker accepts the head.
+-/
+theorem checkRecordGlobal_true_of_resolved
+    (cert : List Record) (R : Record) (children : List Record)
+    (hres : localChildren? cert R = some children)
+    (hShape : WellFormedRecordFormat R)
+    (hLocal : LocallyCovered R children) :
+    checkRecordGlobal cert R = true := by
+  rw [checkRecordGlobal_some cert R children hres]
+  exact checkRecordLocal_true_of_shape_and_local R children hShape hLocal
 
 end Certificate
 end CaseC

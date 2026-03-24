@@ -1,4 +1,13 @@
 -- FILE: Lean/Lehmer/CaseC/Certificate/CheckerLocal.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.Certificate.Format : def thm
+- Lehmer.CaseC.Certificate.Record : def thm
+- Lehmer.CaseC.Certificate.Priority : def thm
+- Lehmer.CaseC.Certificate.Coverage : def thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.Certificate.Format
 import Lehmer.CaseC.Certificate.Record
@@ -12,7 +21,7 @@ namespace Certificate
 /--
 Boolean shape check for a raw node format.
 
-For MVP-4 this checks only the coarse syntactic constraints:
+For the current local checker, this checks only the coarse syntactic constraints:
 - terminal nodes must have no children;
 - split nodes must have at least one child;
 - all other node kinds are accepted at the raw format level.
@@ -41,6 +50,10 @@ def checkPrioritySorted : List Record → Bool
 
 /--
 Boolean local priority/coverage check against a supplied child list.
+
+At the current checker-facing level, this verifies exactly:
+- the child ids match the declared ids;
+- the child list is priority-sorted.
 -/
 def checkLocalChildren (R : Record) (children : List Record) : Bool :=
   (children.map recordId == recordChildren R) && checkPrioritySorted children
@@ -78,9 +91,9 @@ If a list is priority-sorted propositionally, then the boolean checker returns t
 theorem checkPrioritySorted_true_of_sorted : ∀ children : List Record,
     PrioritySorted children → checkPrioritySorted children = true
   | [], _ => by
-      simp [PrioritySorted, checkPrioritySorted]
+      simp [checkPrioritySorted]
   | [_], _ => by
-      simp [PrioritySorted, checkPrioritySorted]
+      simp [checkPrioritySorted]
   | R₁ :: R₂ :: Rs, h => by
       simp [PrioritySorted] at h
       rcases h with ⟨h12, htail⟩
@@ -174,18 +187,38 @@ theorem checkRecordLocal_terminal_nil
     checkPrioritySorted]
 
 /--
-Stable MVP-4 placeholder: a locally well-covered record should pass the local
-checker.
+If a record is well-formed at the shape level and the supplied child list is
+locally covered, then the local checker accepts it.
+
+This is the local completeness direction at the exact level the checker
+currently verifies.
 -/
-theorem checkRecordLocal_true_placeholder
+theorem checkRecordLocal_true_of_shape_and_local
     (R : Record) (children : List Record)
-    (h : WellCovered R children) :
+    (hShape : WellFormedRecordFormat R)
+    (hLocal : LocallyCovered R children) :
     checkRecordLocal R children = true := by
-  rcases h with ⟨hLocal, _hPairwise⟩
   rcases hLocal with ⟨hIds, hChildren⟩
+  have hShapeBool : checkRecordShape R = true := by
+    rcases hShape with ⟨hTerm, hSplit⟩
+    dsimp [checkRecordShape, checkFormat]
+    cases hk : R.data.kind with
+    | terminal =>
+        have hch : R.data.children = [] := hTerm hk
+        simp [hch]
+    | split =>
+        have hne : R.data.children ≠ [] := hSplit hk
+        simp [hne]
+    | gatepass =>
+        simp
+    | excluded =>
+        simp
+    | residual =>
+        simp
   have hLocalChildren : checkLocalChildren R children = true := by
     exact checkLocalChildren_true_of_valid R children hIds hChildren.2
-  sorry
+  rw [checkRecordLocal, hShapeBool, hLocalChildren]
+  simp
 
 end Certificate
 end CaseC

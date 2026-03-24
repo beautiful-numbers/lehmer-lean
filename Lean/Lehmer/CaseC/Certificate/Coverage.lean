@@ -1,4 +1,11 @@
 -- FILE: Lean/Lehmer/CaseC/Certificate/Coverage.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.CaseC.Certificate.Record : def thm
+- Lehmer.CaseC.Certificate.Priority : def thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.CaseC.Certificate.Record
 import Lehmer.CaseC.Certificate.Priority
@@ -30,7 +37,7 @@ def ChildrenMatchIds (parent : Record) (children : List Record) : Prop :=
 /--
 A minimal local coverage predicate for a parent record and a supplied child list.
 
-For MVP-4, local coverage means:
+For the current checker-facing layer, local coverage means:
 - the supplied child list matches the declared child ids;
 - the child list respects the local priority discipline.
 -/
@@ -45,10 +52,10 @@ def LocallyCovered (parent : Record) (children : List Record) : Prop :=
 A terminal record is locally covered by the empty child list.
 -/
 theorem locallyCovered_terminal_nil
-    (R : Record) (hterm : IsTerminalRecord R) (hchildren : recordChildren R = []) :
+    (R : Record) (_hterm : IsTerminalRecord R) (hchildren : recordChildren R = []) :
     LocallyCovered R [] := by
   constructor
-  · simpa [ChildrenMatchIds, recordChildren_def] using hchildren.symm
+  · simpa [ChildrenMatchIds] using hchildren.symm
   · exact childrenRespectPriority_nil_of_no_children R hchildren
 
 /--
@@ -64,7 +71,9 @@ theorem locallyCovered_of_match_and_priority
 
 /--
 A child list is pairwise id-disjoint if distinct positions carry distinct ids.
-This is a lightweight global sanity condition useful for later checker layers.
+
+This is a stronger auxiliary notion that may be used later by global layers,
+but it is not part of the current local checker target.
 -/
 def PairwiseIdDisjoint (children : List Record) : Prop :=
   children.Pairwise IdDisjoint
@@ -79,7 +88,10 @@ def PairwiseIdDisjoint (children : List Record) : Prop :=
 
 /--
 A stronger local coverage predicate adding id-disjointness of the supplied
-children. This is the form most convenient for the later global checker.
+children.
+
+This notion is intentionally kept auxiliary: it is stronger than what the
+current local checker directly tests.
 -/
 def WellCovered (parent : Record) (children : List Record) : Prop :=
   LocallyCovered parent children ∧ PairwiseIdDisjoint children
@@ -105,17 +117,18 @@ theorem wellCovered_terminal_nil
   exact pairwiseIdDisjoint_nil
 
 /--
-Stable MVP-4 placeholder: a syntactically valid child list produced by the
-certificate layer should satisfy the intended local coverage condition.
+If the child ids match, the child list is priority-sorted, and the child ids
+are pairwise disjoint, then the stronger local coverage condition holds.
 -/
-theorem wellCovered_placeholder
+theorem wellCovered_of_ids_priority_disjoint
     (parent : Record) (children : List Record)
-    (hIds : children.map recordId = recordChildren parent) :
+    (hIds : children.map recordId = recordChildren parent)
+    (hPrio : PrioritySorted children)
+    (hDisjoint : PairwiseIdDisjoint children) :
     WellCovered parent children := by
-  refine ⟨?_, ?_⟩
-  · exact locallyCovered_of_match_and_priority parent children hIds
-      (childrenRespectPriority_placeholder parent children hIds)
-  · sorry
+  refine ⟨?_, hDisjoint⟩
+  exact locallyCovered_of_match_and_priority parent children hIds
+    (childrenRespectPriority_of_ids_and_sorted parent children hIds hPrio)
 
 end Certificate
 end CaseC
