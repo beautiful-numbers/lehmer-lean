@@ -5,6 +5,7 @@ IMPORT CLASSIFICATION
 - Lehmer.Basic.Defs : def
 - Lehmer.Support.PotentialP2 : def param
 - Lehmer.CaseB.Spec : struct spec def
+- Lehmer.CaseB.Parameters : def
 - Lehmer.CaseB.Descent.ControlledRemoval : def thm
 - Lehmer.CaseB.Descent.P2Decrease : thm
 -/
@@ -13,6 +14,7 @@ import Lehmer.Prelude
 import Lehmer.Basic.Defs
 import Lehmer.Support.PotentialP2
 import Lehmer.CaseB.Spec
+import Lehmer.CaseB.Parameters
 import Lehmer.CaseB.Descent.ControlledRemoval
 import Lehmer.CaseB.Descent.P2Decrease
 
@@ -23,20 +25,36 @@ open Lehmer.Basic
 open Lehmer.Support
 
 /--
-An abstract upper bound for the Case B descent complexity at level `y`.
+The Case B descent budget.
 
-For MVP-2 we keep this intentionally simple and stable: it is just a
-level-dependent natural number parameter.
+This is the actual parameter package exported by `CaseB.Parameters`.
+It replaces the old placeholder `KmaxB y := y`.
 -/
-def KmaxB (y : ℕ) : ℕ :=
-  y
+noncomputable def KmaxB (y : ℕ) : ℕ :=
+  kappaB y
 
 @[simp] theorem KmaxB_def (y : ℕ) :
-    KmaxB y = y := rfl
+    KmaxB y = kappaB y := rfl
+
+/--
+Expanded paper-style form of the Case B descent budget.
+-/
+theorem KmaxB_eq_ceil_three_log_four (y : ℕ) :
+    KmaxB y = Nat.ceil (3 * (Real.log (yB y))^4) := by
+  simpa [KmaxB] using kappaB_eq_ceil_three_log_four y
+
+/--
+The descent budget is nonnegative.
+-/
+theorem KmaxB_nonneg (y : ℕ) :
+    0 ≤ KmaxB y := by
+  simpa [KmaxB] using kappaB_nonneg y
 
 /--
 The canonical length measure attached to a support at level `y`.
-For MVP-2 we use the support cardinality as the discrete descent-size proxy.
+
+At the current Case B descent stage, we use the support cardinality as the
+discrete descent-size proxy that strictly drops under controlled removal.
 -/
 def descentLength (S : Finset ℕ) (_y : ℕ) : ℕ :=
   supportCard S
@@ -71,11 +89,8 @@ theorem contextDescentLength_next_of_removable (C : Context) {p : ℕ}
     supportCard_remove_of_removable hp
 
 /--
-The descent-length proxy is always bounded by itself through `KmaxB` once the
-chosen abstract bound dominates the support cardinality.
-
-This isolates the bound interface without committing yet to the final
-analytic formula for `Kmax,B(y)`.
+If the support cardinality is bounded by `KmaxB y`, then the descent-length
+proxy is bounded by `KmaxB y`.
 -/
 theorem descentLength_le_KmaxB_of_bound
     (S : Finset ℕ) (y : ℕ)
@@ -84,7 +99,7 @@ theorem descentLength_le_KmaxB_of_bound
   simpa [descentLength] using hbound
 
 /--
-Context-level version of the abstract descent bound.
+Context-level version of the previous descent bound.
 -/
 theorem contextDescentLength_le_KmaxB_of_bound
     (C : Context)
@@ -93,11 +108,7 @@ theorem contextDescentLength_le_KmaxB_of_bound
   simpa [contextDescentLength, descentLength] using hbound
 
 /--
-A renamed interface form of the previous conditional descent bound.
-
-Unlike the earlier unconditional placeholder, this statement is logically
-correct with the current `Spec` layer and does not inject a false global
-invariant into `Context`.
+Interface form of the conditional descent bound.
 -/
 theorem exists_descent_bound_of_assumption
     (C : Context)

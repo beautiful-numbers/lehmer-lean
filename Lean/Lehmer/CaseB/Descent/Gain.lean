@@ -1,4 +1,12 @@
 -- FILE: Lean/Lehmer/CaseB/Descent/Gain.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.Support.PotentialP2 : def param
+- Lehmer.CaseB.Spec : struct spec def
+- Lehmer.CaseB.Descent.ControlledRemoval : def thm
+-/
+
 import Lehmer.Prelude
 import Lehmer.Support.PotentialP2
 import Lehmer.CaseB.Spec
@@ -12,8 +20,7 @@ open Lehmer.Support
 /--
 A local gain predicate for a controlled removal step.
 
-For MVP-2, "gain" means strict decrease of the second potential `P2`.
-This keeps the descent interface simple and stable.
+At the descent layer, gain means strict decrease of the second potential `P2`.
 -/
 def HasGain (S : Finset ℕ) (p y : ℕ) : Prop :=
   P2 (remove S p) y < P2 S y
@@ -38,49 +45,166 @@ theorem contextHasGain_iff_P2 (C : Context) (p : ℕ) :
   rfl
 
 /--
-A removable element has gain provided the strict-decrease hypothesis is available.
+Paper-facing generic prime predicate for the Case B descent layer.
+
+At the present stage this file records the routing distinction
+generic / entangled without yet committing to the final witness-accounting
+internals.  The actual gain content is carried by the corresponding gain
+predicates below.
 -/
-theorem hasGain_of_removable (S : Finset ℕ) (p y : ℕ)
-    (_hp : Removable S p)
-    (hgain : HasGain S p y) :
+def GenericPrime (S : Finset ℕ) (p y : ℕ) : Prop :=
+  Removable S p
+
+/--
+Paper-facing entangled prime predicate for the Case B descent layer.
+
+This is the complementary routing placeholder for the later lock / witness
+machinery.  As with `GenericPrime`, the genuine gain content is carried by the
+dedicated gain predicate below.
+-/
+def EntangledPrime (S : Finset ℕ) (p y : ℕ) : Prop :=
+  Removable S p
+
+@[simp] theorem GenericPrime_def (S : Finset ℕ) (p y : ℕ) :
+    GenericPrime S p y = Removable S p := rfl
+
+@[simp] theorem EntangledPrime_def (S : Finset ℕ) (p y : ℕ) :
+    EntangledPrime S p y = Removable S p := rfl
+
+/--
+A generic removable prime is one that yields strict potential decrease through
+the generic side of the paper dichotomy.
+-/
+def GenericGain (S : Finset ℕ) (p y : ℕ) : Prop :=
+  GenericPrime S p y ∧ HasGain S p y
+
+/--
+An entangled removable prime is one that yields strict potential decrease
+through the entangled side of the paper dichotomy.
+-/
+def EntangledGain (S : Finset ℕ) (p y : ℕ) : Prop :=
+  EntangledPrime S p y ∧ HasGain S p y
+
+@[simp] theorem GenericGain_def (S : Finset ℕ) (p y : ℕ) :
+    GenericGain S p y = (GenericPrime S p y ∧ HasGain S p y) := rfl
+
+@[simp] theorem EntangledGain_def (S : Finset ℕ) (p y : ℕ) :
+    EntangledGain S p y = (EntangledPrime S p y ∧ HasGain S p y) := rfl
+
+/--
+Paper-style gain criterion: a removable prime yields gain either through the
+generic side or through the entangled side.
+-/
+def GainCriterion (S : Finset ℕ) (p y : ℕ) : Prop :=
+  GenericGain S p y ∨ EntangledGain S p y
+
+@[simp] theorem GainCriterion_def (S : Finset ℕ) (p y : ℕ) :
+    GainCriterion S p y = (GenericGain S p y ∨ EntangledGain S p y) := rfl
+
+/--
+Context-level generic gain predicate.
+-/
+def ContextGenericGain (C : Context) (p : ℕ) : Prop :=
+  GenericGain C.S p C.y
+
+/--
+Context-level entangled gain predicate.
+-/
+def ContextEntangledGain (C : Context) (p : ℕ) : Prop :=
+  EntangledGain C.S p C.y
+
+/--
+Context-level paper-style gain criterion.
+-/
+def ContextGainCriterion (C : Context) (p : ℕ) : Prop :=
+  GainCriterion C.S p C.y
+
+@[simp] theorem ContextGenericGain_def (C : Context) (p : ℕ) :
+    ContextGenericGain C p = GenericGain C.S p C.y := rfl
+
+@[simp] theorem ContextEntangledGain_def (C : Context) (p : ℕ) :
+    ContextEntangledGain C p = EntangledGain C.S p C.y := rfl
+
+@[simp] theorem ContextGainCriterion_def (C : Context) (p : ℕ) :
+    ContextGainCriterion C p = GainCriterion C.S p C.y := rfl
+
+/--
+Generic gain implies strict decrease of `P2`.
+-/
+theorem hasGain_of_genericGain (S : Finset ℕ) (p y : ℕ)
+    (hgain : GenericGain S p y) :
     HasGain S p y := by
-  exact hgain
+  exact hgain.2
 
 /--
-Context version of the previous gain statement.
+Entangled gain implies strict decrease of `P2`.
 -/
-theorem contextHasGain_of_removable (C : Context) (p : ℕ)
-    (_hp : Removable C.S p)
-    (hgain : ContextHasGain C p) :
-    ContextHasGain C p := by
-  exact hgain
+theorem hasGain_of_entangledGain (S : Finset ℕ) (p y : ℕ)
+    (hgain : EntangledGain S p y) :
+    HasGain S p y := by
+  exact hgain.2
 
 /--
-A canonical controlled removal step carries gain, provided the gain hypothesis
-is available.
+Paper-style dichotomy criterion implies strict decrease of `P2`.
+-/
+theorem hasGain_of_gainCriterion (S : Finset ℕ) (p y : ℕ)
+    (hgain : GainCriterion S p y) :
+    HasGain S p y := by
+  rcases hgain with hgen | hent
+  · exact hasGain_of_genericGain S p y hgen
+  · exact hasGain_of_entangledGain S p y hent
+
+/--
+Context-level generic gain implies strict decrease of the Case B potential.
+-/
+theorem contextHasGain_of_genericGain (C : Context) (p : ℕ)
+    (hgain : ContextGenericGain C p) :
+    ContextHasGain C p := by
+  exact hgain.2
+
+/--
+Context-level entangled gain implies strict decrease of the Case B potential.
+-/
+theorem contextHasGain_of_entangledGain (C : Context) (p : ℕ)
+    (hgain : ContextEntangledGain C p) :
+    ContextHasGain C p := by
+  exact hgain.2
+
+/--
+Context-level paper-style gain criterion implies strict decrease of the
+Case B potential.
+-/
+theorem contextHasGain_of_gainCriterion (C : Context) (p : ℕ)
+    (hgain : ContextGainCriterion C p) :
+    ContextHasGain C p := by
+  exact hasGain_of_gainCriterion C.S p C.y hgain
+
+/--
+A canonical controlled removal step carries gain, provided the paper-style
+gain criterion holds.
 -/
 theorem controlledRemoval_hasGain (S : Finset ℕ) (p y : ℕ)
     (hp : Removable S p)
-    (hgain : HasGain S p y) :
+    (hgain : GainCriterion S p y) :
     ControlledRemoval S p (remove S p) ∧ HasGain S p y := by
-  exact ⟨controlledRemoval_canonical S p hp, hgain⟩
+  exact ⟨controlledRemoval_canonical S p hp, hasGain_of_gainCriterion S p y hgain⟩
 
 /--
 Context-level canonical controlled removal together with gain.
 -/
 theorem contextControlledRemoval_hasGain (C : Context) (p : ℕ)
     (hp : Removable C.S p)
-    (hgain : ContextHasGain C p) :
+    (hgain : ContextGainCriterion C p) :
     ContextControlledRemoval C p (nextContext C p) ∧ ContextHasGain C p := by
-  exact ⟨contextControlledRemoval_canonical C p hp, hgain⟩
+  exact ⟨contextControlledRemoval_canonical C p hp, contextHasGain_of_gainCriterion C p hgain⟩
 
 /--
-Stable MVP-2 interface lemma: every removable element yields a gainful
-successor context, provided the gain hypothesis is available.
+Every removable element yields a gainful successor context, provided the
+paper-style gain criterion is available.
 -/
 theorem exists_gainful_successor_of_removable (C : Context)
     {p : ℕ} (hp : Removable C.S p)
-    (hgain : ContextHasGain C p) :
+    (hgain : ContextGainCriterion C p) :
     ∃ C', ContextControlledRemoval C p C' ∧ ContextHasGain C p := by
   refine ⟨nextContext C p, ?_⟩
   exact contextControlledRemoval_hasGain C p hp hgain

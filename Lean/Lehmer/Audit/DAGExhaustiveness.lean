@@ -73,6 +73,16 @@ inductive RequiredNode where
   | caseB_p2Decrease
   | caseB_kmaxB
   | caseB_descentSkeleton
+  | caseB_genericChains
+  | caseB_witnessAccounting
+  | caseB_ssLock
+  | caseB_entanglementScarcity
+  | caseB_saturatedSupportBound
+  | caseB_supplyBound
+  | caseB_majorantMc
+  | caseB_closedMajorantBound
+  | caseB_noCrossing
+  | caseB_contradiction
 
   -- Case C gap-closure active DAG
   | caseC_rigidity
@@ -148,6 +158,16 @@ def nodeModule : RequiredNode → String
   | .caseB_p2Decrease => "Lehmer.CaseB.Descent.P2Decrease"
   | .caseB_kmaxB => "Lehmer.CaseB.Descent.KmaxB"
   | .caseB_descentSkeleton => "Lehmer.CaseB.Descent.DescentSkeleton"
+  | .caseB_genericChains => "Lehmer.CaseB.Saturation.GenericChains"
+  | .caseB_witnessAccounting => "Lehmer.CaseB.Saturation.WitnessAccounting"
+  | .caseB_ssLock => "Lehmer.CaseB.Saturation.SSLock"
+  | .caseB_entanglementScarcity => "Lehmer.CaseB.Saturation.EntanglementScarcity"
+  | .caseB_saturatedSupportBound => "Lehmer.CaseB.Saturation.SaturatedSupportBound"
+  | .caseB_supplyBound => "Lehmer.CaseB.Saturation.SupplyBound"
+  | .caseB_majorantMc => "Lehmer.CaseB.Dominance.MajorantMc"
+  | .caseB_closedMajorantBound => "Lehmer.CaseB.Dominance.ClosedMajorantBound"
+  | .caseB_noCrossing => "Lehmer.CaseB.Dominance.NoCrossing"
+  | .caseB_contradiction => "Lehmer.CaseB.Dominance.Contradiction"
 
   | .caseC_rigidity => "Lehmer.CaseC.GapClosure.Rigidity"
   | .caseC_supportProfiles => "Lehmer.CaseC.GapClosure.SupportProfiles"
@@ -217,6 +237,16 @@ def Covered : RequiredNode → Prop
   | .caseB_p2Decrease => True
   | .caseB_kmaxB => True
   | .caseB_descentSkeleton => True
+  | .caseB_genericChains => True
+  | .caseB_witnessAccounting => True
+  | .caseB_ssLock => True
+  | .caseB_entanglementScarcity => True
+  | .caseB_saturatedSupportBound => True
+  | .caseB_supplyBound => True
+  | .caseB_majorantMc => True
+  | .caseB_closedMajorantBound => True
+  | .caseB_noCrossing => True
+  | .caseB_contradiction => True
 
   | .caseC_rigidity => True
   | .caseC_supportProfiles => True

@@ -60,10 +60,10 @@ This is globally valid for the conditional definition.
 -/
 theorem UBm_le_two_before_mreq {y m : ℕ} (hm : m < mreq y) :
     UBm y m ≤ 2 := by
-  unfold mreq at hm ⊢
-  split_ifs with h
-  · exact le_of_not_lt (Nat.find_min h hm)
-  · exfalso
+  by_cases h : ∃ k : ℕ, (2 : ℚ) < UBm y k
+  · rw [mreq_eq_find_of_exists h] at hm
+    exact le_of_not_gt (Nat.find_min h hm)
+  · rw [mreq_eq_zero_of_not_exists h] at hm
     omega
 
 /--
@@ -78,10 +78,9 @@ Minimality: any witness `m` with `UBm y m > 2` dominates `mreq y`.
 -/
 theorem mreq_le_of_UBm_gt_two {y m : ℕ} (hm : (2 : ℚ) < UBm y m) :
     mreq y ≤ m := by
-  unfold mreq
-  split_ifs with h
-  · exact Nat.find_min' h hm
-  · exact False.elim (h ⟨m, hm⟩)
+  have h : ∃ k : ℕ, (2 : ℚ) < UBm y k := ⟨m, hm⟩
+  rw [mreq_eq_find_of_exists h]
+  exact Nat.find_min' h hm
 
 /--
 Re-export of minimality under the same name.

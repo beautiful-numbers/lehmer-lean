@@ -30,7 +30,8 @@ open Lehmer.Pipeline
 Audit-facing taxonomy of the currently exhaustive range-based branches.
 
 At the present transition stage of the pipeline:
-- mathematical Case A is already closed locally;
+- mathematical Case A is already closed locally and audited separately;
+- Case B is now routed through its mathematical bridge at pipeline level;
 - the exhaustive classification theorem still concerns the stable range split
   made of the legacy small-pivot range together with Case C / intermediate /
   Case B.
@@ -83,6 +84,7 @@ At the current stage:
 - the legacy small-pivot range is still tracked at the taxonomic level;
 - the mathematical Case A contradiction is audited separately in
   `Lehmer.Audit.CaseAClosure`.
+- Case B is handled through its pipeline bridge.
 -/
 def RangeBranchHandled (n : ℕ) : RangeBranch → Prop
   | .smallPivotRange => InSmallPivotRange n
@@ -291,7 +293,7 @@ theorem candidate_coverage_audit_complete :
         , no_candidate_left_out
         , no_active_range_branch_missing
         , caseA_audit_exhaustive
-        , all_global_branches_present⟩
+        , all_global_branches_present ⟩
 
 /--
 Convenient packaged form using the already assembled range-pipeline theorem.

@@ -42,7 +42,7 @@ The prime support of `1` is empty, hence `omega 1 = 0`.
 -/
 @[simp] theorem omega_one : omega 1 = 0 := by
   unfold omega supportCard primeSupport
-  simp
+  simp [Nat.not_prime_one]
 
 /--
 `omega` is always nonnegative.

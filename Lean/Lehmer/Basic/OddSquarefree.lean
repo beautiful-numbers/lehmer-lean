@@ -84,9 +84,9 @@ theorem LehmerComposite.odd {n : ℕ} (h : LehmerComposite n) : Odd n := by
     have hpred_even : Even (n - 1) := by
       refine ⟨k * m, ?_⟩
       calc
-        n - 1 = Nat.totient n * m := by simpa [Nat.mul_comm] using hm.symm
-        _ = (2 * k) * m := by rw [hk]
-        _ = 2 * (k * m) := by ring
+        n - 1 = Nat.totient n * m := hm
+        _ = (k + k) * m := by rw [hk]
+        _ = k * m + k * m := by ring
 
     rcases hEven with ⟨a, ha⟩
     rcases hpred_even with ⟨b, hb⟩
@@ -132,7 +132,7 @@ theorem LehmerComposite.squarefree {n : ℕ} (h : LehmerComposite n) :
 
   have hsub : n - (n - 1) = 1 := by
     have hs : n = (n - 1) + 1 := by
-      exact Nat.succ_pred_eq_of_pos h.pos
+      simpa [Nat.succ_eq_add_one] using (Nat.succ_pred_eq_of_pos h.pos).symm
     omega
 
   have hp_dvd_one : p ∣ 1 := by

@@ -37,15 +37,16 @@ theorem le_one_of_lehmerQuotient_eq_zero {n : ℕ}
   by_cases hφ : Nat.totient n = 0
   · by_cases hn0 : n = 0
     · omega
-    · have hφpos : 0 < Nat.totient n := (Nat.totient_pos).2 (Nat.pos_of_ne_zero hn0)
-      exact False.elim (hφ <| ne_of_gt hφpos)
+    · have hφpos : 0 < Nat.totient n := by
+        exact (Nat.totient_pos).2 (Nat.pos_of_ne_zero hn0)
+      exact False.elim ((ne_of_gt hφpos) hφ)
   · have hφQ : totientQ n ≠ 0 := by
       rw [totientQ_def]
       exact_mod_cast hφ
     have hq : (((n - 1 : ℕ) : ℚ) / totientQ n) = 0 := by
       simpa [lehmerQuotient_def] using hK0
     have hnum_zero : (((n - 1 : ℕ) : ℚ)) = 0 := by
-      rcases (div_eq_zero_iff hφQ).mp hq with hnum | hden
+      rcases (div_eq_zero_iff.mp hq) with hnum | hden
       · exact hnum
       · exact False.elim (hφQ hden)
     have hnat : n - 1 = 0 := by
@@ -62,7 +63,8 @@ theorem prime_of_lehmerQuotient_eq_one {n : ℕ}
     (hn1 : 1 < n)
     (hK1 : lehmerQuotient n = 1) :
     Nat.Prime n := by
-  have hφQ_pos : (0 : ℚ) < totientQ n := totientQ_pos_of_pos (lt_trans (by decide : 0 < 1) hn1)
+  have hnpos : 0 < n := lt_trans (by decide : 0 < 1) hn1
+  have hφQ_pos : (0 : ℚ) < totientQ n := totientQ_pos_of_pos hnpos
   have hφQ_ne : totientQ n ≠ 0 := ne_of_gt hφQ_pos
 
   have hq : (((n - 1 : ℕ) : ℚ) / totientQ n) = 1 := by
@@ -71,12 +73,13 @@ theorem prime_of_lehmerQuotient_eq_one {n : ℕ}
   have hphi_eq_q : (((n - 1 : ℕ) : ℚ)) = totientQ n := by
     have hmul : (((n - 1 : ℕ) : ℚ)) = 1 * totientQ n := by
       exact (div_eq_iff hφQ_ne).mp hq
-    simpa [totientQ_def] using hmul
+    simpa using hmul
 
   have hphi_eq_nat : n - 1 = Nat.totient n := by
+    rw [totientQ_def] at hphi_eq_q
     exact_mod_cast hphi_eq_q
 
-  exact (Nat.totient_eq_iff_prime hn1).mp hphi_eq_nat.symm
+  exact (Nat.totient_eq_iff_prime hnpos).mp hphi_eq_nat.symm
 
 /--
 Core analytic input for the pivot method:

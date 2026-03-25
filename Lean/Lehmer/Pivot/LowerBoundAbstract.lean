@@ -100,10 +100,10 @@ For a Lehmer composite, every prime divisor of `n` is at least its canonical
 pivot `pivotVal n = Nat.minFac n`.
 -/
 theorem yrough_at_pivotVal_of_LehmerComposite {n : ℕ}
-    (hL : LehmerComposite n) :
+    (_hL : LehmerComposite n) :
     YRough (pivotVal n) n := by
   intro p hp hpd
-  simpa [pivotVal] using Nat.minFac_le_of_dvd hL.one_lt hpd
+  simpa [pivotVal] using Nat.minFac_le_of_dvd hp.two_le hpd
 
 /--
 Pipeline-ready lower bound at the canonical pivot.

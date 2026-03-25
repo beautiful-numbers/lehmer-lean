@@ -21,10 +21,11 @@ open Lehmer.Basic
 open Lehmer.Support
 
 /--
-A prime `p` is removable from `S` in the minimal MVP-2 sense
-if it belongs to the support.
-Further structural conditions can be added later without changing
-the role of this predicate in the descent skeleton.
+A prime `p` is removable from `S` exactly when it belongs to the current
+support.
+
+At the present Case B descent stage, controlled removal is the canonical
+support-erasure step. No extra placeholder side-condition is introduced here.
 -/
 def Removable (S : Finset ℕ) (p : ℕ) : Prop :=
   p ∈ S
@@ -54,8 +55,10 @@ def nextContext (C : Context) (p : ℕ) : Context :=
     (nextContext C p).S = C.S.erase p := rfl
 
 /--
-A controlled removal step from `S` along `p`.
-For MVP-2 this is just membership together with the successor support.
+A controlled removal step from `S` along `p` to `T`.
+
+This is the exact canonical erasure step: `p` must belong to `S`, and the next
+support is `S.erase p`.
 -/
 def ControlledRemoval (S : Finset ℕ) (p : ℕ) (T : Finset ℕ) : Prop :=
   Removable S p ∧ T = remove S p
@@ -89,6 +92,28 @@ theorem contextControlledRemoval_canonical (C : Context) (p : ℕ)
   exact ⟨hp, rfl⟩
 
 /--
+A controlled-removal target is uniquely determined.
+-/
+theorem controlledRemoval_target_unique {S T₁ T₂ : Finset ℕ} {p : ℕ}
+    (h₁ : ControlledRemoval S p T₁)
+    (h₂ : ControlledRemoval S p T₂) :
+    T₁ = T₂ := by
+  rcases h₁ with ⟨_, rfl⟩
+  rcases h₂ with ⟨_, rfl⟩
+  rfl
+
+/--
+A context-level controlled-removal successor is uniquely determined.
+-/
+theorem contextControlledRemoval_target_unique {C C₁ C₂ : Context} {p : ℕ}
+    (h₁ : ContextControlledRemoval C p C₁)
+    (h₂ : ContextControlledRemoval C p C₂) :
+    C₁ = C₂ := by
+  rcases h₁ with ⟨_, rfl⟩
+  rcases h₂ with ⟨_, rfl⟩
+  rfl
+
+/--
 An element is absent from the successor support after erasure.
 -/
 @[simp] theorem not_mem_remove_self {S : Finset ℕ} {p : ℕ} :
@@ -104,6 +129,31 @@ theorem remove_subset (S : Finset ℕ) (p : ℕ) :
   simpa [remove] using Finset.mem_of_mem_erase hq
 
 /--
+Every element of the successor support is different from the removed element.
+-/
+theorem mem_remove_implies_ne {S : Finset ℕ} {p q : ℕ}
+    (hq : q ∈ remove S p) :
+    q ≠ p := by
+  simpa [remove] using (Finset.ne_of_mem_erase hq)
+
+/--
+Every element of the successor support already belonged to the original support.
+-/
+theorem mem_remove_implies_mem {S : Finset ℕ} {p q : ℕ}
+    (hq : q ∈ remove S p) :
+    q ∈ S := by
+  simpa [remove] using (Finset.mem_of_mem_erase hq)
+
+/--
+If `q` belongs to `S` and is different from `p`, then `q` survives the
+controlled removal of `p`.
+-/
+theorem mem_remove_of_mem_of_ne {S : Finset ℕ} {p q : ℕ}
+    (hq : q ∈ S) (hqp : q ≠ p) :
+    q ∈ remove S p := by
+  simpa [remove] using Finset.mem_erase.mpr ⟨hqp, hq⟩
+
+/--
 The support cardinality drops by one under a removable controlled removal.
 -/
 theorem supportCard_remove_of_removable {S : Finset ℕ} {p : ℕ}
@@ -112,7 +162,27 @@ theorem supportCard_remove_of_removable {S : Finset ℕ} {p : ℕ}
   simpa [Removable, remove, supportCard, hp] using Finset.card_erase_of_mem hp
 
 /--
+The support cardinality strictly decreases under a removable controlled removal.
+-/
+theorem supportCard_remove_lt_of_removable {S : Finset ℕ} {p : ℕ}
+    (hp : Removable S p) :
+    supportCard (remove S p) < supportCard S := by
+  have hEq := supportCard_remove_of_removable hp
+  have hPos : 0 < supportCard S := by
+    exact Finset.card_pos.mpr ⟨p, hp⟩
+  omega
+
+/--
+Context-level form of strict decrease of support cardinality.
+-/
+theorem supportCard_nextContext_lt_of_removable (C : Context) {p : ℕ}
+    (hp : Removable C.S p) :
+    supportCard (nextContext C p).S < supportCard C.S := by
+  simpa using supportCard_remove_lt_of_removable hp
+
+/--
 Expanded form of the second potential after controlled removal.
+
 This is the local algebraic target shape for later descent lemmas.
 -/
 theorem P2_remove_expand (S : Finset ℕ) (p y : ℕ) :
@@ -129,17 +199,24 @@ theorem potential_nextContext_expand (C : Context) (p : ℕ) :
   rfl
 
 /--
-Stable MVP-2 placeholder for the local gain statement attached to a
-controlled removal.
-
-At this stage this theorem is itself the interface hypothesis that will be
-strengthened later by the genuine descent proof.
+A context-level controlled-removal step preserves the Case B level.
 -/
-theorem controlledRemoval_gain_placeholder
-    (S : Finset ℕ) (p y : ℕ) (_hp : Removable S p)
-    (hdec : P2 (remove S p) y < P2 S y) :
-    P2 (remove S p) y < P2 S y := by
-  exact hdec
+theorem ContextControlledRemoval_preserves_level
+    {C C' : Context} {p : ℕ}
+    (hstep : ContextControlledRemoval C p C') :
+    C'.y = C.y := by
+  rcases hstep with ⟨_, rfl⟩
+  rfl
+
+/--
+A context-level controlled-removal step realizes the canonical erased support.
+-/
+theorem ContextControlledRemoval_support_eq
+    {C C' : Context} {p : ℕ}
+    (hstep : ContextControlledRemoval C p C') :
+    C'.S = remove C.S p := by
+  rcases hstep with ⟨_, rfl⟩
+  rfl
 
 end CaseB
 end Lehmer

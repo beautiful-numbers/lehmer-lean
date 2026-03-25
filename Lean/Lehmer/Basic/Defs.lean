@@ -1,39 +1,55 @@
--- FILE: Lean/Lehmer/Pivot/Defs.lean
-/-
-IMPORT CLASSIFICATION
-- Lehmer.Prelude : meta
-- Lehmer.Basic.Defs : def
--/
+-- FILE: Lean/Lehmer/Basic/Defs.lean
 
-import Lehmer.Prelude
-import Lehmer.Basic.Defs
+import Mathlib
 
 namespace Lehmer
-namespace Pivot
-
-open Lehmer.Basic
+namespace Basic
 
 /--
-`YRough y n` means that every prime divisor of `n` is at least `y`.
-
-This is the basic roughness predicate used by the pivot layer.
+A composite integer satisfying Lehmer's divisibility condition.
+This is the basic object ruled out by the main theorem.
 -/
-def YRough (y n : ℕ) : Prop :=
-  ∀ p : ℕ, Nat.Prime p → p ∣ n → y ≤ p
+def LehmerComposite (n : ℕ) : Prop :=
+  ¬ Nat.Prime n ∧ 2 ≤ n ∧ Nat.totient n ∣ (n - 1)
 
 /--
-The pivot value attached to `n`, defined as its least prime factor.
-
-For the Lehmer problem, this is the natural pivot parameter used in the paper.
+The multiplicative index I(n) = n / φ(n), viewed in ℚ.
 -/
-def pivotVal (n : ℕ) : ℕ :=
-  n.minFac
+def totientIndex (n : ℕ) : ℚ :=
+  (n : ℚ) / (Nat.totient n : ℚ)
 
-@[simp] theorem pivotVal_def (n : ℕ) :
-    pivotVal n = n.minFac := rfl
+/--
+The Lehmer quotient K(n) = (n - 1) / φ(n), viewed in ℚ.
+-/
+def lehmerQuotient (n : ℕ) : ℚ :=
+  ((n - 1 : ℕ) : ℚ) / (Nat.totient n : ℚ)
 
-@[simp] theorem yRough_def (y n : ℕ) :
-    YRough y n = ∀ p : ℕ, Nat.Prime p → p ∣ n → y ≤ p := rfl
+/--
+The prime support of n, as the finite set of prime divisors of n.
+-/
+def primeSupport (n : ℕ) : Finset ℕ :=
+  (Nat.divisors n).filter Nat.Prime
 
-end Pivot
+/--
+The product of the elements of a finite support.
+This is the support-level analogue of n.
+-/
+def supportProd (S : Finset ℕ) : ℕ :=
+  S.prod id
+
+/--
+The lcm of the shifted support {p - 1 : p ∈ S}.
+This is the support-level analogue of the Lehmer divisor obstruction.
+-/
+def supportLcm (S : Finset ℕ) : ℕ :=
+  Finset.lcm S (fun p => p - 1)
+
+/--
+The cardinality of a finite support.
+This is the support-level analogue of ω(n).
+-/
+def supportCard (S : Finset ℕ) : ℕ :=
+  S.card
+
+end Basic
 end Lehmer
