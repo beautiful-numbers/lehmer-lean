@@ -30,6 +30,15 @@ namespace Lehmer
 namespace CaseB
 
 open Lehmer.Basic
+open Classical
+
+/--
+A witness is counted as entangled when the accounting datum classifies it on the
+entangled side.
+-/
+def IsEntangledWitness {C : Context} (A : WitnessAccounting C) (p : ℕ) : Prop :=
+  ∃ hp : p ∈ witnessSet C A, ∃ hent : EntangledWitness C p,
+    (A.hclassified p hp).2 = Or.inr hent
 
 /--
 The entangled witness set extracted from a witness accounting datum.
@@ -38,12 +47,15 @@ At the current stage, entanglement scarcity is formulated as a support-bounded
 subfamily of the witness set consisting of the primes classified on the
 entangled side of the generic/entangled dichotomy.
 -/
-def entangledWitnessSet {C : Context} (A : WitnessAccounting C) : Finset ℕ :=
-  (witnessSet C A).filter (fun p => EntangledWitness C p)
+noncomputable def entangledWitnessSet {C : Context} (A : WitnessAccounting C) : Finset ℕ := by
+  classical
+  exact (witnessSet C A).filter (fun p => IsEntangledWitness A p)
 
 @[simp] theorem entangledWitnessSet_def {C : Context} (A : WitnessAccounting C) :
     entangledWitnessSet A =
-      (witnessSet C A).filter (fun p => EntangledWitness C p) := rfl
+      (witnessSet C A).filter (fun p => IsEntangledWitness A p) := by
+  classical
+  rfl
 
 /--
 Every entangled witness belongs to the ambient witness set.
@@ -52,7 +64,8 @@ theorem mem_witnessSet_of_mem_entangledWitnessSet {C : Context}
     (A : WitnessAccounting C) {p : ℕ}
     (hp : p ∈ entangledWitnessSet A) :
     p ∈ witnessSet C A := by
-  simpa [entangledWitnessSet] using (Finset.mem_filter.mp hp).1
+  classical
+  exact (Finset.mem_filter.mp hp).1
 
 /--
 Every entangled witness belongs to the ambient support.
@@ -70,7 +83,9 @@ theorem entangledWitness_of_mem_entangledWitnessSet {C : Context}
     (A : WitnessAccounting C) {p : ℕ}
     (hp : p ∈ entangledWitnessSet A) :
     EntangledWitness C p := by
-  exact (Finset.mem_filter.mp hp).2
+  classical
+  rcases (Finset.mem_filter.mp hp).2 with ⟨hpW, hent, _⟩
+  exact hent
 
 /--
 The entangled witness set is support-bounded.
@@ -78,6 +93,7 @@ The entangled witness set is support-bounded.
 theorem card_entangledWitnessSet_le_supportCard {C : Context}
     (A : WitnessAccounting C) :
     supportCard (entangledWitnessSet A) ≤ supportCard C.S := by
+  classical
   have hsub :
       entangledWitnessSet A ⊆ witnessSet C A := by
     intro p hp
@@ -120,30 +136,21 @@ A generic singleton witness accounting datum has empty entangled witness set.
 theorem entangledWitnessSet_singletonGeneric_empty (C : Context) (p : ℕ)
     (hp : Removable C.S p) (hgen : ContextGenericGain C p) :
     entangledWitnessSet (singletonGenericWitnessAccounting C p hp hgen) = ∅ := by
+  classical
   ext q
   constructor
   · intro hq
-    have hmem : q = p := by
-      have hq' : q ∈ witnessSet C (singletonGenericWitnessAccounting C p hp hgen) := by
-        exact (Finset.mem_filter.mp hq).1
-      simpa [witnessSet, singletonGenericWitnessAccounting, singletonWitnessPack] using hq'
-    subst hmem
-    have hent : EntangledWitness C p := by
-      exact (Finset.mem_filter.mp hq).2
-    have hclass :
-        WitnessCompatible C p ∧ (GenericWitness C p ∨ EntangledWitness C p) := by
-      simpa [witnessSet, singletonGenericWitnessAccounting, singletonWitnessPack] using
-        (singletonGenericWitnessAccounting C p hp hgen).hclassified p (by simp)
-    rcases hclass.2 with hgeneric | hent'
-    · exact False.elim (by
-        change ContextEntangledGain C p at hent
-        change ContextGenericGain C p at hgeneric
-        trivial)
-    · exact False.elim (by
-        change ContextEntangledGain C p at hent
-        exact False.elim (by trivial))
+    have hqW :
+        q ∈ witnessSet C (singletonGenericWitnessAccounting C p hp hgen) := by
+      exact mem_witnessSet_of_mem_entangledWitnessSet _ hq
+    have hqeq : q = p := by
+      simpa [witnessSet, singletonGenericWitnessAccounting, singletonWitnessPack] using hqW
+    subst q
+    rcases (Finset.mem_filter.mp hq).2 with ⟨hpW, hent, _hEq⟩
+    exfalso
+    exact contextGeneric_not_entangled hgen hent
   · intro hq
-    simpa using hq
+    simp at hq
 
 /--
 A singleton entangled witness accounting datum has witness set equal to its
@@ -153,15 +160,21 @@ theorem entangledWitnessSet_singletonEntangled_eq (C : Context) (p : ℕ)
     (hp : Removable C.S p) (hent : ContextEntangledGain C p) :
     entangledWitnessSet (singletonEntangledWitnessAccounting C p hp hent) =
       witnessSet C (singletonEntangledWitnessAccounting C p hp hent) := by
+  classical
   ext q
-  simp [entangledWitnessSet, witnessSet, singletonEntangledWitnessAccounting, singletonWitnessPack]
   constructor
   · intro hq
-    exact hq.1
+    exact mem_witnessSet_of_mem_entangledWitnessSet _ hq
   · intro hq
-    have hq' : q = p := by simpa using hq
-    subst hq'
-    exact ⟨by simp, hent⟩
+    have hqeq : q = p := by
+      simp [witnessSet, singletonEntangledWitnessAccounting, singletonWitnessPack] at hq
+      exact hq
+    subst q
+    apply Finset.mem_filter.mpr
+    refine ⟨?_, ?_⟩
+    · simp [witnessSet, singletonEntangledWitnessAccounting, singletonWitnessPack]
+    · refine ⟨?_, hent, rfl⟩
+      · simp [witnessSet, singletonEntangledWitnessAccounting, singletonWitnessPack]
 
 /--
 The entangled witness set attached to a generic-chain witness accounting datum

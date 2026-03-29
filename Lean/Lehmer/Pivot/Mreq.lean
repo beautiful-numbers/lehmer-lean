@@ -19,8 +19,8 @@ Conditional threshold definition.
 If there exists some index `m` with `UBm y m > 2`, then `mreq y` is the least
 such index. Otherwise, we set `mreq y = 0`.
 
-This avoids any global analytic existence theorem at the definition level while
-still recovering the exact minimal-threshold behavior whenever a witness exists.
+This keeps the file purely definitional / minimality-based, without importing
+any large-`y` analytic existence theorem at definition level.
 -/
 noncomputable def mreq (y : ℕ) : ℕ :=
   if h : ∃ m : ℕ, (2 : ℚ) < UBm y m then
@@ -56,6 +56,7 @@ theorem UBm_gt_two_at_mreq_of_exists {y : ℕ}
 
 /--
 Below the threshold, the envelope stays at or below `2`.
+
 This is globally valid for the conditional definition.
 -/
 theorem UBm_le_two_before_mreq {y m : ℕ} (hm : m < mreq y) :
@@ -142,6 +143,32 @@ theorem mreq_pos_of_exists {y : ℕ}
     rw [hm, UBm_zero] at hgt
     norm_num at hgt
   exact Nat.pos_iff_ne_zero.mpr hm0
+
+/--
+At the threshold, the envelope does not stay at or below `2`, provided existence holds.
+
+This is a convenient negated form for downstream bridge files.
+-/
+theorem UBm_not_le_two_at_mreq_of_exists {y : ℕ}
+    (h : ∃ m : ℕ, (2 : ℚ) < UBm y m) :
+    ¬ UBm y (mreq y) ≤ 2 := by
+  exact not_le_of_gt (UBm_gt_two_at_mreq_of_exists h)
+
+/--
+Any strict predecessor of the threshold fails to exceed `2`.
+-/
+theorem not_UBm_gt_two_of_lt_mreq {y m : ℕ} (hm : m < mreq y) :
+    ¬ (2 : ℚ) < UBm y m := by
+  exact UBm_not_gt_two_before_mreq hm
+
+/--
+Contradiction form:
+if `m < mreq y`, then `m` cannot witness threshold exceedance.
+-/
+theorem false_of_lt_mreq_of_UBm_gt_two {y m : ℕ}
+    (hm : m < mreq y) (hgt : (2 : ℚ) < UBm y m) :
+    False := by
+  exact (UBm_not_gt_two_before_mreq hm) hgt
 
 end Pivot
 end Lehmer

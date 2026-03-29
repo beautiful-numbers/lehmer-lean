@@ -52,7 +52,9 @@ The empty witness package.
 -/
 def emptyWitnessPack (C : Context) : WitnessPack C where
   W := ∅
-  hsub := by intro p hp; simpa using hp
+  hsub := by
+    intro p hp
+    simp at hp
 
 @[simp] theorem emptyWitnessPack_witnesses (C : Context) :
     (emptyWitnessPack C).W = ∅ := rfl
@@ -167,7 +169,7 @@ def emptyWitnessAccounting (C : Context) : WitnessAccounting C where
   pack := emptyWitnessPack C
   hclassified := by
     intro p hp
-    simpa using hp
+    simp at hp
 
 /--
 Every witness in a witness accounting datum belongs to the support.
@@ -193,7 +195,8 @@ def singletonGenericWitnessAccounting (C : Context) (p : ℕ)
   pack := singletonWitnessPack C p hp
   hclassified := by
     intro q hq
-    have hq' : q = p := by simpa [singletonWitnessPack] using hq
+    have hq' : q = p := by
+      simpa [singletonWitnessPack] using hq
     subst hq'
     exact ⟨hp, Or.inl hgen⟩
 
@@ -206,7 +209,8 @@ def singletonEntangledWitnessAccounting (C : Context) (p : ℕ)
   pack := singletonWitnessPack C p hp
   hclassified := by
     intro q hq
-    have hq' : q = p := by simpa [singletonWitnessPack] using hq
+    have hq' : q = p := by
+      simpa [singletonWitnessPack] using hq
     subst hq'
     exact ⟨hp, Or.inr hent⟩
 
@@ -245,16 +249,19 @@ The witness accounting of a trivial generic chain is empty.
 The witness accounting of a nontrivial generic chain contains the head prime.
 -/
 theorem head_mem_witnessAccountingOfGenericChain {C D : Context}
-    (s : GenericStepData C) (Γ : GenericChain s.C' D) :
-    s.p ∈ witnessSet C (witnessAccountingOfGenericChain (GenericChain.cons s Γ)) := by
-  simp [witnessAccountingOfGenericChain, witnessAccountingOfGenericStep,
-    witnessSet, singletonWitnessPack]
+    (s : GenericStepData C) (_Γ : GenericChain s.C' D) :
+    s.p ∈ witnessSet C (witnessAccountingOfGenericChain (GenericChain.cons s _Γ)) := by
+  have hp : Removable C.S s.p := by
+    rcases s.hstep with ⟨hp, _⟩
+    exact hp
+  change s.p ∈ (singletonGenericWitnessAccounting C s.p hp s.hgeneric).pack.W
+  exact singletonWitnessPack_mem C s.p hp
 
 /--
 The head prime of a generic chain is support-compatible.
 -/
 theorem head_witnessCompatible_of_genericChain {C D : Context}
-    (s : GenericStepData C) (Γ : GenericChain s.C' D) :
+    (s : GenericStepData C) (_Γ : GenericChain s.C' D) :
     WitnessCompatible C s.p := by
   rcases s.hstep with ⟨hp, _⟩
   exact hp
@@ -263,7 +270,7 @@ theorem head_witnessCompatible_of_genericChain {C D : Context}
 The head prime of a generic chain is generically classified.
 -/
 theorem head_genericWitness_of_genericChain {C D : Context}
-    (s : GenericStepData C) (Γ : GenericChain s.C' D) :
+    (s : GenericStepData C) (_Γ : GenericChain s.C' D) :
     GenericWitness C s.p := by
   exact s.hgeneric
 

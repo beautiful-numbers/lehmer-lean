@@ -41,14 +41,16 @@ Expanded paper-style form of the Case B descent budget.
 -/
 theorem KmaxB_eq_ceil_three_log_four (y : ℕ) :
     KmaxB y = Nat.ceil (3 * (Real.log (yB y))^4) := by
-  simpa [KmaxB] using kappaB_eq_ceil_three_log_four y
+  rw [KmaxB]
+  exact kappaB_eq_ceil_three_log_four y
 
 /--
 The descent budget is nonnegative.
 -/
 theorem KmaxB_nonneg (y : ℕ) :
     0 ≤ KmaxB y := by
-  simpa [KmaxB] using kappaB_nonneg y
+  rw [KmaxB]
+  exact kappaB_nonneg y
 
 /--
 The canonical length measure attached to a support at level `y`.

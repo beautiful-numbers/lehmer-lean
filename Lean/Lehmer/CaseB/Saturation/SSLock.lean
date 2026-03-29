@@ -49,7 +49,7 @@ A locked context is saturated.
 theorem epsBSaturated_of_SSLock (C : Context)
     (hlock : SSLock C) :
     EpsBSaturated C := by
-  exact hlock
+  simpa [SSLock] using hlock
 
 /--
 A saturated context is locked.
@@ -57,14 +57,14 @@ A saturated context is locked.
 theorem SSLock_of_epsBSaturated (C : Context)
     (hsat : EpsBSaturated C) :
     SSLock C := by
-  exact hsat
+  simpa [SSLock] using hsat
 
 /--
 The lock predicate is equivalent to saturation.
 -/
 theorem SSLock_iff_epsBSaturated (C : Context) :
     SSLock C ↔ EpsBSaturated C := by
-  rfl
+  simp [SSLock]
 
 /--
 A locked context is not in the descent regime.
@@ -72,7 +72,7 @@ A locked context is not in the descent regime.
 theorem not_ContextNonSaturated_of_SSLock (C : Context)
     (hlock : SSLock C) :
     ¬ ContextNonSaturated C := by
-  simpa [SSLock, EpsBSaturated, ContextSaturated, Saturated]
+  simpa [SSLock, EpsBSaturated, ContextSaturated, Saturated] using hlock
 
 /--
 A locked context cannot be descent-eligible.
@@ -90,7 +90,7 @@ def descentWindow_of_SSLock (C : Context)
     (hlock : SSLock C)
     (hbound : supportCard C.S ≤ KmaxB C.y) :
     DescentWindow C :=
-  descent_window_of_saturated C hlock hbound
+  descent_window_of_saturated C (epsBSaturated_of_SSLock C hlock) hbound
 
 /--
 A generic chain to a locked terminal context packages the generic-side lock
@@ -123,7 +123,7 @@ def genericChainToSSLock_of_saturated {C : Context}
   terminal := G.terminal
   chain := G.chain
   hbudget := G.hbudget
-  hlock := G.hsaturated
+  hlock := SSLock_of_epsBSaturated G.terminal G.hsaturated
 
 /--
 Witness accounting attached to a generic chain reaching a locked terminal
@@ -149,7 +149,7 @@ that terminal context is locked.
 theorem SSLock_terminal_of_descentWindow {C : Context}
     (W : DescentWindow C) :
     SSLock W.terminal := by
-  exact W.hterminal_saturated
+  exact SSLock_of_epsBSaturated W.terminal W.hterminal_saturated
 
 /--
 Any descent window induces a trivial lock package at its terminal context.
@@ -157,14 +157,14 @@ Any descent window induces a trivial lock package at its terminal context.
 def terminalLockWitness_of_descentWindow {C : Context}
     (W : DescentWindow C) :
     GenericChainToSSLock W.terminal :=
-  trivialGenericChainToSSLock W.terminal W.hterminal_saturated
+  trivialGenericChainToSSLock W.terminal (SSLock_of_epsBSaturated W.terminal W.hterminal_saturated)
 
 /--
 A locked context still satisfies the same Case B level as itself.
 This theorem is only a normalization lemma for later saturation files.
 -/
 theorem SSLock_preserves_level_trivially (C : Context)
-    (hlock : SSLock C) :
+    (_hlock : SSLock C) :
     C.y = C.y := by
   rfl
 

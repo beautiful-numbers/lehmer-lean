@@ -22,7 +22,6 @@ namespace Lehmer
 namespace Pipeline
 
 open Lehmer.Basic
-open Lehmer.CaseB
 
 /--
 Pipeline-level handledness predicate for the global taxonomy.
@@ -96,27 +95,25 @@ theorem pipeline_closes_caseA_of_falls
   exact caseA_bridge_terminal_of_falls hL hA
 
 /--
-Local pipeline closure of the global Case B branch, once the mathematical Case B
-contradiction data and the uniform no-crossing interface are available.
+Assumption-based local closure of the global Case B branch.
 -/
-theorem pipeline_closes_caseB
+theorem pipeline_closes_caseB_of_assumption
+    (hcloseB : ∀ {n : ℕ}, LehmerComposite n → InCaseB n → False)
     {n : ℕ} (hL : LehmerComposite n)
-    (hB : InCaseB n)
-    (D : CaseBPipelineData n)
-    (hno : NoCrossingBeyondYstar) :
+    (hB : InCaseB n) :
     False := by
-  exact caseB_bridge_terminal hL hB D hno
+  exact hcloseB hL hB
 
 /--
-Equivalent local Case B closure statement using the abstract branch relation.
+Equivalent assumption-based local Case B closure statement using the abstract
+branch relation.
 -/
-theorem pipeline_closes_caseB_of_falls
+theorem pipeline_closes_caseB_of_falls_assumption
+    (hcloseB : ∀ {n : ℕ}, LehmerComposite n → InCaseB n → False)
     {n : ℕ} (hL : LehmerComposite n)
-    (hB : FallsInGlobalBranch n GlobalBranch.caseB)
-    (D : CaseBPipelineData n)
-    (hno : NoCrossingBeyondYstar) :
+    (hB : FallsInGlobalBranch n GlobalBranch.caseB) :
     False := by
-  exact caseB_bridge_terminal_of_falls hL hB D hno
+  exact hcloseB hL hB
 
 /--
 Range-level exhaustivity statement for the current transition architecture.
@@ -158,16 +155,14 @@ stage.
 
 To rule out every Lehmer candidate, it is enough to know:
 - the legacy small-pivot range closes;
-- the Case B branch closes through its contradiction data and the uniform
-  no-crossing interface;
+- the Case B branch closes under an explicit assumption;
 - the still range-routed intermediate / Case C branches close.
 
 Case A itself is already closed locally by `pipeline_closes_caseA`.
 -/
 theorem pipeline_closes_all_cases_by_range_assumptions
     (hcloseSmallA : ∀ {n : ℕ}, LehmerComposite n → InSmallPivotRange n → False)
-    (hdataB : ∀ n : ℕ, LehmerComposite n → InCaseB n → CaseBPipelineData n)
-    (hnoB : NoCrossingBeyondYstar)
+    (hcloseB : ∀ {n : ℕ}, LehmerComposite n → InCaseB n → False)
     (hcloseI : ∀ {n : ℕ}, LehmerComposite n → InIntermediate n → False)
     (hcloseC : ∀ {n : ℕ}, LehmerComposite n → InCaseC n → False)
     {n : ℕ} (hL : LehmerComposite n) :
@@ -176,23 +171,22 @@ theorem pipeline_closes_all_cases_by_range_assumptions
   · exact hcloseSmallA hL hA
   · exact hcloseC hL hC
   · exact hcloseI hL hI
-  · exact pipeline_closes_caseB hL hB (hdataB n hL hB) hnoB
+  · exact hcloseB hL hB
 
 /--
 A convenience variant isolating the already-completed mathematical Case A
-closure and the now-mathematical Case B closure from the remaining range-based
-closure obligations.
+closure and the still-assumption-based Case B closure from the remaining
+range-based closure obligations.
 -/
-theorem pipeline_closes_completed_caseAB_and_remaining_ranges
+theorem pipeline_closes_completed_caseA_and_remaining_ranges
     (hcloseSmallA : ∀ {n : ℕ}, LehmerComposite n → InSmallPivotRange n → False)
-    (hdataB : ∀ n : ℕ, LehmerComposite n → InCaseB n → CaseBPipelineData n)
-    (hnoB : NoCrossingBeyondYstar)
+    (hcloseB : ∀ {n : ℕ}, LehmerComposite n → InCaseB n → False)
     (hcloseI : ∀ {n : ℕ}, LehmerComposite n → InIntermediate n → False)
     (hcloseC : ∀ {n : ℕ}, LehmerComposite n → InCaseC n → False)
     {n : ℕ} (hL : LehmerComposite n) :
     False := by
   exact pipeline_closes_all_cases_by_range_assumptions
-    hcloseSmallA hdataB hnoB hcloseI hcloseC hL
+    hcloseSmallA hcloseB hcloseI hcloseC hL
 
 end Pipeline
 end Lehmer

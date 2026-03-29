@@ -52,7 +52,7 @@ Length of a generic chain.
 -/
 def genericChainLength {C D : Context} : GenericChain C D → ℕ
   | .nil _ => 0
-  | .cons s Γ => genericChainLength Γ + 1
+  | .cons _ Γ => genericChainLength Γ + 1
 
 @[simp] theorem genericChainLength_nil (C : Context) :
     genericChainLength (GenericChain.nil C) = 0 := rfl
@@ -86,22 +86,23 @@ theorem GenericChain_preserves_level
   induction Γ with
   | nil C =>
       rfl
-  | cons s Γ ih =>
-      have hs : s.C'.y = C.y := ContextControlledRemoval_preserves_level s.hstep
+  | @cons C D s Γ ih =>
+      have hs : s.C'.y = C.y := by
+        exact ContextControlledRemoval_preserves_level s.hstep
       exact Eq.trans ih hs
 
 /--
 Every generic chain starts from its declared initial context.
 -/
-theorem GenericChain_refl_target (C : Context) :
-    GenericChain C C := by
-  exact GenericChain.nil C
+def GenericChain_refl_target (C : Context) :
+    GenericChain C C :=
+  GenericChain.nil C
 
 /--
 The head step of a nonempty generic chain strictly decreases the potential.
 -/
 theorem GenericChain_head_potential_decrease
-    {C D : Context} (s : GenericStepData C) (Γ : GenericChain s.C' D) :
+    {C D : Context} (s : GenericStepData C) (_Γ : GenericChain s.C' D) :
     potential s.C' < potential C := by
   exact s.hP2dec
 
@@ -110,7 +111,7 @@ The head step of a nonempty generic chain strictly decreases the discrete
 descent-length proxy.
 -/
 theorem GenericChain_head_length_decrease
-    {C D : Context} (s : GenericStepData C) (Γ : GenericChain s.C' D) :
+    {C D : Context} (s : GenericStepData C) (_Γ : GenericChain s.C' D) :
     contextDescentLength s.C' < contextDescentLength C := by
   exact s.hLenDec
 
@@ -129,7 +130,7 @@ The empty generic chain is always within budget.
 -/
 theorem genericChainWithinBudget_nil (C : Context) :
     GenericChainWithinBudget (GenericChain.nil C) := by
-  simp [GenericChainWithinBudget, KmaxB_nonneg]
+  simp [GenericChainWithinBudget]
 
 /--
 Package of a terminal generic chain ending at a saturated context.
@@ -160,9 +161,9 @@ A generic one-step descent exists from a descent-eligible context provided
 there is a removable prime satisfying the generic-side gain criterion.
 -/
 theorem exists_generic_step_of_descentEligible
-    (C : Context) (hC : ContextDescentEligible C)
+    (C : Context) (_hC : ContextDescentEligible C)
     (hgen : ∃ p : ℕ, Removable C.S p ∧ ContextGenericGain C p) :
-    ∃ s : GenericStepData C, True := by
+    ∃ _s : GenericStepData C, True := by
   rcases hgen with ⟨p, hp, hgp⟩
   refine ⟨{ p := p
           , C' := nextContext C p

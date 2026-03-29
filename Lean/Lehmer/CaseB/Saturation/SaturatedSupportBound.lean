@@ -47,7 +47,7 @@ noncomputable def saturatedSupportBound (y : ℕ) (w : ℕ) : ℕ :=
 /--
 Context-level witness budget extracted from a witness accounting datum.
 -/
-def witnessBudget {C : Context} (A : WitnessAccounting C) : ℕ :=
+noncomputable def witnessBudget {C : Context} (A : WitnessAccounting C) : ℕ :=
   supportCard (entangledWitnessSet A)
 
 @[simp] theorem witnessBudget_def {C : Context} (A : WitnessAccounting C) :
@@ -98,7 +98,7 @@ Monotonicity in the witness budget argument.
 theorem saturatedSupportBound_mono_right {y w₁ w₂ : ℕ}
     (hw : w₁ ≤ w₂) :
     saturatedSupportBound y w₁ ≤ saturatedSupportBound y w₂ := by
-  simp [saturatedSupportBound]
+  dsimp [saturatedSupportBound]
   omega
 
 /--
@@ -106,7 +106,7 @@ The saturated-support bound dominates the descent budget.
 -/
 theorem KmaxB_le_saturatedSupportBound (y w : ℕ) :
     KmaxB y ≤ saturatedSupportBound y w := by
-  simp [saturatedSupportBound]
+  dsimp [saturatedSupportBound]
   exact Nat.le_add_left _ _
 
 /--
@@ -114,7 +114,7 @@ The saturated-support bound dominates the witness budget.
 -/
 theorem witnessBudget_le_saturatedSupportBound (y w : ℕ) :
     w ≤ saturatedSupportBound y w := by
-  simp [saturatedSupportBound]
+  dsimp [saturatedSupportBound]
   exact Nat.le_add_right _ _
 
 /--
@@ -136,20 +136,23 @@ theorem saturatedSupportBound_of_lock_and_accounting
     (_hlock : SSLock C)
     (hbound : supportCard C.S ≤ saturatedSupportBoundOfAccounting A) :
     HasSaturatedSupportBound C A := by
-  exact hbound
+  exact hasSaturatedSupportBound_of_assumption C A hbound
 
 /--
 A generic chain to lock induces an accounting-based saturated-support bound on
-its terminal context whenever that terminal support is bounded by the induced
+its initial context whenever that initial support is bounded by the induced
 majorant.
+
+Note: `witnessAccountingOfGenericChainToSSLock G` is accounting on the initial
+context of the chain, not on the terminal context.
 -/
 theorem saturatedSupportBound_of_genericChainToSSLock
     {C : Context} (G : GenericChainToSSLock C)
     (hbound :
-      supportCard G.terminal.S ≤
+      supportCard C.S ≤
         saturatedSupportBoundOfAccounting
           (witnessAccountingOfGenericChainToSSLock G)) :
-    HasSaturatedSupportBound G.terminal
+    HasSaturatedSupportBound C
       (witnessAccountingOfGenericChainToSSLock G) := by
   exact hbound
 
@@ -164,9 +167,8 @@ theorem saturatedSupportBoundOf_genericChainToSSLock_eq
         supportCard
           (entangledWitnessSet (witnessAccountingOfGenericChainToSSLock G)) +
         KmaxB C.y := by
-  have hlevel : G.terminal.y = C.y := GenericChain_preserves_level G.chain
-  rw [saturatedSupportBoundOfAccounting_eq]
-  simpa [hlevel]
+  exact saturatedSupportBoundOfAccounting_eq
+    (witnessAccountingOfGenericChainToSSLock G)
 
 /--
 The induced accounting majorant for a generic chain to lock is at least the
@@ -177,8 +179,12 @@ theorem entangledWitnessBudget_le_saturatedSupportBoundOf_genericChainToSSLock
     supportCard (entangledWitnessSet (witnessAccountingOfGenericChainToSSLock G)) ≤
       saturatedSupportBoundOfAccounting
         (witnessAccountingOfGenericChainToSSLock G) := by
-  rw [saturatedSupportBoundOf_genericChainToSSLock_eq]
-  exact Nat.le_add_right _ _
+  have h :
+      supportCard (entangledWitnessSet (witnessAccountingOfGenericChainToSSLock G)) ≤
+        supportCard (entangledWitnessSet (witnessAccountingOfGenericChainToSSLock G)) +
+          KmaxB C.y := by
+    exact Nat.le_add_right _ _
+  exact (saturatedSupportBoundOf_genericChainToSSLock_eq G).symm ▸ h
 
 /--
 The induced accounting majorant for a generic chain to lock is at least the
@@ -189,8 +195,12 @@ theorem KmaxB_le_saturatedSupportBoundOf_genericChainToSSLock
     KmaxB C.y ≤
       saturatedSupportBoundOfAccounting
         (witnessAccountingOfGenericChainToSSLock G) := by
-  rw [saturatedSupportBoundOf_genericChainToSSLock_eq]
-  exact Nat.le_add_left _ _
+  have h :
+      KmaxB C.y ≤
+        supportCard (entangledWitnessSet (witnessAccountingOfGenericChainToSSLock G)) +
+          KmaxB C.y := by
+    exact Nat.le_add_left _ _
+  exact (saturatedSupportBoundOf_genericChainToSSLock_eq G).symm ▸ h
 
 end CaseB
 end Lehmer

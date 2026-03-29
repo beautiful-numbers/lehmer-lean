@@ -18,8 +18,8 @@ open Lehmer.Basic
 /--
 Pipeline-level handledness predicate for the global intermediate branch.
 
-At the current stage, this bridge records that the candidate has entered the
-global intermediate branch. A stronger terminal closure theorem can later
+At the current stage, this bridge only records that the candidate has entered
+the global intermediate branch. A stronger terminal closure theorem can later
 consume this handledness predicate.
 -/
 def IntermediateHandled (n : ℕ) : Prop :=
@@ -69,7 +69,7 @@ theorem intermediate_handled_iff_in_intermediate
 /--
 Terminal interface for the intermediate branch.
 
-This theorem is the correct shape for the next strengthening step:
+This is the correct shape for the next strengthening step:
 once a terminal closure proof for `IntermediateHandled n` is available, it can
 be consumed here to close the global intermediate branch.
 -/

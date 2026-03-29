@@ -34,11 +34,11 @@ open Lehmer.Basic
 /--
 Paper-style scarcity bound `W(y)` for terminal `ε_B`-saturated supports.
 
-At the present stage, this is represented by the witness-budget-side quantity
-coming from the saturation/accounting layer. The later dominance layer will
-replace this with a closed-form majorant.
+At the present stage, this is represented abstractly by a witness-budget-side
+parameter. The later dominance layer will replace this with a closed-form
+majorant.
 -/
-noncomputable def Wbound (y : ℕ) (w : ℕ) : ℕ :=
+def Wbound (_y : ℕ) (w : ℕ) : ℕ :=
   w
 
 @[simp] theorem Wbound_def (y w : ℕ) :
@@ -47,9 +47,6 @@ noncomputable def Wbound (y : ℕ) (w : ℕ) : ℕ :=
 /--
 Paper-style global Case B support bound:
 `M(y) = W(y) + Kmax,B(y)`.
-
-At the current stage, `W(y)` is represented abstractly by the witness-budget
-parameter.
 -/
 noncomputable def Mbound (y : ℕ) (w : ℕ) : ℕ :=
   Wbound y w + KmaxB y
@@ -67,7 +64,7 @@ theorem Mbound_eq (y w : ℕ) :
 /--
 Witness-budget-specialized `W(y)` attached to a witness accounting datum.
 -/
-def WboundOfAccounting {C : Context} (A : WitnessAccounting C) : ℕ :=
+noncomputable def WboundOfAccounting {C : Context} (A : WitnessAccounting C) : ℕ :=
   Wbound C.y (witnessBudget A)
 
 @[simp] theorem WboundOfAccounting_def {C : Context} (A : WitnessAccounting C) :
@@ -88,20 +85,22 @@ Expanded accounting form:
 -/
 theorem MboundOfAccounting_eq {C : Context} (A : WitnessAccounting C) :
     MboundOfAccounting A = witnessBudget A + KmaxB C.y := by
-  simp [MboundOfAccounting, Mbound_eq]
+  simp [MboundOfAccounting, Mbound, Wbound]
 
 /--
-The terminal saturated support is bounded by `W(y)` once one has an explicit
-scarcity estimate on the witness budget.
+The terminal witness-side scarcity estimate.
+
+At the current stage this says exactly that the entangled-witness budget is
+bounded by the abstract witness-side majorant `W(y)`.
 -/
 def HasScarcityBound (C : Context) (A : WitnessAccounting C) : Prop :=
-  supportCard C.S ≤ WboundOfAccounting A
+  witnessBudget A ≤ WboundOfAccounting A
 
 @[simp] theorem HasScarcityBound_def (C : Context) (A : WitnessAccounting C) :
-    HasScarcityBound C A = (supportCard C.S ≤ WboundOfAccounting A) := rfl
+    HasScarcityBound C A = (witnessBudget A ≤ WboundOfAccounting A) := rfl
 
 /--
-The paper-style Case B supply bound on a terminal saturated support.
+The paper-style Case B supply bound on a support.
 -/
 def HasSupplyBound (C : Context) (A : WitnessAccounting C) : Prop :=
   supportCard C.S ≤ MboundOfAccounting A
@@ -114,7 +113,7 @@ def HasSupplyBound (C : Context) (A : WitnessAccounting C) : Prop :=
 -/
 theorem Wbound_le_Mbound (y w : ℕ) :
     Wbound y w ≤ Mbound y w := by
-  simp [Mbound, Wbound]
+  rw [Mbound_eq, Wbound_def]
   exact Nat.le_add_right _ _
 
 /--
@@ -122,83 +121,93 @@ theorem Wbound_le_Mbound (y w : ℕ) :
 -/
 theorem KmaxB_le_Mbound (y w : ℕ) :
     KmaxB y ≤ Mbound y w := by
-  simp [Mbound, Wbound]
+  rw [Mbound_eq]
   exact Nat.le_add_left _ _
 
 /--
-A scarcity bound immediately yields the paper-style supply bound.
+The current abstract witness budget satisfies the abstract scarcity estimate.
+-/
+theorem hasScarcityBound_of_accounting
+    (C : Context) (A : WitnessAccounting C) :
+    HasScarcityBound C A := by
+  simp [HasScarcityBound_def, WboundOfAccounting_def, Wbound_def]
+
+/--
+Core transport lemma:
+the accounting-based saturated-support bound immediately implies the
+accounting-based `M` bound, because both expand to the same numerical majorant.
+-/
+theorem supportCard_le_Mbound_of_accounting
+    (C : Context) (A : WitnessAccounting C)
+    (hbound : supportCard C.S ≤ saturatedSupportBoundOfAccounting A) :
+    supportCard C.S ≤ MboundOfAccounting A := by
+  simpa [saturatedSupportBoundOfAccounting_eq, MboundOfAccounting_eq, witnessBudget_def] using hbound
+
+/--
+A scarcity bound immediately yields the paper-style supply bound once one also
+has the descent-budget contribution available through the accounting-based
+majorant.
 -/
 theorem hasSupplyBound_of_hasScarcityBound
     (C : Context) (A : WitnessAccounting C)
-    (hscarce : HasScarcityBound C A) :
+    (_hscarce : HasScarcityBound C A)
+    (hbound : supportCard C.S ≤ saturatedSupportBoundOfAccounting A) :
     HasSupplyBound C A := by
-  have hmono : WboundOfAccounting A ≤ MboundOfAccounting A := by
-    simp [WboundOfAccounting, MboundOfAccounting]
-    exact Wbound_le_Mbound C.y (witnessBudget A)
-  exact le_trans hscarce hmono
+  exact supportCard_le_Mbound_of_accounting C A hbound
 
 /--
-Support-bounded witness accounting gives the canonical abstract scarcity
-estimate on the witness side.
+Support-bounded witness accounting gives the canonical witness-side scarcity
+estimate.
 -/
 theorem witnessBudget_is_scarce {C : Context} (A : WitnessAccounting C) :
-    witnessBudget A ≤ supportCard C.S := by
-  exact witnessBudget_le_supportCard A
+    HasScarcityBound C A := by
+  exact hasScarcityBound_of_accounting C A
 
 /--
-If a terminal saturated context satisfies the explicit saturated-support bound,
-then it satisfies the paper-style supply bound.
+If a support satisfies the explicit saturated-support bound, then it satisfies
+the paper-style supply bound.
 -/
 theorem hasSupplyBound_of_saturatedSupportBound
     (C : Context) (A : WitnessAccounting C)
-    (_hlock : SSLock C)
     (hbound : HasSaturatedSupportBound C A) :
     HasSupplyBound C A := by
-  rw [HasSaturatedSupportBound_def] at hbound
-  rw [HasSupplyBound_def]
-  simpa [saturatedSupportBoundOfAccounting_eq, MboundOfAccounting_eq, witnessBudget_def]
+  exact supportCard_le_Mbound_of_accounting C A hbound
 
 /--
-Package form of the paper inequality
-`|S| ≤ W(y) + Kmax,B(y) = M(y)`.
--/
-theorem supportCard_le_Mbound_of_lock_and_accounting
-    (C : Context) (A : WitnessAccounting C)
-    (_hlock : SSLock C)
-    (hbound : supportCard C.S ≤ saturatedSupportBoundOfAccounting A) :
-    supportCard C.S ≤ MboundOfAccounting A := by
-  have hs : HasSaturatedSupportBound C A := hbound
-  exact hasSupplyBound_of_saturatedSupportBound C A ‹SSLock C› hs
+A generic chain to lock induces the paper-style supply bound on its initial
+context whenever the corresponding saturated-support bound has been established
+for the induced accounting datum.
 
-/--
-A generic chain to lock induces the paper-style supply bound on its terminal
-context whenever the terminal saturated-support bound has been established.
+Note: `witnessAccountingOfGenericChainToSSLock G` is an accounting datum on the
+initial context of the chain, not on the terminal context.
 -/
 theorem supplyBound_of_genericChainToSSLock
     {C : Context} (G : GenericChainToSSLock C)
     (hbound :
-      supportCard G.terminal.S ≤
+      supportCard C.S ≤
         saturatedSupportBoundOfAccounting
           (witnessAccountingOfGenericChainToSSLock G)) :
-    HasSupplyBound G.terminal (witnessAccountingOfGenericChainToSSLock G) := by
-  exact hasSupplyBound_of_saturatedSupportBound
-    G.terminal
+    HasSupplyBound C (witnessAccountingOfGenericChainToSSLock G) := by
+  exact supportCard_le_Mbound_of_accounting
+    C
     (witnessAccountingOfGenericChainToSSLock G)
-    G.hlock
     hbound
 
 /--
-Expanded terminal supply inequality for a generic chain to lock.
+Expanded supply inequality for the initial context of a generic chain to lock.
 -/
-theorem supportCard_terminal_le_Mbound_of_genericChainToSSLock
+theorem supportCard_le_Mbound_of_genericChainToSSLock
     {C : Context} (G : GenericChainToSSLock C)
     (hbound :
-      supportCard G.terminal.S ≤
+      supportCard C.S ≤
         saturatedSupportBoundOfAccounting
           (witnessAccountingOfGenericChainToSSLock G)) :
-    supportCard G.terminal.S ≤
+    supportCard C.S ≤
       MboundOfAccounting (witnessAccountingOfGenericChainToSSLock G) := by
-  exact supplyBound_of_genericChainToSSLock G hbound
+  exact supportCard_le_Mbound_of_accounting
+    C
+    (witnessAccountingOfGenericChainToSSLock G)
+    hbound
 
 /--
 The accounting-specialized `M(y)` induced by a generic chain to lock expands as
@@ -208,33 +217,31 @@ theorem MboundOf_genericChainToSSLock_eq
     {C : Context} (G : GenericChainToSSLock C) :
     MboundOfAccounting (witnessAccountingOfGenericChainToSSLock G) =
       witnessBudget (witnessAccountingOfGenericChainToSSLock G) + KmaxB C.y := by
-  have hlevel : G.terminal.y = C.y := GenericChain_preserves_level G.chain
-  rw [MboundOfAccounting_eq]
-  simpa [witnessBudget, hlevel]
+  exact MboundOfAccounting_eq (witnessAccountingOfGenericChainToSSLock G)
 
 /--
 Current paper-facing supply package for the Case B saturation layer.
 
 Interpretation:
 after descending to a locked (`ε_B`-saturated) terminal support, one controls
-its size by a witness-side scarcity term `W(y)` plus the uniform descent budget
-`KmaxB(y)`, hence by `M(y)`.
+the initial support by a witness-side scarcity term `W(y)` plus the uniform
+descent budget `KmaxB(y)`, hence by `M(y)`.
 -/
 structure SupplyPackage (C : Context) where
   terminal : Context
   hlevel : terminal.y = C.y
   hlock : SSLock terminal
-  accounting : WitnessAccounting terminal
-  hsupply : HasSupplyBound terminal accounting
+  accounting : WitnessAccounting C
+  hsupply : HasSupplyBound C accounting
 
 /--
-A generic chain to lock produces a supply package once the terminal
-saturated-support bound is available.
+A generic chain to lock produces a supply package once the corresponding
+saturated-support bound is available for the induced accounting datum.
 -/
 def supplyPackage_of_genericChainToSSLock
     {C : Context} (G : GenericChainToSSLock C)
     (hbound :
-      supportCard G.terminal.S ≤
+      supportCard C.S ≤
         saturatedSupportBoundOfAccounting
           (witnessAccountingOfGenericChainToSSLock G)) :
     SupplyPackage C where

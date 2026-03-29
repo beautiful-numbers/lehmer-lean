@@ -25,7 +25,7 @@ under a removable controlled removal and the paper-style gain criterion,
 the second potential `P2` strictly decreases.
 -/
 theorem P2_strict_decrease_of_removable
-    (S : Finset ℕ) (p y : ℕ) (hp : Removable S p)
+    (S : Finset ℕ) (p y : ℕ) (_hp : Removable S p)
     (hgain : GainCriterion S p y) :
     P2 (remove S p) y < P2 S y := by
   exact hasGain_of_gainCriterion S p y hgain
@@ -52,7 +52,7 @@ theorem P2_strict_decrease_of_entangledGain
 Context-level form of strict decrease for the Case B potential.
 -/
 theorem potential_strict_decrease_of_removable
-    (C : Context) (p : ℕ) (hp : Removable C.S p)
+    (C : Context) (p : ℕ) (_hp : Removable C.S p)
     (hgain : ContextGainCriterion C p) :
     potential (nextContext C p) < potential C := by
   exact contextHasGain_of_gainCriterion C p hgain

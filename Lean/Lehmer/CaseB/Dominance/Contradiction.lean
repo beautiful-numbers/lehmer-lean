@@ -7,7 +7,7 @@ IMPORT CLASSIFICATION
 - Lehmer.CaseB.Saturation.WitnessAccounting : def thm
 - Lehmer.CaseB.Saturation.SupplyBound : def thm
 - Lehmer.CaseB.Dominance.MajorantMc : def thm
-- Lehmer.CaseB.Dominance.ClosedMajorantBound : thm
+- Lehmer.CaseB.Dominance.ClosedMajorantBound : def thm
 - Lehmer.CaseB.Dominance.NoCrossing : def thm
 - Lehmer.Pivot.Mreq : def thm
 -/
@@ -53,7 +53,7 @@ def LargePivotRegime (C : Context) : Prop :=
     LargePivotRegime C = (Ystar ≤ C.y ∧ Nat.Prime C.y) := rfl
 
 /--
-Terminal Case B contradiction from the three ingredients:
+Terminal Case B contradiction from the four numerical ingredients:
 
 - pivot demand: `mreq(y) ≤ ω`,
 - supply bound: `ω ≤ M(y)`,
@@ -71,10 +71,11 @@ theorem contradiction_of_supply_closedMajorant_noCrossing
     (hcross : NoCrossingAt C.y) :
     False := by
   have hM : supportCard C.S ≤ MboundOfAccounting A := hsupply
-  have hMc : MboundOfAccounting A ≤ McNat C.y :=
-    MboundOfAccounting_le_McNat_of_closedWitnessBound A hclosed
+  have hMc : MboundOfAccounting A ≤ McNat C.y := by
+    exact MboundOfAccounting_le_McNat_of_closedWitnessBound A hclosed
   have hcross' : McNat C.y < mreq C.y := hcross
-  have hchain : supportCard C.S < mreq C.y := lt_of_le_of_lt (le_trans hM hMc) hcross'
+  have hchain : supportCard C.S < mreq C.y := by
+    exact lt_of_le_of_lt (le_trans hM hMc) hcross'
   exact (not_lt_of_ge hdemand) hchain
 
 /--
@@ -91,7 +92,29 @@ theorem contradiction_of_supply_closedMajorant_largePivot
     False := by
   have hcross : NoCrossingAt C.y := by
     exact hno C.y hlarge.1 hlarge.2
-  exact contradiction_of_supply_closedMajorant_noCrossing C A hdemand hsupply hclosed hcross
+  exact contradiction_of_supply_closedMajorant_noCrossing
+    C A hdemand hsupply hclosed hcross
+
+/--
+Paper-facing large-pivot contradiction.
+
+Interpretation:
+in the large-pivot regime `Y* ≤ y`, the four Case B ingredients
+(pivot demand, supply bound, closed majorant, no-crossing) are incompatible.
+
+This is the theorem that should be consumed by the pipeline bridge before
+specializing to natural candidates.
+-/
+theorem caseB_contradiction_of_largePivot
+    {C : Context}
+    (hdemand : MeetsPivotDemand C)
+    (hsupply : ∃ A : WitnessAccounting C, HasSupplyBound C A ∧ ClosedWitnessBound A)
+    (hlarge : LargePivotRegime C)
+    (hno : NoCrossingBeyondYstar) :
+    False := by
+  rcases hsupply with ⟨A, hA_supply, hA_closed⟩
+  exact contradiction_of_supply_closedMajorant_largePivot
+    C A hdemand hA_supply hA_closed hlarge hno
 
 /--
 Support-cardinality form of the terminal contradiction.
@@ -103,8 +126,11 @@ theorem supportCard_contradiction_of_supply_closedMajorant_noCrossing
     (hclosed : ClosedWitnessBound A)
     (hcross : McNat C.y < mreq C.y) :
     False := by
-  exact contradiction_of_supply_closedMajorant_noCrossing
-    C A hdemand hsupply hclosed hcross
+  have hMc : MboundOfAccounting A ≤ McNat C.y := by
+    exact MboundOfAccounting_le_McNat_of_closedWitnessBound A hclosed
+  have hchain : supportCard C.S < mreq C.y := by
+    exact lt_of_le_of_lt (le_trans hsupply hMc) hcross
+  exact (not_lt_of_ge hdemand) hchain
 
 /--
 Natural packaged form of the terminal Case B contradiction.
@@ -126,6 +152,21 @@ theorem contradiction_of_data
     False := by
   exact contradiction_of_supply_closedMajorant_largePivot
     C D.accounting D.hdemand D.hsupply D.hclosed D.hlarge hno
+
+/--
+Existential packaged form of the Case B contradiction.
+
+This is a convenient bridge theorem when the caller can only provide an
+existential supply/accounting package rather than a fully bundled structure.
+-/
+theorem contradiction_of_exists_data
+    (C : Context)
+    (hdemand : MeetsPivotDemand C)
+    (hsupply : ∃ A : WitnessAccounting C, HasSupplyBound C A ∧ ClosedWitnessBound A)
+    (hlarge : LargePivotRegime C)
+    (hno : NoCrossingBeyondYstar) :
+    False := by
+  exact caseB_contradiction_of_largePivot hdemand hsupply hlarge hno
 
 end CaseB
 end Lehmer

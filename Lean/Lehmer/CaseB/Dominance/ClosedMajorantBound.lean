@@ -27,7 +27,7 @@ open Lehmer.Basic
 Closed witness-side majorant assumption.
 
 This is the Lean-facing closed numerical inequality used to dominate the Case B
-supply bound by the closed majorant `Mc`.  It packages exactly the quantity that
+supply bound by the closed majorant `Mc`. It packages exactly the quantity that
 appears after expanding `M(y) = W(y) + Kmax,B(y)` in the current code base.
 -/
 def ClosedWitnessBound {C : Context} (A : WitnessAccounting C) : Prop :=
@@ -56,7 +56,8 @@ theorem closedMajorantOfAccounting_bound_of_closedWitnessBound
     {C : Context} (A : WitnessAccounting C)
     (hclosed : ClosedWitnessBound A) :
     ((MboundOfAccounting A : ℕ) : ℝ) ≤ Mc C.y := by
-  exact hasClosedMajorantOfAccounting_of_closedWitnessBound A hclosed
+  exact closedMajorantOfAccounting_bound A
+    (hasClosedMajorantOfAccounting_of_closedWitnessBound A hclosed)
 
 /--
 Natural-number domination form of the closed witness-side majorant.
@@ -69,9 +70,9 @@ theorem MboundOfAccounting_le_McNat_of_closedWitnessBound
     (hasClosedMajorantOfAccounting_of_closedWitnessBound A hclosed)
 
 /--
-If a terminal Case B support satisfies the paper-style supply bound and the
+If a Case B support satisfies the paper-style supply bound and the
 corresponding witness accounting satisfies the closed witness-side majorant,
-then the terminal support is bounded by the closed majorant `McNat`.
+then the support is bounded by the closed majorant `McNat`.
 -/
 theorem supportCard_le_McNat_of_supplyBound
     {C : Context} (A : WitnessAccounting C)
@@ -85,26 +86,23 @@ theorem supportCard_le_McNat_of_supplyBound
 Package form for a `SupplyPackage`.
 
 This is the exact bridge from the saturation/supply layer to the dominance
-layer: once the accounting side is closed numerically, the terminal support is
+layer: once the accounting side is closed numerically, the initial support is
 bounded by the closed majorant.
 -/
-theorem terminal_support_le_McNat_of_supplyPackage
+theorem support_le_McNat_of_supplyPackage
     {C : Context} (P : SupplyPackage C)
     (hclosed : ClosedWitnessBound P.accounting) :
-    supportCard P.terminal.S ≤ McNat C.y := by
-  have hlevel : P.terminal.y = C.y := P.hlevel
-  have hs : supportCard P.terminal.S ≤ McNat P.terminal.y := by
-    exact supportCard_le_McNat_of_supplyBound P.accounting P.hsupply hclosed
-  simpa [hlevel] using hs
+    supportCard C.S ≤ McNat C.y := by
+  exact supportCard_le_McNat_of_supplyBound P.accounting P.hsupply hclosed
 
 /--
-Real-valued form of the terminal closed-majorant bound for a `SupplyPackage`.
+Real-valued form of the closed-majorant bound for a `SupplyPackage`.
 -/
-theorem terminal_support_cast_le_Mc_of_supplyPackage
+theorem support_cast_le_McNat_of_supplyPackage
     {C : Context} (P : SupplyPackage C)
     (hclosed : ClosedWitnessBound P.accounting) :
-    (supportCard P.terminal.S : ℝ) ≤ McNat C.y := by
-  exact_mod_cast terminal_support_le_McNat_of_supplyPackage P hclosed
+    (supportCard C.S : ℝ) ≤ McNat C.y := by
+  exact_mod_cast support_le_McNat_of_supplyPackage P hclosed
 
 end CaseB
 end Lehmer

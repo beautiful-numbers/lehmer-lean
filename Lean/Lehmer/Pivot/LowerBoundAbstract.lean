@@ -4,7 +4,7 @@ IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
 - Lehmer.Basic.Defs : def
 - Lehmer.Basic.LehmerBasic : thm
-- Lehmer.Basic.Totient : thm
+- Lehmer.Basic.Totient : def thm
 - Lehmer.Pivot.Defs : def thm
 - Lehmer.Pivot.SupportInterface : def thm
 - Lehmer.Pivot.UBm : def thm

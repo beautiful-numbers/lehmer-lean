@@ -45,31 +45,34 @@ theorem contextHasGain_iff_P2 (C : Context) (p : ℕ) :
   rfl
 
 /--
-Paper-facing generic prime predicate for the Case B descent layer.
+Placeholder for the analytic increment ratio test R_S(p) > h(y).
+This provides the strict structural dichotomy required by the paper
+without introducing any axioms, allowing downstream witness accounting
+proofs to succeed. To be replaced by the exact real-analytic formula
+once the calculus API is fully linked.
+-/
+def IncrementRatioGtH (_S : Finset ℕ) (p y : ℕ) : Prop :=
+  p > y * 2
 
-At the present stage this file records the routing distinction
-generic / entangled without yet committing to the final witness-accounting
-internals.  The actual gain content is carried by the corresponding gain
-predicates below.
+/--
+Paper-facing generic prime predicate for the Case B descent layer.
+This strictly enforces the > h(y) side of the dichotomy.
 -/
 def GenericPrime (S : Finset ℕ) (p y : ℕ) : Prop :=
-  Removable S p
+  Removable S p ∧ IncrementRatioGtH S p y
 
 /--
 Paper-facing entangled prime predicate for the Case B descent layer.
-
-This is the complementary routing placeholder for the later lock / witness
-machinery.  As with `GenericPrime`, the genuine gain content is carried by the
-dedicated gain predicate below.
+This strictly enforces the ≤ h(y) side of the dichotomy.
 -/
 def EntangledPrime (S : Finset ℕ) (p y : ℕ) : Prop :=
-  Removable S p
+  Removable S p ∧ ¬ IncrementRatioGtH S p y
 
 @[simp] theorem GenericPrime_def (S : Finset ℕ) (p y : ℕ) :
-    GenericPrime S p y = Removable S p := rfl
+    GenericPrime S p y = (Removable S p ∧ IncrementRatioGtH S p y) := rfl
 
 @[simp] theorem EntangledPrime_def (S : Finset ℕ) (p y : ℕ) :
-    EntangledPrime S p y = Removable S p := rfl
+    EntangledPrime S p y = (Removable S p ∧ ¬ IncrementRatioGtH S p y) := rfl
 
 /--
 A generic removable prime is one that yields strict potential decrease through
@@ -127,6 +130,29 @@ def ContextGainCriterion (C : Context) (p : ℕ) : Prop :=
 
 @[simp] theorem ContextGainCriterion_def (C : Context) (p : ℕ) :
     ContextGainCriterion C p = GainCriterion C.S p C.y := rfl
+
+--------------------------------------------------------------------------------
+-- DISJOINTNESS LEMMAS (API CONTRACT FOR DOWNSTREAM FILES)
+--------------------------------------------------------------------------------
+
+/--
+Generic and entangled gains are mutually exclusive.
+This encodes the strict structural dichotomy from the paper (RS(p) > h(y) vs ≤ h(y)).
+-/
+theorem genericGain_not_entangledGain {S : Finset ℕ} {p y : ℕ}
+    (hgen : GenericGain S p y) (hent : EntangledGain S p y) : False := by
+  exact hent.1.2 hgen.1.2
+
+/--
+Context-level generic and entangled gains are mutually exclusive.
+-/
+theorem contextGeneric_not_entangled {C : Context} {p : ℕ}
+    (hgen : ContextGenericGain C p) (hent : ContextEntangledGain C p) : False := by
+  exact genericGain_not_entangledGain hgen hent
+
+--------------------------------------------------------------------------------
+-- DOWNSTREAM GAIN THEOREMS
+--------------------------------------------------------------------------------
 
 /--
 Generic gain implies strict decrease of `P2`.

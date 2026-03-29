@@ -9,6 +9,7 @@ IMPORT CLASSIFICATION
 - Lehmer.Pipeline.CaseCBridge : def thm
 - Lehmer.Pipeline.Main : def thm
 - Lehmer.Audit.CaseAClosure : thm
+- Lehmer.Audit.CaseBClosure : thm
 -/
 
 import Lehmer.Prelude
@@ -19,6 +20,7 @@ import Lehmer.Pipeline.IntermediateBridge
 import Lehmer.Pipeline.CaseCBridge
 import Lehmer.Pipeline.Main
 import Lehmer.Audit.CaseAClosure
+import Lehmer.Audit.CaseBClosure
 
 namespace Lehmer
 namespace Audit
@@ -31,7 +33,7 @@ Audit-facing taxonomy of the currently exhaustive range-based branches.
 
 At the present transition stage of the pipeline:
 - mathematical Case A is already closed locally and audited separately;
-- Case B is now routed through its mathematical bridge at pipeline level;
+- mathematical Case B is now also closed locally and audited separately;
 - the exhaustive classification theorem still concerns the stable range split
   made of the legacy small-pivot range together with Case C / intermediate /
   Case B.
@@ -83,8 +85,10 @@ predicate holds.
 At the current stage:
 - the legacy small-pivot range is still tracked at the taxonomic level;
 - the mathematical Case A contradiction is audited separately in
-  `Lehmer.Audit.CaseAClosure`.
-- Case B is handled through its pipeline bridge.
+  `Lehmer.Audit.CaseAClosure`;
+- the mathematical Case B contradiction is audited separately in
+  `Lehmer.Audit.CaseBClosure`;
+- Case B still has an explicit pipeline bridge and slot in the stable taxonomy.
 -/
 def RangeBranchHandled (n : ℕ) : RangeBranch → Prop
   | .smallPivotRange => InSmallPivotRange n
@@ -276,10 +280,11 @@ Interpretation:
 - every classified range branch is handled by the current pipeline;
 - every named active range branch is present;
 - mathematical Case A is already closed locally, via `Lehmer.Audit.CaseAClosure`;
+- mathematical Case B is already closed locally, via `Lehmer.Audit.CaseBClosure`;
 - every named global branch still has an explicit active slot.
 
 This is the precise audit reading of the current transition state of the
-pipeline after the mathematical closure of Case A.
+pipeline after the mathematical closure of Cases A and B.
 -/
 theorem candidate_coverage_audit_complete :
     RangeTaxonomyExhaustiveAudit ∧
@@ -287,12 +292,14 @@ theorem candidate_coverage_audit_complete :
     NoCandidateLeftOut ∧
     NoActiveRangeBranchMissing ∧
     CaseAClosedAudit ∧
+    CaseBClosedAudit ∧
     (∀ b : GlobalBranch, GlobalBranchPresent b) := by
   exact ⟨ range_taxonomy_exhaustive_audit
         , range_taxonomy_handled_audit
         , no_candidate_left_out
         , no_active_range_branch_missing
         , caseA_audit_exhaustive
+        , caseB_audit_exhaustive
         , all_global_branches_present ⟩
 
 /--

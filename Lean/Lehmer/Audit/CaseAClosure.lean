@@ -3,60 +3,70 @@
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
 - Lehmer.Basic.Defs : def
-- Lehmer.Pipeline.GlobalSplit : def thm
-- Lehmer.Pipeline.CaseABridge : def thm
-- Lehmer.Pipeline.Main : def thm
+- Lehmer.Pivot.CaseAContradiction : def thm
 -/
 
 import Lehmer.Prelude
 import Lehmer.Basic.Defs
-import Lehmer.Pipeline.GlobalSplit
-import Lehmer.Pipeline.CaseABridge
-import Lehmer.Pipeline.Main
+import Lehmer.Pivot.CaseAContradiction
 
 namespace Lehmer
 namespace Audit
 
 open Lehmer.Basic
-open Lehmer.Pipeline
+open Lehmer.Pivot
 
-/--
-Audit-facing local closure statement for the mathematical Case A branch.
+def AuditCandidate (n : ℕ) : Prop :=
+  LehmerComposite n
 
-This isolates the current completed fact that a Lehmer composite cannot lie in
-the mathematical Case A branch of the pipeline.
--/
-def CaseAClosedAudit : Prop :=
-  ∀ n : ℕ, LehmerComposite n → InCaseA n → False
+@[simp] theorem AuditCandidate_def (n : ℕ) :
+    AuditCandidate n = LehmerComposite n := rfl
 
-@[simp] theorem CaseAClosedAudit_def :
-    CaseAClosedAudit = (∀ n : ℕ, LehmerComposite n → InCaseA n → False) := rfl
+def AuditCaseAClass (n : ℕ) : Prop :=
+  InCaseA n
 
-/--
-Local audit theorem: mathematical Case A is closed.
--/
-theorem caseA_audit_exhaustive :
-    CaseAClosedAudit := by
-  intro n hL hA
-  exact pipeline_closes_caseA hL hA
+@[simp] theorem AuditCaseAClass_def (n : ℕ) :
+    AuditCaseAClass n = InCaseA n := rfl
 
-/--
-Equivalent audit theorem using the abstract global branch relation.
--/
-theorem caseA_audit_exhaustive_of_falls
-    {n : ℕ} (hL : LehmerComposite n)
-    (hA : FallsInGlobalBranch n GlobalBranch.caseA) :
+def CaseAEmptyAudit : Prop :=
+  ∀ n : ℕ, AuditCandidate n → AuditCaseAClass n → False
+
+@[simp] theorem CaseAEmptyAudit_def :
+    CaseAEmptyAudit =
+      (∀ n : ℕ, AuditCandidate n → AuditCaseAClass n → False) := rfl
+
+theorem audit_caseA_empty_pointwise
+    {n : ℕ} (hCand : AuditCandidate n) (hA : AuditCaseAClass n) :
     False := by
-  exact pipeline_closes_caseA_of_falls hL hA
+  exact caseA_impossible hCand hA
 
-/--
-Negated formulation: no Lehmer composite lies in the pipeline Case A branch.
--/
-theorem not_inCaseA_of_LehmerComposite
+theorem caseA_empty_audit :
+    CaseAEmptyAudit := by
+  intro n hCand hA
+  exact audit_caseA_empty_pointwise hCand hA
+
+theorem no_audit_candidate_in_caseA :
+    ¬ ∃ n : ℕ, AuditCandidate n ∧ AuditCaseAClass n := by
+  intro h
+  rcases h with ⟨n, hCand, hA⟩
+  exact caseA_empty_audit n hCand hA
+
+theorem no_LehmerComposite_in_caseA :
+    ¬ ∃ n : ℕ, LehmerComposite n ∧ InCaseA n := by
+  intro h
+  rcases h with ⟨n, hL, hA⟩
+  exact caseA_impossible hL hA
+
+theorem not_AuditCaseAClass_of_AuditCandidate
+    {n : ℕ} (hCand : AuditCandidate n) :
+    ¬ AuditCaseAClass n := by
+  intro hA
+  exact audit_caseA_empty_pointwise hCand hA
+
+theorem audit_not_inCaseA_of_LehmerComposite
     {n : ℕ} (hL : LehmerComposite n) :
     ¬ InCaseA n := by
-  intro hA
-  exact caseA_audit_exhaustive n hL hA
+  exact Pivot.not_inCaseA_of_LehmerComposite hL
 
 end Audit
 end Lehmer

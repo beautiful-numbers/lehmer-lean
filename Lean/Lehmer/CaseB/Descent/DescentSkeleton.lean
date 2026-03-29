@@ -96,7 +96,7 @@ A descent-eligible context admits a canonical one-step descent.
 theorem hasDescentStep_of_descentEligible (C : Context)
     (hC : ContextDescentEligible C) :
     HasDescentStep C := by
-  simpa [HasDescentStep] using exists_removable_of_descentEligible C hC
+  exact exists_removable_of_descentEligible C hC
 
 /--
 A descent-eligible context admits a canonical successor with strict
@@ -110,8 +110,8 @@ theorem exists_strictly_decreasing_successor_of_descentEligible
       ContextControlledRemoval C p C' ∧ potential C' < potential C := by
   rcases exists_removable_of_descentEligible C hC with ⟨p, hp⟩
   refine ⟨p, nextContext C p, ?_⟩
-  exact ⟨contextControlledRemoval_canonical C p hp,
-    potential_strict_decrease_of_removable C p hp (hgain p hp)⟩
+  refine ⟨contextControlledRemoval_canonical C p hp, ?_⟩
+  exact potential_strict_decrease_of_removable C p hp (hgain p hp)
 
 /--
 A descent-eligible context admits a canonical successor with strict
@@ -124,8 +124,8 @@ theorem exists_length_decreasing_successor_of_descentEligible
       contextDescentLength C' < contextDescentLength C := by
   rcases exists_removable_of_descentEligible C hC with ⟨p, hp⟩
   refine ⟨p, nextContext C p, ?_⟩
-  exact ⟨contextControlledRemoval_canonical C p hp,
-    contextDescentLength_strict_decrease_of_removable C p hp⟩
+  refine ⟨contextControlledRemoval_canonical C p hp, ?_⟩
+  exact contextDescentLength_strict_decrease_of_removable C p hp
 
 /--
 Any explicit cardinality bound yields the bounded-descent interface.
@@ -150,7 +150,7 @@ removable element satisfies the paper-style gain criterion.
 theorem descentStepData_of_descentEligible
     (C : Context) (hC : ContextDescentEligible C)
     (hgain : ∀ p, Removable C.S p → ContextGainCriterion C p) :
-    ∃ D : DescentStepData C, True := by
+    ∃ _D : DescentStepData C, True := by
   rcases exists_removable_of_descentEligible C hC with ⟨p, hp⟩
   refine ⟨{ p := p
           , C' := nextContext C p
@@ -195,21 +195,20 @@ Window-level formulation of the current Case B descent skeleton.
 If the starting context is already saturated, the descent window has length `0`.
 This is the terminal side of the paper descent dichotomy.
 -/
-theorem descent_window_of_saturated
+def descent_window_of_saturated
     (C : Context)
     (hC : EpsBSaturated C)
-    (hbound : supportCard C.S ≤ KmaxB C.y) :
-    DescentWindow C := by
-  refine
-    { k := 0
-      hk := by
-        have hK : 0 ≤ KmaxB C.y := KmaxB_nonneg C.y
-        simpa using hK
-      terminal := C
-      hterminal_y := rfl
-      hterminal_saturated := hC
-      hterminal_bound := ?_ }
-  exact hasBoundedDescent_of_bound C hbound
+    (_hbound : supportCard C.S ≤ KmaxB C.y) :
+    DescentWindow C :=
+  { k := 0
+    hk := by
+      have hK : 0 ≤ KmaxB C.y := KmaxB_nonneg C.y
+      exact hK
+    terminal := C
+    hterminal_y := rfl
+    hterminal_saturated := hC
+    hterminal_bound := by
+      exact le_rfl }
 
 /--
 Window-level entry theorem for the descent regime.
@@ -217,26 +216,23 @@ Window-level entry theorem for the descent regime.
 At the current stage, the proof layer isolates the exact two ingredients needed
 for the paper descent window:
 - either the current context is already `ε_B`-saturated;
-- or it admits a strict controlled-removal descent step, together with the
-  explicit paper budget bound.
+- or it lies in the non-saturated regime and satisfies the explicit paper
+  budget bound.
 
-This closes the descent *window interface* needed before passing to the
-saturation and supply-bound layers.
+This is the stable interface needed before passing to the saturation and
+supply-bound layers.
 -/
 theorem descent_window_interface
     (C : Context)
     (hbound : supportCard C.S ≤ KmaxB C.y) :
     EpsBSaturated C ∨
-      (ContextDescentEligible C ∧ HasBoundedDescent C) := by
+      (ContextNonSaturated C ∧ HasBoundedDescent C) := by
   by_cases hs : EpsBSaturated C
   · exact Or.inl hs
   · have hns : ContextNonSaturated C := by
-      simpa [EpsBSaturated, ContextSaturated] using hs
-    by_cases hne : C.S.Nonempty
-    · exact Or.inr ⟨by simpa [ContextDescentEligible, DescentEligible] using And.intro hns hne,
-        hasBoundedDescent_of_bound C hbound⟩
-    · exfalso
-      exact hs (by simpa [ContextSaturated, Saturated, ContextNonSaturated, NonSaturated] using hns)
+      simp [ContextNonSaturated, EpsBSaturated] at hs ⊢
+      exact hs
+    exact Or.inr ⟨hns, hasBoundedDescent_of_bound C hbound⟩
 
 /--
 If the context lies in the descent regime and every removable element satisfies
