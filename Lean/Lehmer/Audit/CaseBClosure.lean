@@ -3,23 +3,28 @@
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
 - Lehmer.Basic.Defs : def
-- Lehmer.CaseB.CaseBContradiction : thm
-- Lehmer.CaseB.Dominance.NoCrossingGlobal : thm
+- Lehmer.CaseB.CaseBClassAudit : def thm
+- Lehmer.CaseB.TerminalBridgeAudit : def thm
+- Lehmer.CaseB.Dominance.NoCrossingGlobalAudit : def thm
+- Lehmer.CaseB.CaseBContradictionAudit : thm
 -/
 
 import Lehmer.Prelude
 import Lehmer.Basic.Defs
-import Lehmer.CaseB.CaseBContradiction
-import Lehmer.CaseB.Dominance.NoCrossingGlobal
+import Lehmer.CaseB.CaseBClassAudit
+import Lehmer.CaseB.TerminalBridgeAudit
+import Lehmer.CaseB.Dominance.NoCrossingGlobalAudit
+import Lehmer.CaseB.CaseBContradictionAudit
 
 namespace Lehmer
 namespace Audit
 
 open Lehmer.Basic
 open Lehmer.CaseB
+open Lehmer.Pivot (pivotVal)
 
 /--
-Audit candidate predicate.
+Audit-facing candidate predicate.
 -/
 def AuditCandidate (n : ℕ) : Prop :=
   LehmerComposite n
@@ -28,87 +33,102 @@ def AuditCandidate (n : ℕ) : Prop :=
     AuditCandidate n = LehmerComposite n := rfl
 
 /--
-Audit-facing Case B class.
+Audit-facing predicate expressing the missing bridge "every audited Case B
+candidate reaches the audited terminal structural form".
 
-This is the complete audited Case B window:
-the canonical pivot lies in the large-pivot regime `Ystar ≤ P⁻(n)`.
+This is kept explicit here because the bridge is not yet exported by the lower
+layers as an unconditional theorem.
 -/
-def AuditCaseBClass (n : ℕ) : Prop :=
-  InCaseB n
+def CaseBWindowCompleteAudit : Prop :=
+  ∀ n : ℕ, AuditCandidate n → AuditCaseBClass n → CaseBTerminalDataAudit n
 
-@[simp] theorem AuditCaseBClass_def (n : ℕ) :
-    AuditCaseBClass n = InCaseB n := rfl
+@[simp] theorem CaseBWindowCompleteAudit_def :
+    CaseBWindowCompleteAudit =
+      (∀ n : ℕ, AuditCandidate n → AuditCaseBClass n → CaseBTerminalDataAudit n) := rfl
 
 /--
-Audit certificate: the audited Case B window is exactly the mathematical
-large-pivot window `Ystar ≤ P⁻(n)`.
+Coverage / exactness of the audited Case B window.
+
+Re-exported from `CaseBClassAudit`.
 -/
 theorem audit_windowB_exact (n : ℕ) :
-    AuditCaseBClass n ↔ Ystar ≤ Lehmer.Pivot.pivotVal n := by
-  rfl
+    AuditCaseBClass n ↔ Ystar ≤ pivotVal n := by
+  exact Lehmer.CaseB.audit_windowB_semantic_exact n
 
 /--
-Case B audit closure predicate.
-
-Interpretation:
-every Lehmer candidate classified in the complete audited Case B window is
-ruled out.
+Coverage soundness: every audited Case B candidate satisfies the exact semantic
+large-pivot window.
 -/
-def CaseBClosureAudit : Prop :=
-  ∀ n : ℕ, AuditCandidate n → AuditCaseBClass n → False
-
-@[simp] theorem CaseBClosureAudit_def :
-    CaseBClosureAudit =
-      (∀ n : ℕ, AuditCandidate n → AuditCaseBClass n → False) := rfl
+theorem audit_windowB_sound
+    {n : ℕ}
+    (h : AuditCaseBClass n) :
+    Ystar ≤ pivotVal n := by
+  exact Lehmer.CaseB.audit_windowB_sound h
 
 /--
-Audit certificate: every audit candidate in the exact Case B window is ruled
-out.
+Coverage completeness at the local window level: every candidate satisfying the
+exact semantic large-pivot condition is captured by the audited Case B class.
 -/
-theorem audit_windowB_empty_pointwise
+theorem audit_windowB_complete_local
+    {n : ℕ}
+    (h : Ystar ≤ pivotVal n) :
+    AuditCaseBClass n := by
+  exact Lehmer.CaseB.audit_windowB_complete h
+
+/--
+Conditional pointwise emptiness of the audited Case B window.
+
+This is the honest final audit assembly currently available:
+it requires both missing bridges explicitly:
+1. terminalization completeness for audited Case B candidates,
+2. the global audited no-crossing certificate.
+-/
+theorem caseB_window_empty
+    (hcomplete : CaseBWindowCompleteAudit)
+    (hno : NoCrossingBeyondYstarAudit)
     {n : ℕ}
     (hCand : AuditCandidate n)
     (hB : AuditCaseBClass n) :
     False := by
-  exact caseB_impossible hCand hB no_crossing_beyond_ystar
+  have hD : CaseBTerminalDataAudit n := hcomplete n hCand hB
+  exact caseB_impossibleAudit hCand hB hD hno
 
 /--
-Audit certificate: the whole audited Case B window is empty.
+Paper-facing reformulation of the conditional pointwise emptiness theorem.
 -/
-theorem caseB_closure_audit :
-    CaseBClosureAudit := by
-  intro n hCand hB
-  exact audit_windowB_empty_pointwise hCand hB
+theorem caseB_exhaustive_closure
+    (hcomplete : CaseBWindowCompleteAudit)
+    (hno : NoCrossingBeyondYstarAudit)
+    {n : ℕ}
+    (hL : LehmerComposite n)
+    (hy : Ystar ≤ pivotVal n) :
+    False := by
+  have hB : AuditCaseBClass n := audit_windowB_complete_local hy
+  exact caseB_window_empty hcomplete hno hL hB
 
 /--
-Audit certificate: no audit candidate lies in the exact Case B window.
+Conditional existential elimination for the audited Case B family.
 -/
-theorem no_audit_candidate_in_caseB :
+theorem no_audit_candidate_in_caseB
+    (hcomplete : CaseBWindowCompleteAudit)
+    (hno : NoCrossingBeyondYstarAudit) :
     ¬ ∃ n : ℕ, AuditCandidate n ∧ AuditCaseBClass n := by
   intro h
   rcases h with ⟨n, hCand, hB⟩
-  exact caseB_closure_audit n hCand hB
+  exact caseB_window_empty hcomplete hno hCand hB
 
 /--
-Paper-facing audit certificate: no Lehmer composite satisfies the large-pivot
-condition `Ystar ≤ P⁻(n)`.
+Paper-facing existential reformulation:
+under the two explicit remaining bridges, no Lehmer composite can satisfy the
+large-pivot Case B window.
 -/
-theorem no_LehmerComposite_with_largePivot :
-    ¬ ∃ n : ℕ, LehmerComposite n ∧ Ystar ≤ Lehmer.Pivot.pivotVal n := by
+theorem no_LehmerComposite_with_largePivot
+    (hcomplete : CaseBWindowCompleteAudit)
+    (hno : NoCrossingBeyondYstarAudit) :
+    ¬ ∃ n : ℕ, LehmerComposite n ∧ Ystar ≤ pivotVal n := by
   intro h
-  rcases h with ⟨n, hL, hB⟩
-  exact caseB_impossible hL hB no_crossing_beyond_ystar
-
-/--
-Pointwise paper-facing audit certificate:
-every Lehmer composite fails the large-pivot condition `Ystar ≤ P⁻(n)`.
--/
-theorem not_largePivot_of_LehmerComposite
-    {n : ℕ}
-    (hL : LehmerComposite n) :
-    ¬ Ystar ≤ Lehmer.Pivot.pivotVal n := by
-  intro hB
-  exact caseB_impossible hL hB no_crossing_beyond_ystar
+  rcases h with ⟨n, hL, hy⟩
+  exact caseB_exhaustive_closure hcomplete hno hL hy
 
 end Audit
 end Lehmer

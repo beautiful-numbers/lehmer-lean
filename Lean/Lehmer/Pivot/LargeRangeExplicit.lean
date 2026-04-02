@@ -64,5 +64,92 @@ theorem largeRangeEndpoint_matches_Y0 :
     largeRangeEndpointY0 = Y0 := by
   rfl
 
+/--
+Audit-facing packaged view of the explicit large-range endpoint data.
+
+This is only a consumable API layer over the already exposed endpoint constants.
+It does not add any new mathematical semantics.
+-/
+structure LargeRangeEndpointAPI where
+  Y0 : ℕ
+  M : ℕ
+  N : ℕ
+  certified : Prop
+
+/--
+Canonical packaged endpoint API.
+-/
+def largeRangeEndpointAPI : LargeRangeEndpointAPI where
+  Y0 := largeRangeEndpointY0
+  M := largeRangeEndpointM
+  N := largeRangeEndpointN
+  certified := LargeRangeEndpointCertified
+
+/--
+The packaged endpoint API is certified.
+-/
+theorem largeRangeEndpointAPI_certified :
+    largeRangeEndpointAPI.certified := by
+  exact largeRangeEndpointCertified
+
+/--
+The packaged endpoint API carries the shared threshold `Y0`.
+-/
+theorem largeRangeEndpointAPI_Y0 :
+    largeRangeEndpointAPI.Y0 = Y0 := by
+  rfl
+
+/--
+The packaged endpoint API carries the exported endpoint index `M`.
+-/
+theorem largeRangeEndpointAPI_M :
+    largeRangeEndpointAPI.M = 87302 := by
+  rfl
+
+/--
+The packaged endpoint API carries the exported endpoint index `N`.
+-/
+theorem largeRangeEndpointAPI_N :
+    largeRangeEndpointAPI.N = 117301 := by
+  rfl
+
+/--
+Audit-facing alias for the packaged endpoint threshold.
+-/
+abbrev largeRangeConsumableY0 : ℕ :=
+  largeRangeEndpointAPI.Y0
+
+/--
+Audit-facing alias for the packaged endpoint lower index.
+-/
+abbrev largeRangeConsumableM : ℕ :=
+  largeRangeEndpointAPI.M
+
+/--
+Audit-facing alias for the packaged endpoint upper index.
+-/
+abbrev largeRangeConsumableN : ℕ :=
+  largeRangeEndpointAPI.N
+
+/--
+Audit-facing alias for the packaged endpoint certificate.
+-/
+abbrev LargeRangeConsumableCertified : Prop :=
+  largeRangeEndpointAPI.certified
+
+/--
+The consumable certificate is available.
+-/
+theorem largeRangeConsumableCertified :
+    LargeRangeConsumableCertified := by
+  exact largeRangeEndpointAPI_certified
+
+/--
+Consumable threshold compatibility with the shared pivot threshold constant.
+-/
+theorem largeRangeConsumable_matches_Y0 :
+    largeRangeConsumableY0 = Y0 := by
+  rfl
+
 end Pivot
 end Lehmer

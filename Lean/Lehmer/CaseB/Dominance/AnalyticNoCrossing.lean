@@ -1,52 +1,90 @@
--- FILE: Lean/Lehmer/CaseB/Dominance/AnalyticMhatBarrier.lean
+-- FILE: Lean/Lehmer/CaseB/Dominance/AnalyticNoCrossing.lean
 /-
 IMPORT CLASSIFICATION
-- Mathlib.Data.Real.Basic : def thm
 - Lehmer.Prelude : meta
 - Lehmer.CaseB.Dominance.NoCrossing : def thm
+- Lehmer.CaseB.Dominance.MajorantMc : def thm
+- Lehmer.CaseB.Dominance.AnalyticMhatBarrier : thm
+- Lehmer.Pivot.MreqAnalyticBridge : thm
 -/
 
-import Mathlib.Data.Real.Basic
 import Lehmer.Prelude
 import Lehmer.CaseB.Dominance.NoCrossing
+import Lehmer.CaseB.Dominance.MajorantMc
+import Lehmer.CaseB.Dominance.AnalyticMhatBarrier
+import Lehmer.Pivot.MreqAnalyticBridge
 
 namespace Lehmer
 namespace CaseB
 
-open Real
-
-theorem zero_lt_of_TB_le {t : ℝ} (ht : TB ≤ t) : 0 < t := by
-  have hY0 : (Y0 : ℝ) ≤ t := le_trans Y0_le_TB ht
-  have h0 : (0 : ℝ) < Y0 := by
-    norm_num [Y0_def]
-  exact lt_of_lt_of_le h0 hY0
-
-theorem one_lt_of_TB_le {t : ℝ} (ht : TB ≤ t) : 1 < t := by
-  have hY0 : (Y0 : ℝ) ≤ t := le_trans Y0_le_TB ht
-  have h1 : (1 : ℝ) < Y0 := by
-    norm_num [Y0_def]
-  exact lt_of_lt_of_le h1 hY0
-
-theorem one_le_of_TB_le {t : ℝ} (ht : TB ≤ t) : 1 ≤ t := by
-  exact le_of_lt (one_lt_of_TB_le ht)
-
-theorem log_pos_of_TB_le {t : ℝ} (ht : TB ≤ t) : 0 < Real.log t := by
-  exact Real.log_pos (one_lt_of_TB_le ht)
-
-theorem log_nonneg_of_TB_le {t : ℝ} (ht : TB ≤ t) : 0 ≤ Real.log t := by
-  exact le_of_lt (log_pos_of_TB_le ht)
+open Lehmer.Pivot
 
 /--
-Continuous analytic comparison beyond `TB`.
+Bridge from the closed majorant `Mc` to the continuous paper majorant `Mhat`.
 
-This is the substantive large-`t` inequality needed by the Case B no-crossing
-pipeline:
-`Mhat t < analyticBarrier t`.
+This theorem should be a thin structural bridge: `Mc` is the Case B majorant
+written in terms of the local auxiliary quantity `yB y`, while `Mhat` is the
+paper majorant evaluated directly at `y`. The intended proof is to use the
+relation between `yB y` and `y`, together with monotonicity of the majorant
+expression on the large range.
 -/
-theorem mhat_lt_barrier
-    {t : ℝ} (ht : TB ≤ t) :
-    Mhat t < analyticBarrier t := by
+theorem mc_le_mhat :
+    ∀ y : ℕ, 3 ≤ y → Mc y ≤ Mhat (y : ℝ) := by
+  intro y hy
+  /-
+  Intended route:
+  1. prove / import a comparison `yB y ≤ y`,
+  2. prove monotonicity of
+       x ↦ ((20 : ℝ) / 3) * (x / log x) + 3 * (log x)^4 + 2
+     on the relevant range,
+  3. conclude by unfolding `Mc` and `Mhat`.
+  -/
   admit
+
+/--
+Function-style export of the Appendix A strict large-range comparison.
+-/
+theorem mhat_lt_barrier :
+    ∀ t : ℝ, TB ≤ t → Mhat t < analyticBarrier t := by
+  intro t ht
+  exact CaseB.mhat_lt_barrier ht
+
+/--
+Discrete ceiling bridge from `Mc` to `analyticBarrier`.
+
+The intended proof is not to redo Appendix A here, but to consume an already
+available large-range discretization gap strong enough to survive passage to
+ceilings.
+-/
+theorem mcNat_lt_barrierCeil :
+    ∀ y : ℕ, Y0 ≤ y →
+      Mc y < analyticBarrier (y : ℝ) →
+      McNat y < Nat.ceil (analyticBarrier (y : ℝ)) := by
+  intro y hy hgap
+  rw [McNat_def]
+  /-
+  Intended route:
+  use a stronger upstream large-range gap / discretization lemma.
+  A purely formal `ceil` argument from `Mc y < analyticBarrier (y : ℝ)` is
+  not enough in general without additional margin.
+  -/
+  admit
+
+/--
+Pivot-side bridge placeholder interface.
+
+At the current stage, `MreqAnalyticBridge.lean` no longer exports a theorem of
+the exact shape required by `CaseBAnalyticBounds`; it exports the minimality
+step plus a genuine sub-barrier `UBm` obligation. Therefore this file must not
+pretend that the final connector is already available as a theorem.
+
+The final `barrierCeil_le_mreq` connector should be reinstated here only once
+the pivot-side analytic block is genuinely closed with the exact signature
+required by `CaseBAnalyticBounds`.
+-/
+def HasBarrierCeilLeMreqConnector : Prop :=
+  ∀ y : ℕ, Y0 ≤ y →
+    Nat.ceil (analyticBarrier (y : ℝ)) ≤ mreq y
 
 end CaseB
 end Lehmer
