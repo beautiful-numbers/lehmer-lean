@@ -56,12 +56,12 @@ def LargePivotRegime (C : Context) : Prop :=
 Terminal Case B contradiction from the four numerical ingredients:
 
 - pivot demand: `mreq(y) ≤ ω`,
-- supply bound: `ω ≤ M(y)`,
-- closed majorant: `M(y) ≤ McNat(y)`,
-- no-crossing: `McNat(y) < mreq(y)`.
+- supply bound: `ω ≤ MboundOfAccounting`,
+- closed majorant: `MboundOfAccounting ≤ M(y)`,
+- no-crossing: `M(y) < mreq(y)`.
 
-This is the exact Case B contradiction pattern exported by the current Lean
-architecture.
+This is the paper-facing Case B contradiction pattern exported by the current
+Lean architecture.
 -/
 theorem contradiction_of_supply_closedMajorant_noCrossing
     (C : Context) (A : WitnessAccounting C)
@@ -70,13 +70,16 @@ theorem contradiction_of_supply_closedMajorant_noCrossing
     (hclosed : ClosedWitnessBound A)
     (hcross : NoCrossingAt C.y) :
     False := by
-  have hM : supportCard C.S ≤ MboundOfAccounting A := hsupply
-  have hMc : MboundOfAccounting A ≤ McNat C.y := by
-    exact MboundOfAccounting_le_McNat_of_closedWitnessBound A hclosed
-  have hcross' : McNat C.y < mreq C.y := hcross
-  have hchain : supportCard C.S < mreq C.y := by
-    exact lt_of_le_of_lt (le_trans hM hMc) hcross'
-  exact (not_lt_of_ge hdemand) hchain
+  have hdemand_real : (mreq C.y : ℝ) ≤ (supportCard C.S : ℝ) := by
+    exact_mod_cast hdemand
+  have hM : (supportCard C.S : ℝ) ≤ ((MboundOfAccounting A : ℕ) : ℝ) := by
+    exact_mod_cast hsupply
+  have hclosedM : ((MboundOfAccounting A : ℕ) : ℝ) ≤ M C.y := by
+    simpa [M, Mc] using
+      (closedMajorantOfAccounting_bound_of_closedWitnessBound A hclosed)
+  have hchain : (supportCard C.S : ℝ) < (mreq C.y : ℝ) := by
+    exact lt_of_le_of_lt (le_trans hM hclosedM) hcross
+  exact (not_lt_of_ge hdemand_real) hchain
 
 /--
 Large-pivot version of the terminal Case B contradiction using the uniform
@@ -124,13 +127,18 @@ theorem supportCard_contradiction_of_supply_closedMajorant_noCrossing
     (hdemand : mreq C.y ≤ supportCard C.S)
     (hsupply : supportCard C.S ≤ MboundOfAccounting A)
     (hclosed : ClosedWitnessBound A)
-    (hcross : McNat C.y < mreq C.y) :
+    (hcross : M C.y < (mreq C.y : ℝ)) :
     False := by
-  have hMc : MboundOfAccounting A ≤ McNat C.y := by
-    exact MboundOfAccounting_le_McNat_of_closedWitnessBound A hclosed
-  have hchain : supportCard C.S < mreq C.y := by
-    exact lt_of_le_of_lt (le_trans hsupply hMc) hcross
-  exact (not_lt_of_ge hdemand) hchain
+  have hdemand_real : (mreq C.y : ℝ) ≤ (supportCard C.S : ℝ) := by
+    exact_mod_cast hdemand
+  have hsupply_real : (supportCard C.S : ℝ) ≤ ((MboundOfAccounting A : ℕ) : ℝ) := by
+    exact_mod_cast hsupply
+  have hclosedM : ((MboundOfAccounting A : ℕ) : ℝ) ≤ M C.y := by
+    simpa [M, Mc] using
+      (closedMajorantOfAccounting_bound_of_closedWitnessBound A hclosed)
+  have hchain : (supportCard C.S : ℝ) < (mreq C.y : ℝ) := by
+    exact lt_of_le_of_lt (le_trans hsupply_real hclosedM) hcross
+  exact (not_lt_of_ge hdemand_real) hchain
 
 /--
 Natural packaged form of the terminal Case B contradiction.

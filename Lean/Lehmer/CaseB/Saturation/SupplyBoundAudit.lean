@@ -73,10 +73,9 @@ Context soundness for audit-facing scarcity bounds:
 the estimate is attached to the same ambient Case B context.
 -/
 theorem hasScarcityBoundAudit_context_sound
-    (C : Context) (A : WitnessAccountingAudit C)
-    (h : HasScarcityBoundAudit C A) :
+    (C : Context) (A : WitnessAccountingAudit C) :
     witnessBudget A ≤ WboundOfAccounting A := by
-  simpa using h
+  simp
 
 /--
 Context soundness for audit-facing supply bounds:
@@ -232,9 +231,11 @@ theorem genericChain_supplyPackageAudit_sound
           (witnessAccountingOfGenericChainToSSLock G)) :
     ∃ P : SupplyPackageAudit C,
       P.terminal = G.terminal ∧
-      P.hlevel = GenericChain_preserves_level G.chain ∧
-      P.hlock = G.hlock := by
-  refine ⟨supplyPackage_of_genericChainToSSLock G hbound, rfl, rfl, rfl⟩
+      P.terminal.y = C.y ∧
+      SSLock P.terminal := by
+  refine ⟨supplyPackage_of_genericChainToSSLock G hbound, rfl, ?_, ?_⟩
+  · simpa using GenericChain_preserves_level G.chain
+  · simpa using G.hlock
 
 /--
 Every audit-facing supply package carries a witness accounting datum on the
@@ -258,7 +259,7 @@ theorem supplyPackageAudit_terminal_usable
       SSLock T ∧
       HasSupplyBoundAudit C A := by
   refine ⟨P.terminal, P.accounting, rfl, ?_, P.hlock, P.hsupply⟩
-  simpa [P.hlevel] using P.hlevel
+  simpa using P.hlevel
 
 /--
 Homogeneous grammar for audit-facing supply packages.

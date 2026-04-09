@@ -3,13 +3,11 @@
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
 - Lehmer.Pivot.AppendixA.IntervalDefs : def thm
-- Lehmer.Pivot.AppendixA.IntervalMembership : def thm
 - Lehmer.Pivot.AppendixA.PrimeCountToUpperBound : thm
 -/
 
 import Lehmer.Prelude
 import Lehmer.Pivot.AppendixA.IntervalDefs
-import Lehmer.Pivot.AppendixA.IntervalMembership
 import Lehmer.Pivot.AppendixA.PrimeCountToUpperBound
 
 namespace Lehmer
@@ -19,103 +17,75 @@ namespace AppendixA
 /-!
 # Appendix A interval upper bound
 
-This file packages the upper-bound statement needed to place the first `m`
-primes `≥ y` inside the discrete Appendix A interval `[y, xA y]`.
+This file records the paper-facing specialization of the counting-to-enumeration
+bridge to the Appendix A endpoint `xA y`.
 
-Important scope:
+Core content:
+* from the prime count on `[y, xA y]`, recover that the first `m` primes
+  greater than or equal to `y` all lie in `[y, xA y]`.
+
+Scope:
 * no analytic proof of the counting bound yet;
-* no `mreq` yet;
-* this file only turns a prime-count lower bound on `[y, xA y]` into the
-  interval-membership consequences needed downstream.
+* no product comparison yet;
+* no `mreq` yet.
 -/
 
 /--
-Upper-bound interface asserting that the first `m` primes `≥ y` all lie below
-the Appendix A right endpoint `xA y`.
+Appendix A upper bound for the `m`-th prime `≥ y`, in the paper-facing
+prime-counting form.
 -/
-def HasIntervalUpperBound (y m : ℕ) : Prop :=
-  ∀ k : ℕ, k < m → nthPrimeFrom y k ≤ xA y
-
-@[simp] theorem HasIntervalUpperBound_def
-    (y m : ℕ) :
-    HasIntervalUpperBound y m =
-      (∀ k : ℕ, k < m → nthPrimeFrom y k ≤ xA y) := by
-  rfl
-
-/--
-A prime-count lower bound on `[y, xA y]` yields the interval upper bound for
-the first `m` primes `≥ y`.
--/
-theorem HasIntervalUpperBound_of_card_primesInIcc_ge
+theorem py_le_xA_of_primePi_bound
     {y m : ℕ}
-    (hcard : m ≤ (primesInIcc y (xA y)).card) :
-    HasIntervalUpperBound y m := by
-  exact all_nthPrimeFrom_le_xA_of_card_primesInIcc_ge hcard
+    (hy : Nat.Prime y)
+    (hyx : y ≤ xA y)
+    (hm : 1 ≤ m)
+    (hcount : m ≤ primePi (xA y) - primePi y + 1) :
+    py y m ≤ xA y := by
+  exact py_le_xA_of_primePi_sub_primePi_add_one
+    (y := y) (m := m) hy hyx hm hcount
 
 /--
-Indexed interval membership derived from the upper-bound interface.
+Appendix A package:
+if the interval `[y, xA y]` contains at least `m` primes, then every one of the
+first `m` primes `≥ y` lies in `[y, xA y]`.
 -/
-theorem nthPrimeFrom_mem_interval_of_HasIntervalUpperBound
-    {y m k : ℕ}
-    (hup : HasIntervalUpperBound y m)
-    (hk : k < m) :
-    InInterval y (nthPrimeFrom y k) := by
-  exact nthPrimeFrom_mem_interval_of_upper_bound hup hk
-
-/--
-Set-membership form derived from the upper-bound interface:
-every member of `firstPrimesFrom y m` lies in the Appendix A interval.
--/
-theorem mem_firstPrimesFrom_interval_of_HasIntervalUpperBound
-    {y m p : ℕ}
-    (hup : HasIntervalUpperBound y m)
-    (hp : p ∈ firstPrimesFrom y m) :
-    InInterval y p := by
-  exact firstPrimesFrom_subset_interval_of_upper_bound hup p hp
-
-/--
-Subset-style reformulation:
-`firstPrimesFrom y m` is contained in the discrete Appendix A interval under the
-upper-bound interface.
--/
-theorem firstPrimesFrom_subset_interval_of_HasIntervalUpperBound
+theorem all_py_mem_Icc_y_xA_of_primePi_bound
     {y m : ℕ}
-    (hup : HasIntervalUpperBound y m) :
-    ∀ p ∈ firstPrimesFrom y m, InInterval y p := by
-  exact firstPrimesFrom_subset_interval_of_upper_bound hup
+    (hy : Nat.Prime y)
+    (hyx : y ≤ xA y)
+    (hcount : m ≤ primePi (xA y) - primePi y + 1) :
+    ∀ i : ℕ, 1 ≤ i → i ≤ m → y ≤ py y i ∧ py y i ≤ xA y := by
+  intro i hi him
+  exact ⟨py_ge_of_one_le hi, py_le_xA_of_primePi_bound hy hyx hi (le_trans him hcount)⟩
 
 /--
-Prime-membership packaging inside the interval under the upper-bound interface.
+Zero-based reformulation used by the finite-product layer.
 -/
-theorem mem_firstPrimesFrom_prime_interval_of_HasIntervalUpperBound
-    {y m p : ℕ}
-    (hup : HasIntervalUpperBound y m)
-    (hp : p ∈ firstPrimesFrom y m) :
-    Nat.Prime p ∧ InInterval y p := by
-  refine ⟨mem_firstPrimesFrom_prime' hp, ?_⟩
-  exact mem_firstPrimesFrom_interval_of_HasIntervalUpperBound hup hp
+theorem all_py0_le_xA_of_primePi_bound
+    {y m : ℕ}
+    (hy : Nat.Prime y)
+    (hyx : y ≤ xA y)
+    (hcount : m ≤ primePi (xA y) - primePi y + 1) :
+    ∀ k : ℕ, k < m → py0 y k ≤ xA y := by
+  intro k hk
+  simpa [py0] using
+    py_le_xA_of_primePi_bound
+      (y := y) (m := k + 1) hy hyx (Nat.succ_le_succ (Nat.zero_le k))
+      (le_trans (Nat.succ_le_of_lt hk) hcount)
 
 /--
-Existential index packaging inside the interval under the upper-bound
-interface.
+Set-theoretic reformulation used downstream:
+the finite block `firstPrimesFrom y m` lies in the interval `[y, xA y]`.
 -/
-theorem mem_firstPrimesFrom_exists_index_interval_of_HasIntervalUpperBound
-    {y m p : ℕ}
-    (hup : HasIntervalUpperBound y m)
-    (hp : p ∈ firstPrimesFrom y m) :
-    ∃ k < m, nthPrimeFrom y k = p ∧ InInterval y p := by
-  rcases mem_firstPrimesFrom_exists_index hp with ⟨k, hk, rfl⟩
-  exact ⟨k, hk, rfl, nthPrimeFrom_mem_interval_of_HasIntervalUpperBound hup hk⟩
-
-/--
-Right-endpoint inequality extracted from the upper-bound interface.
--/
-theorem nthPrimeFrom_le_xA_of_HasIntervalUpperBound
-    {y m k : ℕ}
-    (hup : HasIntervalUpperBound y m)
-    (hk : k < m) :
-    nthPrimeFrom y k ≤ xA y := by
-  exact hup k hk
+theorem firstPrimesFrom_subset_Icc_y_xA_of_primePi_bound
+    {y m : ℕ}
+    (hy : Nat.Prime y)
+    (hyx : y ≤ xA y)
+    (hcount : m ≤ primePi (xA y) - primePi y + 1) :
+    ∀ p ∈ firstPrimesFrom y m, y ≤ p ∧ p ≤ xA y := by
+  intro p hp
+  rcases (Pivot.mem_firstPrimesFrom_iff).mp hp with ⟨k, hk, rfl⟩
+  exact ⟨py0_ge y k, all_py0_le_xA_of_primePi_bound hy hyx hcount k hk⟩
 
 end AppendixA
 end Pivot

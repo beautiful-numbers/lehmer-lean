@@ -18,52 +18,33 @@ namespace AppendixA
 noncomputable section
 
 /-!
-# Appendix A general `UBm` range-product form
+# Appendix A finite-product form of `UBm`
 
-This file contains only the final structural facts actually needed from the
-general finite-product presentation of `UBm`.
+This file isolates the paper-facing finite-product presentation of the pivot
+envelope `UBm`.
 
-Important scope:
-* no interval indexing yet;
+Scope:
+* finite products only;
+* no interval bridge yet;
 * no analytic estimates yet;
 * no `mreq` yet.
 -/
 
-/-- Rational range product attached to the first `m` primes `≥ y`. -/
+/-- Rational finite product attached to the first `m` primes `≥ y`. -/
 def ubmRangeProdQ (y m : ℕ) : ℚ :=
-  ∏ k in Finset.range m, pivotFactor (nthPrimeFrom y k)
+  ∏ k in Finset.range m, pivotFactor (py0 y k)
 
-/-- Real-cast range product attached to the first `m` primes `≥ y`. -/
+/-- Real-cast finite product attached to the first `m` primes `≥ y`. -/
 def ubmRangeProdR (y m : ℕ) : ℝ :=
-  ∏ k in Finset.range m, (((pivotFactor (nthPrimeFrom y k) : ℚ) : ℝ))
+  ∏ k in Finset.range m, (((pivotFactor (py0 y k) : ℚ) : ℝ))
 
 /--
-Head-tail decomposition of a product on `Finset.range (m+1)`.
--/
-theorem prod_range_succ_shift
-    {α : Type*} [CommMonoid α] (f : ℕ → α) (m : ℕ) :
-    (∏ k in Finset.range (m + 1), f k) =
-      f 0 * ∏ k in Finset.range m, f (k + 1) := by
-  induction m with
-  | zero =>
-      simp
-  | succ m ih =>
-      rw [Finset.prod_range_succ, ih, Finset.prod_range_succ]
-      simp [mul_assoc, mul_left_comm, mul_comm]
-
-/--
-Recursive finite-product form of `UBm`.
+`UBm` is exactly the rational finite product over the first `m` primes `≥ y`.
 -/
 theorem UBm_eq_ubmRangeProdQ
     (y m : ℕ) :
     UBm y m = ubmRangeProdQ y m := by
-  induction m generalizing y with
-  | zero =>
-      simp [UBm_zero, ubmRangeProdQ]
-  | succ m ih =>
-      rw [UBm_succ, ih]
-      rw [ubmRangeProdQ, prod_range_succ_shift]
-      simp [nthPrimeFrom_zero, nthPrimeFrom_succ]
+  rfl
 
 /--
 Real-cast finite-product form of `UBm`.
@@ -79,21 +60,21 @@ theorem UBm_cast_eq_ubmRangeProdR
       simp [ubmRangeProdQ, ubmRangeProdR, Finset.prod_range_succ, ih]
 
 /--
+Equivalent product formula using the finite set `firstPrimesFrom y m`.
+-/
+theorem UBm_eq_UB_firstPrimesFrom
+    (y m : ℕ) :
+    UBm y m = UB (firstPrimesFrom y m) := by
+  exact Pivot.UBm_eq_UB_firstPrimesFrom y m
+
+/--
 Membership in `firstPrimesFrom y m` is equivalent to being one of the indexed
-values `nthPrimeFrom y k` with `k < m`.
+values `py0 y k` with `k < m`.
 -/
 theorem mem_firstPrimesFrom_iff
     {y m p : ℕ} :
-    p ∈ firstPrimesFrom y m ↔ ∃ k < m, nthPrimeFrom y k = p := by
-  classical
-  constructor
-  · intro hp
-    unfold firstPrimesFrom at hp
-    rcases Finset.mem_image.mp hp with ⟨k, hk, hk'⟩
-    exact ⟨k, Finset.mem_range.mp hk, hk'⟩
-  · rintro ⟨k, hk, rfl⟩
-    unfold firstPrimesFrom
-    exact Finset.mem_image.mpr ⟨k, Finset.mem_range.mpr hk, rfl⟩
+    p ∈ firstPrimesFrom y m ↔ ∃ k < m, py0 y k = p := by
+  exact Pivot.mem_firstPrimesFrom_iff
 
 /--
 Every member of `firstPrimesFrom y m` is prime and at least `y`.
@@ -105,13 +86,23 @@ theorem mem_firstPrimesFrom_prime_ge
   exact ⟨mem_firstPrimesFrom_prime hp, mem_firstPrimesFrom_ge hp⟩
 
 /--
-The rational range product is positive.
+The rational finite product is positive.
 -/
 theorem ubmRangeProdQ_pos
     (y m : ℕ) :
     0 < ubmRangeProdQ y m := by
   rw [← UBm_eq_ubmRangeProdQ]
   exact UBm_pos y m
+
+/--
+The real finite product is positive.
+-/
+theorem ubmRangeProdR_pos
+    (y m : ℕ) :
+    0 < ubmRangeProdR y m := by
+  have hq : 0 < ubmRangeProdQ y m := ubmRangeProdQ_pos y m
+  rw [← UBm_cast_eq_ubmRangeProdR]
+  exact_mod_cast hq
 
 end
 

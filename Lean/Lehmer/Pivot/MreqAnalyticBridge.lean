@@ -5,6 +5,24 @@ IMPORT CLASSIFICATION
 - Lehmer.Pivot.AnalyticConstants : def thm
 - Lehmer.Pivot.Mreq : def thm
 - Lehmer.Pivot.MreqAnalytic : def thm
+
+FILE ROLE
+This file is the internal Lean bridge from the minimality definition of `mreq`
+to a discretized lower bound shape.
+
+More precisely, the output proved here is of the internal bridge-shape form
+  Nat.ceil (barrier (y : ℝ)) ≤ mreq y,
+under two genuine analytic inputs:
+- existence of a threshold witness for `mreq y`,
+- control of `UBm y m` below the discretized barrier.
+
+Paper-facing note:
+- This is NOT yet the public paper-facing statement of Lemma 3.4.
+- The paper-facing output expected higher up is of the form
+    C1 * y^2 / log y < mreq(y),
+  not the discretized bridge-shape proved here.
+- Accordingly, this file proves only the minimality bridge step; it does not
+  by itself internalize the full large-range analytic proof from the paper.
 -/
 
 import Lehmer.Prelude
@@ -19,7 +37,8 @@ namespace Pivot
 Positivity of the discretized analytic barrier in the certified large range.
 
 This is the small arithmetic lemma needed in the `mreq = 0` branch of the
-minimality argument.
+minimality argument. It is an internal arithmetic helper for the discretized
+bridge-shape and is not itself a paper-facing pivot theorem.
 -/
 theorem ceil_barrier_pos_of_ge_Y0
     {y : ℕ}
@@ -32,18 +51,28 @@ theorem ceil_barrier_pos_of_ge_Y0
   have hlog : 0 < Real.log (y : ℝ) := by
     exact Real.log_pos hy1
   have hC1 : 0 < C1 := by
-    have : (0 : ℝ) < (1 : ℝ) / 1000 := by norm_num
-    simpa [C1_def] using this
-  have hy0 : 0 < (y : ℝ) := by positivity
+    rw [C1_def]
+    positivity
   have hbar : 0 < barrier (y : ℝ) := by
     dsimp [barrier]
     positivity
-  exact Nat.ceil_pos.mpr hbar
+  have hceil_real : (0 : ℝ) < (Nat.ceil (barrier (y : ℝ)) : ℝ) := by
+    exact lt_of_lt_of_le hbar (Nat.le_ceil _)
+  exact_mod_cast hceil_real
 
 /--
-Minimality bridge:
-if some threshold witness exists, and every index below the discretized
-analytic barrier stays at or below `2`, then that barrier is bounded by `mreq y`.
+Minimality bridge in discretized form.
+
+If:
+1. some threshold witness exists for `mreq y`, and
+2. every index below the discretized barrier stays at or below `2`,
+
+then the discretized barrier is bounded by `mreq y`.
+
+This is an internal Lean bridge-shape theorem:
+  `Nat.ceil (barrier (y : ℝ)) ≤ mreq y`.
+
+It is not yet the public paper-facing analytic lower bound on `mreq(y)`.
 -/
 theorem barrierCeil_le_mreq_of_UBm_le_two_below
     {y : ℕ}
@@ -61,16 +90,20 @@ theorem barrierCeil_le_mreq_of_UBm_le_two_below
   exact (not_lt_of_ge hle) hgt
 
 /--
-Analytic bridge from the large-range barrier to the pivot demand threshold.
+Discretized pivot bridge from analytic input to `mreq`.
 
-This theorem is intentionally parameterized by the genuine analytic inputs
-needed to conclude the bridge:
+This theorem is intentionally parameterized by the genuine inputs needed to
+conclude the bridge:
 
 1. existence of a threshold witness for `mreq y`,
 2. control of `UBm y m` below the discretized barrier.
 
-The present file proves only the minimality step; these inputs must come from
-the real analytic layer.
+Output:
+  `Nat.ceil (barrier (y : ℝ)) ≤ mreq y`.
+
+This remains an internal Lean interface. The corresponding paper-facing output
+expected higher up is a non-discretized lower bound on `mreq(y)`, not this
+`Nat.ceil` bridge-shape.
 -/
 theorem analyticBarrierCeil_le_mreq
     {y : ℕ}
@@ -81,7 +114,10 @@ theorem analyticBarrierCeil_le_mreq
   exact barrierCeil_le_mreq_of_UBm_le_two_below h_exists hbelow
 
 /--
-Convenient non-curried form.
+Convenient non-curried form of the same discretized pivot bridge.
+
+This theorem should still be read only as an internal bridge-shape lemma, not
+as the final public analytic pivot theorem from the paper.
 -/
 theorem analyticBarrierCeil_le_mreq_of_ge_Y0
     (y : ℕ)

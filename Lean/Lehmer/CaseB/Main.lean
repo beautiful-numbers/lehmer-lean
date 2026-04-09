@@ -118,12 +118,51 @@ theorem noCrossingAt_candidate_of_global
 /--
 Expanded inequality form of the previous specialization.
 -/
-theorem candidate_McNat_lt_mreq_of_global
+theorem candidate_M_lt_mreq_of_global
     {n : ℕ} (hL : LehmerComposite n)
     (hy : Ystar ≤ pivotVal n)
     (hno : NoCrossingBeyondYstar) :
-    McNat (candidateContext n).y < mreq (candidateContext n).y := by
+    M (candidateContext n).y < (mreq (candidateContext n).y : ℝ) := by
   exact noCrossingAt_candidate_of_global hL hy hno
+
+/--
+Terminal Case B contradiction for a Lehmer composite, assuming the canonical
+candidate context carries a supply/accounting package and the uniform
+no-crossing statement is available.
+-/
+theorem caseB_contradiction_candidate_of_supplyPackage
+    {n : ℕ}
+    (hL : LehmerComposite n)
+    (hy : Ystar ≤ pivotVal n)
+    (hno : NoCrossingBeyondYstar)
+    (hsupply :
+      ∃ A : WitnessAccounting (candidateContext n),
+        HasSupplyBound (candidateContext n) A ∧ ClosedWitnessBound A) :
+    False := by
+  exact caseB_contradiction_of_largePivot
+    (C := candidateContext n)
+    (meetsPivotDemand_candidate hL)
+    hsupply
+    (largePivotRegime_candidate_of_le hL hy)
+    hno
+
+/--
+Conditional exclusion form:
+if the canonical candidate context admits a supply/accounting package and
+uniform no-crossing holds, then a Lehmer composite cannot have pivot value at
+least `Ystar`.
+-/
+theorem pivotVal_lt_Ystar_of_supplyPackage
+    {n : ℕ}
+    (hL : LehmerComposite n)
+    (hno : NoCrossingBeyondYstar)
+    (hsupply :
+      ∃ A : WitnessAccounting (candidateContext n),
+        HasSupplyBound (candidateContext n) A ∧ ClosedWitnessBound A) :
+    pivotVal n < Ystar := by
+  by_contra hnot
+  have hy : Ystar ≤ pivotVal n := le_of_not_lt hnot
+  exact caseB_contradiction_candidate_of_supplyPackage hL hy hno hsupply
 
 end CaseB
 end Lehmer

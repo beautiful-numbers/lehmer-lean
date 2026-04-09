@@ -5,7 +5,6 @@ IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
 - Lehmer.Basic.Defs : def
 - Lehmer.CaseB.Parameters : def
-- Lehmer.CaseB.Dominance.MajorantMc : def thm
 - Lehmer.Pivot.AnalyticConstants : def thm
 - Lehmer.Pivot.Mreq : def thm
 - Lehmer.Pipeline.Thresholds : def thm
@@ -15,7 +14,6 @@ import Mathlib.Data.Real.Basic
 import Lehmer.Prelude
 import Lehmer.Basic.Defs
 import Lehmer.CaseB.Parameters
-import Lehmer.CaseB.Dominance.MajorantMc
 import Lehmer.Pivot.AnalyticConstants
 import Lehmer.Pivot.Mreq
 import Lehmer.Pipeline.Thresholds
@@ -134,53 +132,29 @@ theorem YC_le_Ystar : Lehmer.Pipeline.YC ≤ Ystar := by
   exact le_trans hYC4 four_le_Ystar
 
 /--
-Continuous paper majorant used in the analytic comparison step.
+Paper-facing closed Case B majorant.
+
+This is the public Case B no-crossing majorant used in the paper-facing API.
+It is intentionally exposed under the name `M`.
 -/
-noncomputable def Mhat (t : ℝ) : ℝ :=
-  ((20 : ℝ) / 3) * (t / Real.log t) + 3 * (Real.log t)^4 + 2
+noncomputable def M (y : ℕ) : ℝ :=
+  ((20 : ℝ) / 3) * (yB y) / Real.log (yB y) +
+    3 * (Real.log (yB y)) ^ 4 + 2
 
-@[simp] theorem Mhat_def (t : ℝ) :
-    Mhat t =
-      ((20 : ℝ) / 3) * (t / Real.log t) + 3 * (Real.log t)^4 + 2 := rfl
-
-/--
-Continuous analytic barrier from the paper.
--/
-noncomputable def analyticBarrier (t : ℝ) : ℝ :=
-  C1 * t^2 / Real.log t
-
-@[simp] theorem analyticBarrier_def (t : ℝ) :
-    analyticBarrier t = C1 * t^2 / Real.log t := rfl
-
-/--
-Large-`y` analytic dominance target from the paper.
--/
-def UniformDominanceAt (t : ℝ) : Prop :=
-  McNat (Nat.floor t) < Nat.ceil (analyticBarrier t)
-
-@[simp] theorem UniformDominanceAt_def (t : ℝ) :
-    UniformDominanceAt t =
-      (McNat (Nat.floor t) < Nat.ceil (analyticBarrier t)) := rfl
-
-/--
-Discrete large-`y` dominance target specialized to integer pivots.
--/
-def UniformDominanceAtNat (y : ℕ) : Prop :=
-  Mc y < analyticBarrier (y : ℝ)
-
-@[simp] theorem UniformDominanceAtNat_def (y : ℕ) :
-    UniformDominanceAtNat y =
-      (Mc y < analyticBarrier (y : ℝ)) := rfl
+@[simp] theorem M_def (y : ℕ) :
+    M y =
+      ((20 : ℝ) / 3) * (yB y) / Real.log (yB y) +
+        3 * (Real.log (yB y)) ^ 4 + 2 := rfl
 
 /--
 Paper-facing no-crossing target:
 the Case B closed majorant lies strictly below the pivot demand threshold.
 -/
 def NoCrossingAt (y : ℕ) : Prop :=
-  McNat y < mreq y
+  M y < (mreq y : ℝ)
 
 @[simp] theorem NoCrossingAt_def (y : ℕ) :
-    NoCrossingAt y = (McNat y < mreq y) := rfl
+    NoCrossingAt y = (M y < (mreq y : ℝ)) := rfl
 
 /--
 Uniform no-crossing target beyond `Y*`.
@@ -193,108 +167,19 @@ def NoCrossingBeyondYstar : Prop :=
       (∀ y : ℕ, Ystar ≤ y → Nat.Prime y → NoCrossingAt y) := rfl
 
 /--
-Analytic package needed to close the no-crossing step.
-
-This is the exact missing bridge layer:
-1. dominate `Mc` by the continuous paper majorant `Mhat`,
-2. compare `Mhat` to the analytic barrier,
-3. discretize from the real strict inequality to `McNat`,
-4. compare the discretized barrier to `mreq`.
--/
-structure CaseBAnalyticBounds where
-  /-- Continuous domination of the closed majorant by the paper majorant. -/
-  Mc_le_Mhat :
-    ∀ y : ℕ, 3 ≤ y → Mc y ≤ Mhat (y : ℝ)
-  /-- Strict analytic dominance beyond `T_B`. -/
-  Mhat_lt_barrier :
-    ∀ t : ℝ, TB ≤ t → Mhat t < analyticBarrier t
-  /-- Discretization step from the real strict dominance to the natural majorant. -/
-  McNat_lt_barrierCeil :
-    ∀ y : ℕ, Y0 ≤ y →
-      Mc y < analyticBarrier (y : ℝ) →
-      McNat y < Nat.ceil (analyticBarrier (y : ℝ))
-  /-- Comparison of the discretized analytic barrier with the pivot demand threshold. -/
-  barrierCeil_le_mreq :
-    ∀ y : ℕ, Y0 ≤ y →
-      Nat.ceil (analyticBarrier (y : ℝ)) ≤ mreq y
-
-/--
-Interface constructor for large-`y` dominance at an integer pivot.
--/
-theorem uniformDominanceAtNat_of_assumption
-    {y : ℕ}
-    (h : Mc y < analyticBarrier (y : ℝ)) :
-    UniformDominanceAtNat y := by
-  exact h
-
-/--
 Interface constructor for no-crossing at a given pivot.
 -/
 theorem noCrossingAt_of_assumption
     {y : ℕ}
-    (h : McNat y < mreq y) :
+    (h : M y < (mreq y : ℝ)) :
     NoCrossingAt y := by
   exact h
-
-/--
-Main analytic bridge:
-from the paper large-`y` comparison package, obtain `McNat y < mreq y`.
--/
-theorem noCrossingAt_of_analyticBounds
-    (bounds : CaseBAnalyticBounds)
-    {y : ℕ} (hy : Ystar ≤ y) :
-    NoCrossingAt y := by
-  rw [NoCrossingAt_def]
-
-  have hy_real : (Ystar : ℝ) ≤ (y : ℝ) := by
-    exact_mod_cast hy
-
-  have hTB : TB ≤ (y : ℝ) := by
-    exact le_trans TB_le_Ystar hy_real
-
-  have hY0_real : (Y0 : ℝ) ≤ (y : ℝ) := by
-    exact le_trans Y0_le_TB hTB
-
-  have hY0 : Y0 ≤ y := by
-    exact_mod_cast hY0_real
-
-  have h3_le_Y0 : 3 ≤ Y0 := by
-    decide
-
-  have h3 : 3 ≤ y := by
-    exact le_trans h3_le_Y0 hY0
-
-  have hMc_le_Mhat : Mc y ≤ Mhat (y : ℝ) := by
-    exact bounds.Mc_le_Mhat y h3
-
-  have hMhat_lt_barrier : Mhat (y : ℝ) < analyticBarrier (y : ℝ) := by
-    exact bounds.Mhat_lt_barrier (y : ℝ) hTB
-
-  have hMc_lt_barrier : Mc y < analyticBarrier (y : ℝ) := by
-    exact lt_of_le_of_lt hMc_le_Mhat hMhat_lt_barrier
-
-  have hdisc : McNat y < Nat.ceil (analyticBarrier (y : ℝ)) := by
-    exact bounds.McNat_lt_barrierCeil y hY0 hMc_lt_barrier
-
-  have hmreq : Nat.ceil (analyticBarrier (y : ℝ)) ≤ mreq y := by
-    exact bounds.barrierCeil_le_mreq y hY0
-
-  exact lt_of_lt_of_le hdisc hmreq
-
-/--
-Uniform no-crossing beyond `Y*` obtained from the analytic package.
--/
-theorem noCrossingBeyondYstar_of_analyticBounds
-    (bounds : CaseBAnalyticBounds) :
-    NoCrossingBeyondYstar := by
-  intro y hy _hp
-  exact noCrossingAt_of_analyticBounds bounds hy
 
 /--
 Uniform no-crossing constructor.
 -/
 theorem noCrossingBeyondYstar_of_assumption
-    (h : ∀ y : ℕ, Ystar ≤ y → Nat.Prime y → McNat y < mreq y) :
+    (h : ∀ y : ℕ, Ystar ≤ y → Nat.Prime y → M y < (mreq y : ℝ)) :
     NoCrossingBeyondYstar := by
   intro y hy hp
   exact h y hy hp
@@ -305,13 +190,11 @@ Elimination form of the uniform no-crossing interface.
 theorem noCrossingAt_of_noCrossingBeyondYstar
     (h : NoCrossingBeyondYstar)
     {y : ℕ} (hy : Ystar ≤ y) (hp : Nat.Prime y) :
-    McNat y < mreq y := by
+    M y < (mreq y : ℝ) := by
   exact h y hy hp
 
 /--
-Convenient packaged form: once the analytic large-`y` comparison has been
-discretized into the `McNat y < mreq y` inequality, the no-crossing interface
-is ready for the final Case B contradiction layer.
+Convenient packaged form for downstream contradiction layers.
 -/
 theorem noCrossing_ready_for_contradiction
     (h : NoCrossingBeyondYstar)

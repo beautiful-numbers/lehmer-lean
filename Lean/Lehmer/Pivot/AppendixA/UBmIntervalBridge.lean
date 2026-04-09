@@ -1,89 +1,123 @@
--- FILE: Lean/Lehmer/Pivot/AppendixA/PrimeCountBridge.lean
+-- FILE: Lean/Lehmer/Pivot/AppendixA/UBmIntervalBridge.lean
 /-
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
-- Lehmer.Pivot.UBm : def thm
-- Lehmer.Pivot.AppendixA.PrimeCountDefs : def thm
-- Lehmer.Pivot.AppendixA.PrimeEnumeration : def thm
+- Lehmer.Pivot.UBmOrder : def thm
+- Lehmer.Pivot.AppendixA.UBmRangeProduct : def thm
 -/
 
 import Lehmer.Prelude
-import Lehmer.Pivot.UBm
-import Lehmer.Pivot.AppendixA.PrimeCountDefs
-import Lehmer.Pivot.AppendixA.PrimeEnumeration
+import Lehmer.Pivot.UBmOrder
+import Lehmer.Pivot.AppendixA.UBmRangeProduct
+
+open scoped BigOperators
+open Finset
 
 namespace Lehmer
 namespace Pivot
 namespace AppendixA
 
+noncomputable section
+
 /-!
-# Appendix A prime-count bridge
+# Appendix A interval bridge for `UBm`
 
-This file records the genuine finite counting consequences already available
-from the enumeration layer.
+This file bridges the finite-product presentation of `UBm` with the paper-facing
+prime-interval product indexed by the last prime `py y k`.
 
-Important scope:
-* no analytic estimates;
-* no `mreq`;
-* no converse counting-to-upper-bound theorem yet.
-
-What is proved here is the bridge in the direction that is already justified:
-an upper bound on the indexed primes `nthPrimeFrom y k` implies a counting
-lower bound on the interval `[y, x]`.
+Scope:
+* interval product bridge only;
+* no analytic bounds yet;
+* no `mreq` yet.
 -/
+
+/-- Rational interval prime product on `[y, x]`. -/
+def intervalPrimeProdQ (y x : ℕ) : ℚ :=
+  ∏ p in ((Finset.Icc y x).filter Nat.Prime), pivotFactor p
+
+/-- Real-cast interval prime product on `[y, x]`. -/
+def intervalPrimeProdR (y x : ℕ) : ℝ :=
+  ∏ p in ((Finset.Icc y x).filter Nat.Prime), ((pivotFactor p : ℚ) : ℝ)
 
 /--
-If all first `m` indexed primes above `y` are at most `x`, then there are at
-least `m` primes in the interval `[y, x]`.
+Membership in the filtered prime interval `[y, py y k]`.
 -/
-theorem m_le_card_primesInIcc_of_nthPrimeFrom_le
-    {y m x : ℕ}
-    (hub : ∀ k : ℕ, k < m → nthPrimeFrom y k ≤ x) :
-    m ≤ (primesInIcc y x).card := by
-  exact m_le_card_primesInIcc_of_upper_bound hub
+theorem mem_intervalPrimeProdQ_iff
+    {y k p : ℕ} :
+    p ∈ ((Finset.Icc y (py y k)).filter Nat.Prime) ↔
+      Nat.Prime p ∧ y ≤ p ∧ p ≤ py y k := by
+  constructor
+  · intro hp
+    rw [Finset.mem_filter] at hp
+    rcases hp with ⟨hpIcc, hpPrime⟩
+    rw [Finset.mem_Icc] at hpIcc
+    exact ⟨hpPrime, hpIcc.1, hpIcc.2⟩
+  · rintro ⟨hpPrime, hpy, hpx⟩
+    rw [Finset.mem_filter, Finset.mem_Icc]
+    exact ⟨⟨hpy, hpx⟩, hpPrime⟩
 
 /--
-If all first `m` indexed primes above `y` are at most `x`, then there are at
-least `m` primes at most `x`.
+The filtered prime interval `[y, py y k]` is exactly the finite set of the first
+`k+1` primes at least `y`.
 -/
-theorem m_le_primePi_of_nthPrimeFrom_le
-    {y m x : ℕ}
-    (hub : ∀ k : ℕ, k < m → nthPrimeFrom y k ≤ x) :
-    m ≤ primePi x := by
-  exact m_le_primePi_of_upper_bound hub
+theorem filter_Icc_eq_firstPrimesFrom
+    (y k : ℕ) :
+    ((Finset.Icc y (py y k)).filter Nat.Prime) = firstPrimesFrom y (k + 1) := by
+  classical
+  ext p
+  rw [mem_intervalPrimeProdQ_iff, mem_firstPrimesFrom_iff_prime_ge_le_py]
 
 /--
-Specialized pointwise form: if `nthPrimeFrom y (m - 1) ≤ x` and `m > 0`, then
-there are at least `m` primes in `[y, x]`.
+Rational interval-product form of `UBm` at the endpoint `py y k`.
 -/
-theorem m_le_card_primesInIcc_of_last_nthPrimeFrom_le
-    {y m x : ℕ}
-    (hm : 0 < m)
-    (hlast : nthPrimeFrom y (m - 1) ≤ x) :
-    m ≤ (primesInIcc y x).card := by
-  apply m_le_card_primesInIcc_of_nthPrimeFrom_le
-  intro k hk
-  have hkm1 : k ≤ m - 1 := by
-    omega
-  have hmono := nthPrimeFrom_strictMono y
-  have hle : nthPrimeFrom y k ≤ nthPrimeFrom y (m - 1) := by
-    exact le_of_lt_or_eq ((lt_or_eq_of_le hkm1)).elim
-      (fun hlt => le_of_lt (hmono hlt))
-      (fun heq => by simpa [heq])
-  exact le_trans hle hlast
+theorem UBm_eq_intervalPrimeProdQ_last
+    (y k : ℕ) :
+    UBm y (k + 1) = intervalPrimeProdQ y (py y k) := by
+  rw [intervalPrimeProdQ, UBm_eq_UB_firstPrimesFrom]
+  rw [filter_Icc_eq_firstPrimesFrom]
 
 /--
-Specialized pointwise form: if `nthPrimeFrom y (m - 1) ≤ x` and `m > 0`, then
-there are at least `m` primes at most `x`.
+Real-cast interval-product form of `UBm` at the endpoint `py y k`.
 -/
-theorem m_le_primePi_of_last_nthPrimeFrom_le
-    {y m x : ℕ}
-    (hm : 0 < m)
-    (hlast : nthPrimeFrom y (m - 1) ≤ x) :
-    m ≤ primePi x := by
-  exact le_trans
-    (m_le_card_primesInIcc_of_last_nthPrimeFrom_le hm hlast)
-    (card_primesInIcc_le_primePi y x)
+theorem UBm_cast_eq_intervalPrimeProdR_last
+    (y k : ℕ) :
+    ((UBm y (k + 1) : ℚ) : ℝ) = intervalPrimeProdR y (py y k) := by
+  rw [UBm_eq_intervalPrimeProdQ_last]
+  induction h : ((Finset.Icc y (py y k)).filter Nat.Prime) using Finset.induction_on with
+  | empty =>
+      simp [intervalPrimeProdQ, intervalPrimeProdR]
+  | @insert a s ha ih =>
+      simp [intervalPrimeProdQ, intervalPrimeProdR, ha, ih]
+
+/--
+The interval product is positive.
+-/
+theorem intervalPrimeProdQ_pos
+    (y x : ℕ) :
+    0 < intervalPrimeProdQ y x := by
+  unfold intervalPrimeProdQ
+  classical
+  induction ((Finset.Icc y x).filter Nat.Prime) using Finset.induction_on with
+  | empty =>
+      simp
+  | @insert a s ha ih =>
+      have ha_prime : Nat.Prime a := by
+        have : a ∈ (Finset.Icc y x).filter Nat.Prime := by simp [ha]
+        exact (Finset.mem_filter.mp this).2
+      rw [Finset.prod_insert ha]
+      exact mul_pos (pivotFactor_pos_of_prime ha_prime) ih
+
+/--
+The real interval product is positive.
+-/
+theorem intervalPrimeProdR_pos
+    (y x : ℕ) :
+    0 < intervalPrimeProdR y x := by
+  have hq : 0 < intervalPrimeProdQ y x := intervalPrimeProdQ_pos y x
+  unfold intervalPrimeProdR intervalPrimeProdQ at *
+  exact_mod_cast hq
+
+end
 
 end AppendixA
 end Pivot

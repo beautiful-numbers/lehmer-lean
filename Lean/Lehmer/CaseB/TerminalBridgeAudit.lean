@@ -53,23 +53,15 @@ context.
 -/
 theorem caseBTerminalDataAudit_witness_support_sound
     {n : ℕ}
-    (hT : CaseBTerminalDataAudit n)
+    (_hT : CaseBTerminalDataAudit n)
     {p : ℕ}
     (hp : ∃ A : WitnessAccountingAudit (candidateContext n),
       p ∈ witnessSetAudit (candidateContext n) A ∧
       HasSupplyBoundAudit (candidateContext n) A ∧
       ClosedWitnessBound A) :
     p ∈ (candidateContext n).S := by
-  rcases hT with ⟨A, hSupply, hClosed⟩
-  rcases hp with ⟨A', hpA', hSupply', hClosed'⟩
-  have hA : A' = A := by
-    have : ∃ A : WitnessAccountingAudit (candidateContext n),
-        HasSupplyBoundAudit (candidateContext n) A ∧
-        ClosedWitnessBound A := ⟨A, hSupply, hClosed⟩
-    simp only at this
-    rfl
-  subst hA
-  exact witnessSetAudit_support_sound A hpA'
+  rcases hp with ⟨A, hpA, _hSupply, _hClosed⟩
+  exact witnessSetAudit_support_sound A hpA
 
 /--
 Witness-side cardinal soundness extracted from terminal data:
@@ -95,7 +87,7 @@ as entangled.
 -/
 theorem caseBTerminalDataAudit_witness_classified
     {n : ℕ}
-    (hT : CaseBTerminalDataAudit n)
+    (_hT : CaseBTerminalDataAudit n)
     {p : ℕ}
     (hp :
       ∃ A : WitnessAccountingAudit (candidateContext n),
@@ -105,16 +97,8 @@ theorem caseBTerminalDataAudit_witness_classified
     WitnessCompatible (candidateContext n) p ∧
       (GenericWitness (candidateContext n) p ∨
         EntangledWitness (candidateContext n) p) := by
-  rcases hT with ⟨A, hSupply, hClosed⟩
-  rcases hp with ⟨A', hpA', hSupply', hClosed'⟩
-  have hA : A' = A := by
-    have : ∃ A : WitnessAccountingAudit (candidateContext n),
-        HasSupplyBoundAudit (candidateContext n) A ∧
-        ClosedWitnessBound A := ⟨A, hSupply, hClosed⟩
-    simp only at this
-    rfl
-  subst hA
-  exact witnessAccountingAudit_classified A hpA'
+  rcases hp with ⟨A, hpA, _hSupply, _hClosed⟩
+  exact witnessAccountingAudit_classified A hpA
 
 /--
 Supply-side soundness extracted from terminal data:
