@@ -2,131 +2,117 @@
 /-
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
-- Lehmer.Basic.Defs : def
-- Lehmer.CaseB.CaseBClassAudit : def thm
-- Lehmer.CaseB.TerminalBridgeAudit : def thm
 - Lehmer.CaseB.Dominance.NoCrossingGlobalAudit : def thm
 - Lehmer.CaseB.CaseBContradiction : thm
 -/
 
 import Lehmer.Prelude
-import Lehmer.Basic.Defs
-import Lehmer.CaseB.CaseBClassAudit
-import Lehmer.CaseB.TerminalBridgeAudit
 import Lehmer.CaseB.Dominance.NoCrossingGlobalAudit
 import Lehmer.CaseB.CaseBContradiction
 
 namespace Lehmer
 namespace CaseB
 
-open Lehmer.Basic
-open Lehmer.Pivot (pivotVal)
+open Dominance
 
 /--
-Audit-facing alias for the terminal structural datum consumed by the Case B
-contradiction layer.
--/
-abbrev CaseBContradictionAuditData (n : ℕ) : Prop :=
-  CaseBTerminalDataAudit n
-
-/--
-Audit-facing alias for the global no-crossing certificate consumed by the
+Audit-facing alias for the terminal structural datum consumed by the new
 Case B contradiction layer.
 -/
-abbrev NoCrossingCertificateAudit : Prop :=
-  NoCrossingBeyondYstarAudit
-
-@[simp] theorem CaseBContradictionAuditData_def (n : ℕ) :
-    CaseBContradictionAuditData n = CaseBTerminalDataAudit n := rfl
-
-@[simp] theorem NoCrossingCertificateAudit_def :
-    NoCrossingCertificateAudit = NoCrossingBeyondYstarAudit := rfl
+abbrev CaseBContradictionAuditData (B : ClosedBudgetFunctions) : Type :=
+  CaseBTerminalData B
 
 /--
-Audit-facing pointwise terminal contradiction for the Case B family.
+Audit-facing alias for the global no-crossing certificate consumed by the new
+Case B contradiction layer.
+-/
+abbrev NoCrossingCertificateAudit (B : ClosedBudgetFunctions) : Prop :=
+  NoCrossingBeyondYstarAudit B
 
-This is the direct audit reading of the main contradiction theorem:
-once a Lehmer candidate lies in the audited Case B class, and once both the
-audited terminal datum and the audited global no-crossing certificate are
-available, the candidate is impossible.
+@[simp] theorem CaseBContradictionAuditData_def (B : ClosedBudgetFunctions) :
+    CaseBContradictionAuditData B = CaseBTerminalData B := rfl
+
+@[simp] theorem NoCrossingCertificateAudit_def (B : ClosedBudgetFunctions) :
+    NoCrossingCertificateAudit B = NoCrossingBeyondYstarAudit B := rfl
+
+/--
+Audit-facing pointwise terminal contradiction for the new Case B contradiction
+layer.
 -/
 theorem false_of_caseB_terminal_dataAudit
-    {n : ℕ}
-    (hL : LehmerComposite n)
-    (hB : AuditCaseBClass n)
-    (hD : CaseBContradictionAuditData n)
-    (hno : NoCrossingCertificateAudit) :
+    {B : ClosedBudgetFunctions}
+    (D : CaseBContradictionAuditData B)
+    (hno : NoCrossingCertificateAudit B) :
     False := by
-  exact false_of_caseB_terminal_data hL hB hD hno
+  exact false_of_terminalData D hno
 
 /--
 Audit-facing pointwise contradiction, same content under the main theorem name.
 -/
 theorem caseB_impossibleAudit
-    {n : ℕ}
-    (hL : LehmerComposite n)
-    (hB : AuditCaseBClass n)
-    (hD : CaseBContradictionAuditData n)
-    (hno : NoCrossingCertificateAudit) :
+    {B : ClosedBudgetFunctions}
+    (D : CaseBContradictionAuditData B)
+    (hno : NoCrossingCertificateAudit B) :
     False := by
-  exact false_of_caseB_terminal_dataAudit hL hB hD hno
+  exact false_of_caseB_terminal_dataAudit D hno
 
 /--
-Audit-facing negative form:
-once the audited terminal datum and the audited no-crossing certificate are
-available, a Lehmer candidate cannot belong to the audited Case B family.
+Local no-crossing extracted audit-facing from the global certificate at the
+terminal level carried by the contradiction datum.
 -/
-theorem not_AuditCaseBClass_of_LehmerComposite
-    {n : ℕ}
-    (hL : LehmerComposite n)
-    (hD : CaseBContradictionAuditData n)
-    (hno : NoCrossingCertificateAudit) :
-    ¬ AuditCaseBClass n := by
-  intro hB
-  exact false_of_caseB_terminal_dataAudit hL hB hD hno
+theorem local_noCrossingAudit_of_terminal_data
+    {B : ClosedBudgetFunctions}
+    (D : CaseBContradictionAuditData B)
+    (hno : NoCrossingCertificateAudit B) :
+    NoCrossingAt B D.y := by
+  exact noCrossingAt_of_NoCrossingBeyondYstarAudit hno D.hy D.hprime
 
 /--
-Semantic-window reformulation of the audit-facing contradiction:
-once the audited terminal datum and the audited no-crossing certificate are
-available, a Lehmer candidate cannot satisfy the large-pivot semantic window.
+Expanded audit-facing contradiction using the local terminal no-crossing
+statement.
 -/
-theorem not_largePivotAudit_of_LehmerComposite
-    {n : ℕ}
-    (hL : LehmerComposite n)
-    (hD : CaseBContradictionAuditData n)
-    (hno : NoCrossingCertificateAudit) :
-    ¬ Ystar ≤ pivotVal n := by
-  intro hy
-  have hB : AuditCaseBClass n := audit_windowB_complete hy
-  exact not_AuditCaseBClass_of_LehmerComposite hL hD hno hB
+theorem false_of_caseB_terminal_dataAudit_local
+    {B : ClosedBudgetFunctions}
+    (D : CaseBContradictionAuditData B)
+    (hlocal : NoCrossingAt B D.y) :
+    False := by
+  exact false_of_terminalData_and_local_noCrossing D hlocal
 
 /--
-Audit-facing semantic-window contradiction, stated positively on the window
-hypothesis and then discharged to `False`.
+Audit-facing semantic contradiction at the terminal level.
 -/
 theorem false_of_largePivotAudit
-    {n : ℕ}
-    (hL : LehmerComposite n)
-    (hy : Ystar ≤ pivotVal n)
-    (hD : CaseBContradictionAuditData n)
-    (hno : NoCrossingCertificateAudit) :
+    {B : ClosedBudgetFunctions}
+    (D : CaseBContradictionAuditData B)
+    (hno : NoCrossingCertificateAudit B) :
     False := by
-  have hB : AuditCaseBClass n := audit_windowB_complete hy
-  exact false_of_caseB_terminal_dataAudit hL hB hD hno
+  exact false_of_caseB_terminal_dataAudit D hno
 
 /--
-Audit-facing elimination from the audited Case B class to the explicit semantic
-window condition.
+Audit-facing contradiction-ready inequality extracted from the global
+no-crossing certificate at the terminal level.
 -/
-theorem false_of_caseB_terminal_dataAudit_semantic
-    {n : ℕ}
-    (hL : LehmerComposite n)
-    (hB : AuditCaseBClass n)
-    (hD : CaseBContradictionAuditData n)
-    (hno : NoCrossingCertificateAudit) :
-    False := by
-  have hy : Ystar ≤ pivotVal n := audit_windowB_sound hB
-  exact false_of_largePivotAudit hL hy hD hno
+theorem M_lt_caseAMreq_of_terminal_dataAudit
+    {B : ClosedBudgetFunctions}
+    (D : CaseBContradictionAuditData B)
+    (hno : NoCrossingCertificateAudit B) :
+    M B D.y < (caseAMreq D.y : ℝ) := by
+  exact M_lt_caseAMreq_of_NoCrossingBeyondYstarAudit hno D.hy D.hprime
+
+/--
+No-hidden-dependency transparency for the audit-facing contradiction datum.
+-/
+theorem caseBContradictionAudit_no_hidden_dependency_data
+    (B : ClosedBudgetFunctions) :
+    CaseBContradictionAuditData B = CaseBTerminalData B := rfl
+
+/--
+No-hidden-dependency transparency for the audit-facing no-crossing
+certificate.
+-/
+theorem caseBContradictionAudit_no_hidden_dependency_noCrossing
+    (B : ClosedBudgetFunctions) :
+    NoCrossingCertificateAudit B = NoCrossingBeyondYstarAudit B := rfl
 
 end CaseB
 end Lehmer

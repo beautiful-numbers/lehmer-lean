@@ -80,14 +80,14 @@ A candidate lies in the intermediate branch when its pivot lies strictly below
 the Case B threshold `Ystar` but above the Case C threshold.
 -/
 def InIntermediate (n : ℕ) : Prop :=
-  YC ≤ pivotOf n ∧ pivotOf n < Lehmer.CaseB.Ystar
+  YC ≤ pivotOf n ∧ pivotOf n < Lehmer.CaseB.Dominance.Ystar
 
 /--
 A candidate lies in the global Case B branch exactly when its pivot is in the
 large-pivot regime `Ystar ≤ pivotOf n`.
 -/
 def InCaseB (n : ℕ) : Prop :=
-  Lehmer.CaseB.Ystar ≤ pivotOf n
+  Lehmer.CaseB.Dominance.Ystar ≤ pivotOf n
 
 @[simp] theorem InSmallPivotRange_def (n : ℕ) :
     InSmallPivotRange n = (3 ≤ pivotOf n ∧ pivotOf n < YA) := rfl
@@ -99,10 +99,10 @@ def InCaseB (n : ℕ) : Prop :=
     InCaseC n = (YA ≤ pivotOf n ∧ pivotOf n < YC) := rfl
 
 @[simp] theorem InIntermediate_def (n : ℕ) :
-    InIntermediate n = (YC ≤ pivotOf n ∧ pivotOf n < Lehmer.CaseB.Ystar) := rfl
+    InIntermediate n = (YC ≤ pivotOf n ∧ pivotOf n < Lehmer.CaseB.Dominance.Ystar) := rfl
 
 @[simp] theorem InCaseB_def (n : ℕ) :
-    InCaseB n = (Lehmer.CaseB.Ystar ≤ pivotOf n) := rfl
+    InCaseB n = (Lehmer.CaseB.Dominance.Ystar ≤ pivotOf n) := rfl
 
 /--
 Audit-facing relation saying that a Lehmer candidate falls in a named global
@@ -169,12 +169,12 @@ Case B, with terminal threshold `Ystar`.
 theorem pivot_range_trichotomy_from_YA {y : ℕ}
     (hy : YA ≤ y) :
     (YA ≤ y ∧ y < YC) ∨
-    (YC ≤ y ∧ y < Lehmer.CaseB.Ystar) ∨
-    (Lehmer.CaseB.Ystar ≤ y) := by
+    (YC ≤ y ∧ y < Lehmer.CaseB.Dominance.Ystar) ∨
+    (Lehmer.CaseB.Dominance.Ystar ≤ y) := by
   by_cases hC : y < YC
   · exact Or.inl ⟨hy, hC⟩
   · have hYC : YC ≤ y := le_of_not_gt hC
-    by_cases hB : y < Lehmer.CaseB.Ystar
+    by_cases hB : y < Lehmer.CaseB.Dominance.Ystar
     · exact Or.inr <| Or.inl ⟨hYC, hB⟩
     · exact Or.inr <| Or.inr (le_of_not_gt hB)
 
@@ -188,8 +188,8 @@ theorem pivot_range_quadrichotomy {y : ℕ}
     (hy : 3 ≤ y) :
     (3 ≤ y ∧ y < YA) ∨
     (YA ≤ y ∧ y < YC) ∨
-    (YC ≤ y ∧ y < Lehmer.CaseB.Ystar) ∨
-    (Lehmer.CaseB.Ystar ≤ y) := by
+    (YC ≤ y ∧ y < Lehmer.CaseB.Dominance.Ystar) ∨
+    (Lehmer.CaseB.Dominance.Ystar ≤ y) := by
   by_cases hA : y < YA
   · exact Or.inl ⟨hy, hA⟩
   · have hYA : YA ≤ y := le_of_not_gt hA
@@ -246,16 +246,6 @@ theorem smallPivotRange_not_intermediate {n : ℕ}
   exact not_lt_of_ge (le_trans hAYC hI.1) hA.2
 
 /--
-The legacy small-pivot range is disjoint from the Case B range.
--/
-theorem smallPivotRange_not_caseB {n : ℕ}
-    (hA : InSmallPivotRange n) :
-    ¬ InCaseB n := by
-  intro hB
-  have hAYstar : YA ≤ Lehmer.CaseB.Ystar := Lehmer.CaseB.YA_le_Ystar
-  exact not_lt_of_ge (le_trans hAYstar hB) hA.2
-
-/--
 The Case C branch is disjoint from the intermediate branch.
 -/
 theorem caseC_not_intermediate {n : ℕ}
@@ -263,16 +253,6 @@ theorem caseC_not_intermediate {n : ℕ}
     ¬ InIntermediate n := by
   intro hI
   exact not_lt_of_ge hI.1 hC.2
-
-/--
-The Case C branch is disjoint from the Case B branch.
--/
-theorem caseC_not_caseB {n : ℕ}
-    (hC : InCaseC n) :
-    ¬ InCaseB n := by
-  intro hB
-  have hCYstar : YC ≤ Lehmer.CaseB.Ystar := Lehmer.CaseB.YC_le_Ystar
-  exact not_lt_of_ge (le_trans hCYstar hB) hC.2
 
 /--
 The intermediate branch is disjoint from the Case B branch.

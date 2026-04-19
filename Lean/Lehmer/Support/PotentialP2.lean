@@ -1,87 +1,141 @@
 -- FILE: Lean/Lehmer/Support/PotentialP2.lean
+/-
+IMPORT CLASSIFICATION
+- Lehmer.Prelude : meta
+- Lehmer.Support.PotentialP : def thm
+-/
+
 import Lehmer.Prelude
-import Lehmer.Basic.Defs
 import Lehmer.Support.PotentialP
 
 namespace Lehmer
 namespace Support
 
-open Lehmer.Basic
+/-- Continuous saturation deficit: how far `supportPotential S` still lies below `1 - eps`. -/
+noncomputable def potentialDeficit (eps : ℝ) (S : Finset ℕ) : ℝ :=
+  max 0 ((1 - eps) - supportPotential S)
 
-/--
-A minimal MVP-2 parameter for the Case B descent potential.
--/
-noncomputable def epsilonB (y : ℕ) : ℝ :=
-  1 / (y : ℝ)
+@[simp] theorem potentialDeficit_def (eps : ℝ) (S : Finset ℕ) :
+    potentialDeficit eps S = max 0 ((1 - eps) - supportPotential S) := rfl
 
-/--
-A second support potential used for the descent skeleton.
--/
-noncomputable def potentialP2 (S : Finset ℕ) (y : ℕ) : ℝ :=
-  potentialP S - epsilonB y * (supportCard S : ℝ)
+/-- Discrete saturation deficit obtained by measuring the continuous deficit in steps of size `delta`. -/
+noncomputable def potentialP2 (eps delta : ℝ) (S : Finset ℕ) : ℕ :=
+  Nat.ceil (potentialDeficit eps S / delta)
 
-/--
-Paper-style alias for the second potential.
--/
-noncomputable abbrev P2 (S : Finset ℕ) (y : ℕ) : ℝ :=
-  potentialP2 S y
+@[simp] theorem potentialP2_def (eps delta : ℝ) (S : Finset ℕ) :
+    potentialP2 eps delta S = Nat.ceil (potentialDeficit eps S / delta) := rfl
 
-@[simp] theorem epsilonB_def (y : ℕ) :
-    epsilonB y = 1 / (y : ℝ) := rfl
+/-- The continuous deficit is always nonnegative. -/
+theorem potentialDeficit_nonneg (eps : ℝ) (S : Finset ℕ) :
+    0 ≤ potentialDeficit eps S := by
+  rw [potentialDeficit_def]
+  exact le_max_left _ _
 
-@[simp] theorem potentialP2_def (S : Finset ℕ) (y : ℕ) :
-    potentialP2 S y = potentialP S - epsilonB y * (supportCard S : ℝ) := rfl
+/-- If the support potential already reaches the saturation threshold, the continuous deficit vanishes. -/
+theorem potentialDeficit_eq_zero_of_saturated
+    {eps : ℝ} {S : Finset ℕ}
+    (hsat : 1 - eps ≤ supportPotential S) :
+    potentialDeficit eps S = 0 := by
+  rw [potentialDeficit_def]
+  apply max_eq_left
+  linarith
 
-@[simp] theorem P2_def (S : Finset ℕ) (y : ℕ) :
-    P2 S y = potentialP S - epsilonB y * (supportCard S : ℝ) := rfl
+/-- If the support potential already reaches the saturation threshold, the discrete deficit vanishes. -/
+theorem potentialP2_eq_zero_of_saturated
+    {eps delta : ℝ} {S : Finset ℕ}
+    (_ : 0 < delta)
+    (hsat : 1 - eps ≤ supportPotential S) :
+    potentialP2 eps delta S = 0 := by
+  rw [potentialP2_def, potentialDeficit_eq_zero_of_saturated hsat]
+  have hzero : (0 : ℝ) / delta = 0 := zero_div delta
+  rw [hzero]
+  norm_num
 
-@[simp] theorem P2_eq_potentialP2 (S : Finset ℕ) (y : ℕ) :
-    P2 S y = potentialP2 S y := rfl
+/-- In the non-saturated regime, the continuous deficit simplifies to the raw difference. -/
+theorem potentialDeficit_eq_sub_of_not_saturated
+    {eps : ℝ} {S : Finset ℕ}
+    (hnsat : supportPotential S < 1 - eps) :
+    potentialDeficit eps S = (1 - eps) - supportPotential S := by
+  rw [potentialDeficit_def]
+  apply max_eq_right
+  linarith
 
-/--
-Expanded form of `P2` in terms of the raw support quantities.
--/
-theorem P2_expand (S : Finset ℕ) (y : ℕ) :
-    P2 S y =
-      Real.log (supportLcm S) / Real.log (supportProd S)
-        - epsilonB y * (supportCard S : ℝ) := by
-  rfl
+/-- Continuous deficit decreases by at least `delta`, up to truncation at `0`, under a controlled gain of size `delta`. -/
+theorem potentialDeficit_le_max_sub_of_gain
+    {eps delta : ℝ} {S S' : Finset ℕ}
+    (hbase : supportPotential S ≤ 1 - eps)
+    (hgain : supportPotential S' ≥ supportPotential S + delta) :
+    potentialDeficit eps S' ≤ max 0 (potentialDeficit eps S - delta) := by
+  have hdef :
+      potentialDeficit eps S = (1 - eps) - supportPotential S := by
+    rw [potentialDeficit_def]
+    apply max_eq_right
+    linarith
+  have hraw :
+      (1 - eps) - supportPotential S' ≤ potentialDeficit eps S - delta := by
+    rw [hdef]
+    linarith
+  rw [potentialDeficit_def]
+  exact max_le_max le_rfl hraw
 
-/--
-For fixed `y`, `P2` differs from `P` by the cardinality correction term.
--/
-theorem P2_eq_P_sub_card_term (S : Finset ℕ) (y : ℕ) :
-    P2 S y = P S - epsilonB y * (supportCard S : ℝ) := by
-  rfl
+/-- Discrete deficit drops by at least one step under a controlled gain of size `delta`. -/
+theorem potentialP2_decrease_of_gain
+    {eps delta : ℝ} {S S' : Finset ℕ}
+    (hdelta : 0 < delta)
+    (hbase : supportPotential S ≤ 1 - eps)
+    (hgain : supportPotential S' ≥ supportPotential S + delta) :
+    potentialP2 eps delta S' ≤ potentialP2 eps delta S - 1 := by
+  let D : ℝ := potentialDeficit eps S
+  let D' : ℝ := potentialDeficit eps S'
 
-/--
-The empty-support value of `P2` is given by direct expansion.
--/
-@[simp] theorem P2_empty (y : ℕ) :
-    P2 ∅ y = potentialP ∅ - epsilonB y * (supportCard (∅ : Finset ℕ) : ℝ) := by
-  rfl
+  have hD_nonneg : 0 ≤ D := potentialDeficit_nonneg eps S
+  have hD'_nonneg : 0 ≤ D' := potentialDeficit_nonneg eps S'
 
-/--
-Removing an element from the support changes `P2` by the corresponding
-difference of `P` plus the cardinality correction term.
--/
-theorem P2_erase_expand (S : Finset ℕ) (p y : ℕ) :
-    P2 (S.erase p) y =
-      potentialP (S.erase p) - epsilonB y * (supportCard (S.erase p) : ℝ) := by
-  rfl
+  have hD'le : D' ≤ max 0 (D - delta) := by
+    exact potentialDeficit_le_max_sub_of_gain hbase hgain
 
-/--
-Interface form for a strict `P2`-decrease under a controlled-removal
-hypothesis.
+  rw [potentialP2_def, potentialP2_def]
+  change Nat.ceil (D' / delta) ≤ Nat.ceil (D / delta) - 1
 
-The strict decrease is not true for arbitrary `S, p, y`; the theorem is
-therefore stated in the precise implication form actually needed later.
--/
-theorem P2_strict_decrease_placeholder
-    (S : Finset ℕ) (p y : ℕ) (_hp : p ∈ S)
-    (hdec : P2 (S.erase p) y < P2 S y) :
-    P2 (S.erase p) y < P2 S y := by
-  exact hdec
+  by_cases hsmall : D < delta
+  · have hmax : max 0 (D - delta) = 0 := by
+      apply max_eq_left
+      linarith
+    have hD'_zero : D' = 0 := by
+      have hle0 : D' ≤ 0 := by simpa [hmax] using hD'le
+      linarith
+    rw [hD'_zero]
+    have hzero : (0 : ℝ) / delta = 0 := zero_div delta
+    rw [hzero]
+    norm_num
+  · have hδleD : delta ≤ D := le_of_not_gt hsmall
+    have hmax : max 0 (D - delta) = D - delta := by
+      apply max_eq_right
+      linarith
+    have hD'le' : D' ≤ D - delta := by
+      simpa [hmax] using hD'le
+    have hquot : D' / delta ≤ D / delta - 1 := by
+      have hdiv : D' / delta ≤ (D - delta) / delta := by
+        exact div_le_div_of_nonneg_right hD'le' (le_of_lt hdelta)
+      have hcalc : (D - delta) / delta = D / delta - 1 := by
+        rw [sub_div, div_self hdelta.ne']
+      exact hdiv.trans_eq hcalc
+    have hcaseil :
+        ((Nat.ceil (D' / delta) : ℕ) : ℝ) < D / delta := by
+      have hlt1 : ((Nat.ceil (D' / delta) : ℕ) : ℝ) < D' / delta + 1 := by
+        exact Nat.ceil_lt_add_one (div_nonneg hD'_nonneg (le_of_lt hdelta))
+      have hle1 : D' / delta + 1 ≤ D / delta := by
+        linarith
+      exact lt_of_lt_of_le hlt1 hle1
+    have hnatlt : Nat.ceil (D' / delta) < Nat.ceil (D / delta) := by
+      have hceil : D / delta ≤ ((Nat.ceil (D / delta) : ℕ) : ℝ) := by
+        exact Nat.le_ceil (D / delta)
+      have hltceil :
+          ((Nat.ceil (D' / delta) : ℕ) : ℝ) <
+            ((Nat.ceil (D / delta) : ℕ) : ℝ) := by
+        exact lt_of_lt_of_le hcaseil hceil
+      exact_mod_cast hltceil
+    exact Nat.le_pred_of_lt hnatlt
 
 end Support
 end Lehmer

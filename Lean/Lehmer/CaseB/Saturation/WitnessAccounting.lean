@@ -66,7 +66,9 @@ def singletonWitnessPack (C : Context) (p : ℕ) (hp : p ∈ C.S) : WitnessPack 
   W := {p}
   hsub := by
     intro q hq
-    simpa using (Finset.mem_singleton.mp hq).symm ▸ hp
+    have hq' : q = p := by simpa using hq
+    subst q
+    exact hp
 
 @[simp] theorem singletonWitnessPack_mem (C : Context) (p : ℕ) (hp : p ∈ C.S) :
     p ∈ (singletonWitnessPack C p hp).W := by
@@ -113,9 +115,6 @@ def WitnessNonempty {C : Context} (P : WitnessPack C) : Prop :=
 /--
 A prime is witness-compatible with a context if it is a removable support
 element.
-
-This is the minimal support-side accounting notion needed before the later
-lock/scarcity refinements are introduced.
 -/
 def WitnessCompatible (C : Context) (p : ℕ) : Prop :=
   Removable C.S p
@@ -172,6 +171,26 @@ def emptyWitnessAccounting (C : Context) : WitnessAccounting C where
     simp at hp
 
 /--
+Union of witness accountings over the same initial context.
+This is a local accounting union; it is honest because both accountings are
+already classified in the same context `C`.
+-/
+def unionWitnessAccounting (C : Context)
+    (A B : WitnessAccounting C) :
+    WitnessAccounting C where
+  pack := unionWitnessPack C A.pack B.pack
+  hclassified := by
+    intro p hp
+    rcases Finset.mem_union.mp hp with hpA | hpB
+    · exact A.hclassified p hpA
+    · exact B.hclassified p hpB
+
+@[simp] theorem unionWitnessAccounting_witnessSet
+    (C : Context) (A B : WitnessAccounting C) :
+    witnessSet C (unionWitnessAccounting C A B) =
+      witnessSet C A ∪ witnessSet C B := rfl
+
+/--
 Every witness in a witness accounting datum belongs to the support.
 -/
 theorem mem_support_of_mem_witnessSet {C : Context} (A : WitnessAccounting C)
@@ -197,7 +216,7 @@ def singletonGenericWitnessAccounting (C : Context) (p : ℕ)
     intro q hq
     have hq' : q = p := by
       simpa [singletonWitnessPack] using hq
-    subst hq'
+    subst q
     exact ⟨hp, Or.inl hgen⟩
 
 /--
@@ -211,7 +230,7 @@ def singletonEntangledWitnessAccounting (C : Context) (p : ℕ)
     intro q hq
     have hq' : q = p := by
       simpa [singletonWitnessPack] using hq
-    subst hq'
+    subst q
     exact ⟨hp, Or.inr hent⟩
 
 /--
@@ -226,12 +245,13 @@ def witnessAccountingOfGenericStep {C : Context} (s : GenericStepData C) :
     s.hgeneric
 
 /--
-A generic chain induces a witness accounting datum on its initial context by
-recording the head prime of the chain when present, and the empty set when the
-chain is trivial.
+A generic chain induces only a minimal local witness accounting datum on its
+initial context: the trivial chain yields the empty accounting, and a nontrivial
+chain records the head pivot only.
 
-This is the minimal accounting interface needed before later files enrich the
-counting argument across longer chains.
+This object is intentionally **not** the cumulative witness accounting of the
+whole chain. The honest cumulative chain-side object is `genericChainWitnessSet`
+defined below.
 -/
 def witnessAccountingOfGenericChain {C D : Context} (Γ : GenericChain C D) :
     WitnessAccounting C :=
@@ -245,12 +265,121 @@ The witness accounting of a trivial generic chain is empty.
 @[simp] theorem witnessAccountingOfGenericChain_nil (C : Context) :
     witnessAccountingOfGenericChain (GenericChain.nil C) = emptyWitnessAccounting C := rfl
 
+@[simp] theorem witnessAccountingOfGenericChain_nil_pack (C : Context) :
+    (witnessAccountingOfGenericChain (GenericChain.nil C)).pack = emptyWitnessPack C := rfl
+
+@[simp] theorem witnessSet_witnessAccountingOfGenericChain_nil (C : Context) :
+    witnessSet C (witnessAccountingOfGenericChain (GenericChain.nil C)) = ∅ := rfl
+
+/--
+Cumulative witness set of a generic chain.
+
+Unlike `witnessAccountingOfGenericChain`, this object honestly records all
+pivots appearing along the whole chain.
+-/
+def genericChainWitnessSet {C D : Context} : GenericChain C D → Finset ℕ
+  | .nil _ => ∅
+  | .cons s Γ => {s.p} ∪ genericChainWitnessSet Γ
+
+@[simp] theorem genericChainWitnessSet_nil (C : Context) :
+    genericChainWitnessSet (GenericChain.nil C) = ∅ := rfl
+
+@[simp] theorem genericChainWitnessSet_cons
+    {C D : Context} (s : GenericStepData C) (Γ : GenericChain s.C' D) :
+    genericChainWitnessSet (GenericChain.cons s Γ) =
+      {s.p} ∪ genericChainWitnessSet Γ := rfl
+
+/--
+Every cumulative witness of a generic chain belongs to the initial support.
+-/
+theorem genericChainWitnessSet_subset_support
+    {C D : Context} (Γ : GenericChain C D) :
+    genericChainWitnessSet Γ ⊆ C.S := by
+  induction Γ with
+  | nil C =>
+      intro p hp
+      simp at hp
+  | @cons C D s Γ ih =>
+      intro p hp
+      rcases Finset.mem_union.mp hp with hp | hp
+      · have hp' : p = s.p := by
+          simpa using hp
+        subst p
+        rcases s.hstep with ⟨hsupp, _⟩
+        exact hsupp
+      · have hp' : p ∈ s.C'.S := ih hp
+        have hSC' : s.C'.S = remove C.S s.p := by
+          exact ContextControlledRemoval_support_eq s.hstep
+        rw [hSC'] at hp'
+        exact mem_remove_implies_mem hp'
+
+/--
+Cardinality bound for the cumulative witness set of a generic chain.
+-/
+theorem card_genericChainWitnessSet_le_supportCard
+    {C D : Context} (Γ : GenericChain C D) :
+    supportCard (genericChainWitnessSet Γ) ≤ supportCard C.S := by
+  simpa [supportCard] using
+    Finset.card_le_card (genericChainWitnessSet_subset_support Γ)
+
+/--
+The cumulative witness pack induced by a generic chain.
+-/
+def witnessPackOfGenericChain {C D : Context} (Γ : GenericChain C D) :
+    WitnessPack C :=
+  { W := genericChainWitnessSet Γ
+    hsub := genericChainWitnessSet_subset_support Γ }
+
+@[simp] theorem witnessPackOfGenericChain_witnesses
+    {C D : Context} (Γ : GenericChain C D) :
+    (witnessPackOfGenericChain Γ).W = genericChainWitnessSet Γ := rfl
+
+/--
+The head prime of a nontrivial generic chain belongs to the cumulative witness
+set.
+-/
+theorem head_mem_genericChainWitnessSet
+    {C D : Context}
+    (s : GenericStepData C) (Γ : GenericChain s.C' D) :
+    s.p ∈ genericChainWitnessSet (GenericChain.cons s Γ) := by
+  simp [genericChainWitnessSet]
+
+/--
+The head prime belongs to the cumulative witness pack of a nontrivial chain.
+-/
+theorem head_mem_witnessPackOfGenericChain
+    {C D : Context}
+    (s : GenericStepData C) (Γ : GenericChain s.C' D) :
+    s.p ∈ (witnessPackOfGenericChain (GenericChain.cons s Γ)).W := by
+  simp [witnessPackOfGenericChain, genericChainWitnessSet]
+
+/--
+Every cumulative witness coming from the tail of a chain remains a cumulative
+witness of the whole chain.
+-/
+theorem tail_mem_genericChainWitnessSet_of_cons
+    {C D : Context}
+    (s : GenericStepData C) (Γ : GenericChain s.C' D) {p : ℕ}
+    (hp : p ∈ genericChainWitnessSet Γ) :
+    p ∈ genericChainWitnessSet (GenericChain.cons s Γ) := by
+  simp [genericChainWitnessSet, hp]
+
+/--
+Any cumulative witness of a generic chain belongs to the initial support.
+-/
+theorem mem_support_of_mem_genericChainWitnessSet
+    {C D : Context} (Γ : GenericChain C D) {p : ℕ}
+    (hp : p ∈ genericChainWitnessSet Γ) :
+    p ∈ C.S := by
+  exact genericChainWitnessSet_subset_support Γ hp
+
 /--
 The witness accounting of a nontrivial generic chain contains the head prime.
+This remains the minimal local head-based accounting API.
 -/
 theorem head_mem_witnessAccountingOfGenericChain {C D : Context}
-    (s : GenericStepData C) (_Γ : GenericChain s.C' D) :
-    s.p ∈ witnessSet C (witnessAccountingOfGenericChain (GenericChain.cons s _Γ)) := by
+    (s : GenericStepData C) (Γ : GenericChain s.C' D) :
+    s.p ∈ witnessSet C (witnessAccountingOfGenericChain (GenericChain.cons s Γ)) := by
   have hp : Removable C.S s.p := by
     rcases s.hstep with ⟨hp, _⟩
     exact hp
@@ -275,7 +404,18 @@ theorem head_genericWitness_of_genericChain {C D : Context}
   exact s.hgeneric
 
 /--
-The witness accounting induced by a generic chain is support-bounded.
+Tail witnesses inject into the cumulative witness set of the whole chain.
+-/
+theorem mem_witnessSet_of_tail
+    {C D : Context}
+    (s : GenericStepData C) (Γ : GenericChain s.C' D) {p : ℕ}
+    (hp : p ∈ genericChainWitnessSet Γ) :
+    p ∈ genericChainWitnessSet (GenericChain.cons s Γ) := by
+  simp [genericChainWitnessSet, hp]
+
+/--
+The minimal local witness accounting induced by a generic chain is
+support-bounded.
 -/
 theorem card_witnessAccountingOfGenericChain_le_supportCard {C D : Context}
     (Γ : GenericChain C D) :
@@ -283,8 +423,8 @@ theorem card_witnessAccountingOfGenericChain_le_supportCard {C D : Context}
   exact card_witnessSet_le_supportCard (witnessAccountingOfGenericChain Γ)
 
 /--
-A generic chain to saturation induces a support-bounded witness accounting
-datum on the initial context.
+A generic chain to saturation induces a minimal local witness accounting datum
+on the initial context.
 -/
 def witnessAccountingOfGenericChainToSaturated {C : Context}
     (G : GenericChainToSaturated C) :
@@ -299,6 +439,71 @@ theorem card_witnessAccountingOfGenericChainToSaturated_le_supportCard
     {C : Context} (G : GenericChainToSaturated C) :
     supportCard (witnessSet C (witnessAccountingOfGenericChainToSaturated G)) ≤ supportCard C.S := by
   exact card_witnessAccountingOfGenericChain_le_supportCard G.chain
+
+/--
+Honest cumulative witness profile of a generic chain.
+This is the cumulative witness-side bridge object for the strategy-1 chain.
+-/
+structure GenericChainWitnessProfile (C : Context) where
+  terminal : Context
+  witnessSet : Finset ℕ
+  hsub : witnessSet ⊆ C.S
+  hcard : supportCard witnessSet ≤ supportCard C.S
+
+/--
+Canonical cumulative witness profile induced by a generic chain.
+-/
+def genericChainWitnessProfile_of_chain
+    {C D : Context} (Γ : GenericChain C D) :
+    GenericChainWitnessProfile C :=
+  { terminal := D
+    witnessSet := genericChainWitnessSet Γ
+    hsub := genericChainWitnessSet_subset_support Γ
+    hcard := card_genericChainWitnessSet_le_supportCard Γ }
+
+/--
+Terminal cumulative witness profile induced by a generic chain to saturation.
+-/
+structure GenericChainToSaturatedWitnessProfile (C : Context) where
+  satChain : GenericChainToSaturated C
+  witnessSet : Finset ℕ
+  hsub : witnessSet ⊆ C.S
+  hcard : supportCard witnessSet ≤ supportCard C.S
+
+/--
+Canonical terminal cumulative witness profile from a saturated generic chain.
+-/
+def genericChainToSaturatedWitnessProfile_of_chain
+    {C : Context} (G : GenericChainToSaturated C) :
+    GenericChainToSaturatedWitnessProfile C :=
+  { satChain := G
+    witnessSet := genericChainWitnessSet G.chain
+    hsub := genericChainWitnessSet_subset_support G.chain
+    hcard := card_genericChainWitnessSet_le_supportCard G.chain }
+
+/--
+Bridge profile exposing both:
+- the old minimal local accounting object, and
+- the honest cumulative witness set of the whole chain.
+-/
+structure GenericChainAccountingBridgeProfile (C : Context) where
+  terminal : Context
+  localAccounting : WitnessAccounting C
+  cumulativeWitnessSet : Finset ℕ
+  hsub : cumulativeWitnessSet ⊆ C.S
+  hcard : supportCard cumulativeWitnessSet ≤ supportCard C.S
+
+/--
+Canonical mixed bridge profile associated to a generic chain.
+-/
+def genericChainAccountingBridgeProfile_of_chain
+    {C D : Context} (Γ : GenericChain C D) :
+    GenericChainAccountingBridgeProfile C :=
+  { terminal := D
+    localAccounting := witnessAccountingOfGenericChain Γ
+    cumulativeWitnessSet := genericChainWitnessSet Γ
+    hsub := genericChainWitnessSet_subset_support Γ
+    hcard := card_genericChainWitnessSet_le_supportCard Γ }
 
 end CaseB
 end Lehmer

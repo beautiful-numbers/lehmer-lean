@@ -181,22 +181,21 @@ theorem supportCard_nextContext_lt_of_removable (C : Context) {p : ℕ}
   simpa using supportCard_remove_lt_of_removable hp
 
 /--
-Expanded form of the second potential after controlled removal.
-
-This is the local algebraic target shape for later descent lemmas.
+Expanded form of the Case B potential after controlled removal, written on the
+canonical successor context built from `(y, remove S p)`.
 -/
 theorem P2_remove_expand (S : Finset ℕ) (p y : ℕ) :
-    P2 (remove S p) y =
-      potentialP (remove S p) - epsilonB y * (supportCard (remove S p) : ℝ) := by
-  rfl
+    potential ⟨y, remove S p⟩ =
+      potentialP2 (epsilonB y) (paperDelta y) (remove S p) := by
+  simp [potential, paperPotential, remove]
 
 /--
 Context-level expanded form of the potential after controlled removal.
 -/
 theorem potential_nextContext_expand (C : Context) (p : ℕ) :
     potential (nextContext C p) =
-      potentialP (remove C.S p) - epsilonB C.y * (supportCard (remove C.S p) : ℝ) := by
-  rfl
+      potentialP2 (epsilonB C.y) (paperDelta C.y) (remove C.S p) := by
+  simp [potential, paperPotential, nextContext, remove]
 
 /--
 A context-level controlled-removal step preserves the Case B level.

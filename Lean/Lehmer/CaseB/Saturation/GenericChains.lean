@@ -37,6 +37,30 @@ structure GenericStepData (C : Context) where
   hLenDec : contextDescentLength C' < contextDescentLength C
 
 /--
+Canonical conversion from a context-level generic gain to a generic step datum.
+-/
+def genericStepData_of_contextGenericGain
+    (C : Context) {p : ℕ}
+    (hgen : ContextGenericGain C p) :
+    GenericStepData C :=
+  { p := p
+    C' := nextContext C p
+    hstep := contextControlledRemoval_canonical C p hgen.1.1
+    hgeneric := hgen
+    hP2dec := potential_strict_decrease_of_genericGain C p hgen.1.1 hgen
+    hLenDec := contextDescentLength_strict_decrease_of_removable C p hgen.1.1 }
+
+@[simp] theorem genericStepData_of_contextGenericGain_p
+    (C : Context) {p : ℕ}
+    (hgen : ContextGenericGain C p) :
+    (genericStepData_of_contextGenericGain C hgen).p = p := rfl
+
+@[simp] theorem genericStepData_of_contextGenericGain_C'
+    (C : Context) {p : ℕ}
+    (hgen : ContextGenericGain C p) :
+    (genericStepData_of_contextGenericGain C hgen).C' = nextContext C p := rfl
+
+/--
 Inductive generic chains.
 
 A generic chain is a finite sequence of controlled removals in which every
@@ -46,6 +70,19 @@ inductive GenericChain : Context → Context → Type where
   | nil (C : Context) : GenericChain C C
   | cons {C D : Context} (s : GenericStepData C) :
       GenericChain s.C' D → GenericChain C D
+
+/--
+A nonempty generic chain, exposing the head step and tail separately.
+-/
+structure NonemptyGenericChain (C D : Context) where
+  head : GenericStepData C
+  tail : GenericChain head.C' D
+
+def NonemptyGenericChain.toGenericChain
+    {C D : Context}
+    (Γ : NonemptyGenericChain C D) :
+    GenericChain C D :=
+  GenericChain.cons Γ.head Γ.tail
 
 /--
 Length of a generic chain.
@@ -61,19 +98,26 @@ def genericChainLength {C D : Context} : GenericChain C D → ℕ
     (s : GenericStepData C) (Γ : GenericChain s.C' D) :
     genericChainLength (GenericChain.cons s Γ) = genericChainLength Γ + 1 := rfl
 
+theorem genericChainLength_pos_of_cons
+    {C D : Context}
+    (s : GenericStepData C) (Γ : GenericChain s.C' D) :
+    0 < genericChainLength (GenericChain.cons s Γ) := by
+  simp [genericChainLength]
+
+theorem genericChainLength_tail_le
+    {C D : Context}
+    (s : GenericStepData C) (Γ : GenericChain s.C' D) :
+    genericChainLength Γ ≤ genericChainLength (GenericChain.cons s Γ) := by
+  simp [genericChainLength]
+
 /--
 A one-step generic chain from a generic removable prime.
 -/
 def singletonGenericChain {C : Context} (p : ℕ)
-    (hp : Removable C.S p) (hgen : ContextGenericGain C p) :
+    (_hp : Removable C.S p) (hgen : ContextGenericGain C p) :
     GenericChain C (nextContext C p) :=
   GenericChain.cons
-    { p := p
-      C' := nextContext C p
-      hstep := contextControlledRemoval_canonical C p hp
-      hgeneric := hgen
-      hP2dec := potential_strict_decrease_of_genericGain C p hp hgen
-      hLenDec := contextDescentLength_strict_decrease_of_removable C p hp }
+    (genericStepData_of_contextGenericGain C hgen)
     (GenericChain.nil (nextContext C p))
 
 /--
@@ -114,6 +158,17 @@ theorem GenericChain_head_length_decrease
     {C D : Context} (s : GenericStepData C) (_Γ : GenericChain s.C' D) :
     contextDescentLength s.C' < contextDescentLength C := by
   exact s.hLenDec
+
+theorem GenericStepData_preserves_level
+    {C : Context} (s : GenericStepData C) :
+    s.C'.y = C.y := by
+  exact ContextControlledRemoval_preserves_level s.hstep
+
+theorem GenericChain_tail_preserves_level
+    {C D : Context}
+    (_s : GenericStepData C) (Γ : GenericChain _s.C' D) :
+    D.y = _s.C'.y := by
+  exact GenericChain_preserves_level Γ
 
 /--
 A generic chain is bounded by the Case B budget when its length is at most
@@ -157,6 +212,36 @@ def trivialGenericChainToSaturated (C : Context)
   hsaturated := hC
 
 /--
+A context-level generic gain canonically yields a generic step datum.
+-/
+theorem exists_genericStepData_of_contextGenericGain
+    (C : Context) {p : ℕ}
+    (hgen : ContextGenericGain C p) :
+    ∃ s : GenericStepData C, s.p = p := by
+  exact ⟨genericStepData_of_contextGenericGain C hgen, rfl⟩
+
+/--
+A context-level generic gain canonically yields a singleton generic chain.
+-/
+theorem exists_singletonGenericChain_of_contextGenericGain
+    (C : Context) {p : ℕ}
+    (hgen : ContextGenericGain C p) :
+    ∃ Γ : GenericChain C (nextContext C p), genericChainLength Γ = 1 := by
+  refine ⟨singletonGenericChain p hgen.1.1 hgen, ?_⟩
+  simp [singletonGenericChain, genericChainLength]
+
+/--
+Structured generic-step extraction from a descent-eligible context, provided a
+generic pivot is already available.
+-/
+theorem genericStepData_of_descentEligible
+    (C : Context) (_hC : ContextDescentEligible C)
+    (hgen : ∃ p : ℕ, Removable C.S p ∧ ContextGenericGain C p) :
+    ∃ _ : GenericStepData C, True := by
+  rcases hgen with ⟨p, _hp, hgp⟩
+  exact ⟨genericStepData_of_contextGenericGain C hgp, trivial⟩
+
+/--
 A generic one-step descent exists from a descent-eligible context provided
 there is a removable prime satisfying the generic-side gain criterion.
 -/
@@ -164,13 +249,23 @@ theorem exists_generic_step_of_descentEligible
     (C : Context) (_hC : ContextDescentEligible C)
     (hgen : ∃ p : ℕ, Removable C.S p ∧ ContextGenericGain C p) :
     ∃ _s : GenericStepData C, True := by
-  rcases hgen with ⟨p, hp, hgp⟩
-  refine ⟨{ p := p
-          , C' := nextContext C p
-          , hstep := contextControlledRemoval_canonical C p hp
-          , hgeneric := hgp
-          , hP2dec := potential_strict_decrease_of_genericGain C p hp hgp
-          , hLenDec := contextDescentLength_strict_decrease_of_removable C p hp }, trivial⟩
+  exact genericStepData_of_descentEligible C _hC hgen
+
+/--
+A lightweight profile of a generic chain, recording level preservation and
+budget compatibility explicitly.
+-/
+structure GenericChainProfile (C D : Context) where
+  chain : GenericChain C D
+  hlevel : D.y = C.y
+  hbudget : genericChainLength chain ≤ KmaxB C.y
+
+def genericChainProfile_nil (C : Context) :
+    GenericChainProfile C C :=
+  { chain := GenericChain.nil C
+    hlevel := rfl
+    hbudget := by
+      exact KmaxB_nonneg C.y }
 
 end CaseB
 end Lehmer

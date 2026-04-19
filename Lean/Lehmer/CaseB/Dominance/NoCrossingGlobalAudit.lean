@@ -12,42 +12,50 @@ import Lehmer.CaseB.Dominance.NoCrossingGlobal
 
 namespace Lehmer
 namespace CaseB
+namespace Dominance
 
-open Lehmer.Pivot
+abbrev NoCrossingBeyondYstarAudit (B : ClosedBudgetFunctions) : Prop :=
+  NoCrossingGlobalCertificate B
 
-abbrev NoCrossingBeyondYstarAudit : Prop :=
-  NoCrossingBeyondYstar
+@[simp] theorem NoCrossingBeyondYstarAudit_def (B : ClosedBudgetFunctions) :
+    NoCrossingBeyondYstarAudit B = NoCrossingGlobalCertificate B := rfl
 
-@[simp] theorem NoCrossingBeyondYstarAudit_def :
-    NoCrossingBeyondYstarAudit = NoCrossingBeyondYstar := rfl
-
-@[simp] theorem NoCrossingBeyondYstarAudit_iff :
-    NoCrossingBeyondYstarAudit ↔
-      (∀ y : ℕ, Ystar ≤ y → Nat.Prime y → NoCrossingAt y) := by
+@[simp] theorem NoCrossingBeyondYstarAudit_iff (B : ClosedBudgetFunctions) :
+    NoCrossingBeyondYstarAudit B ↔
+      (∀ y : ℕ, Ystar ≤ y → Nat.Prime y → NoCrossingAt B y) := by
   rfl
 
 theorem noCrossingBeyondYstarAudit_of_global
-    (h : NoCrossingGlobalCertificate) :
-    NoCrossingBeyondYstarAudit := by
+    {B : ClosedBudgetFunctions}
+    (h : NoCrossingGlobalCertificate B) :
+    NoCrossingBeyondYstarAudit B := by
   exact h
 
 theorem noCrossingAt_of_NoCrossingBeyondYstarAudit
-    (h : NoCrossingBeyondYstarAudit)
+    {B : ClosedBudgetFunctions}
+    (h : NoCrossingBeyondYstarAudit B)
     {y : ℕ} (hy : Ystar ≤ y) (hp : Nat.Prime y) :
-    NoCrossingAt y := by
-  exact h y hy hp
+    NoCrossingAt B y := by
+  exact noCrossingAt_of_global h hy hp
 
-theorem M_lt_mreq_of_NoCrossingBeyondYstarAudit
-    (h : NoCrossingBeyondYstarAudit)
+theorem M_lt_caseAMreq_of_NoCrossingBeyondYstarAudit
+    {B : ClosedBudgetFunctions}
+    (h : NoCrossingBeyondYstarAudit B)
     {y : ℕ} (hy : Ystar ≤ y) (hp : Nat.Prime y) :
-    M y < (mreq y : ℝ) := by
-  exact noCrossingAt_of_noCrossingBeyondYstar h hy hp
-
-theorem noCrossing_ready_for_contradictionAudit
-    (h : NoCrossingBeyondYstarAudit)
-    {y : ℕ} (hy : Ystar ≤ y) (hp : Nat.Prime y) :
-    NoCrossingAt y := by
+    M B y < (caseAMreq y : ℝ) := by
   exact noCrossing_ready_for_contradiction h hy hp
 
+theorem noCrossing_ready_for_contradictionAudit
+    {B : ClosedBudgetFunctions}
+    (h : NoCrossingBeyondYstarAudit B)
+    {y : ℕ} (hy : Ystar ≤ y) (hp : Nat.Prime y) :
+    NoCrossingAt B y := by
+  exact noCrossingAt_of_NoCrossingBeyondYstarAudit h hy hp
+
+theorem noCrossing_no_hidden_dependency_audit
+    (B : ClosedBudgetFunctions) :
+    NoCrossingBeyondYstarAudit B = NoCrossingGlobalCertificate B := rfl
+
+end Dominance
 end CaseB
 end Lehmer

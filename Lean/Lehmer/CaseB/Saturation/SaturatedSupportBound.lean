@@ -202,5 +202,204 @@ theorem KmaxB_le_saturatedSupportBoundOf_genericChainToSSLock
     exact Nat.le_add_left _ _
   exact (saturatedSupportBoundOf_genericChainToSSLock_eq G).symm ▸ h
 
+/--
+Cumulative honest saturated-support majorant.
+
+This uses the cumulative witness-side reading of a chain rather than the local
+classified entangled witness budget.
+-/
+noncomputable def saturatedSupportBoundOfCumulativeWitnesses
+    (y w : ℕ) : ℕ :=
+  w + KmaxB y
+
+@[simp] theorem saturatedSupportBoundOfCumulativeWitnesses_def
+    (y w : ℕ) :
+    saturatedSupportBoundOfCumulativeWitnesses y w = w + KmaxB y := rfl
+
+/--
+Cumulative witness budget attached to an arbitrary finite witness set.
+-/
+noncomputable def cumulativeWitnessBudget
+    (W : Finset ℕ) : ℕ :=
+  supportCard W
+
+@[simp] theorem cumulativeWitnessBudget_def
+    (W : Finset ℕ) :
+    cumulativeWitnessBudget W = supportCard W := rfl
+
+/--
+Cumulative honest saturated-support bound.
+-/
+def HasCumulativeSaturatedSupportBound (C : Context) (W : Finset ℕ) : Prop :=
+  supportCard C.S ≤ saturatedSupportBoundOfCumulativeWitnesses C.y (supportCard W)
+
+@[simp] theorem HasCumulativeSaturatedSupportBound_def
+    (C : Context) (W : Finset ℕ) :
+    HasCumulativeSaturatedSupportBound C W =
+      (supportCard C.S ≤
+        saturatedSupportBoundOfCumulativeWitnesses C.y (supportCard W)) := rfl
+
+/--
+Profile of a local classifed saturated-support bound.
+-/
+structure SaturatedSupportBoundProfile (C : Context) where
+  witnessBudget0 : ℕ
+  hbound : supportCard C.S ≤ saturatedSupportBound C.y witnessBudget0
+
+/--
+Build a local classified saturated-support profile from accounting data.
+-/
+noncomputable def saturatedSupportBoundProfile_of_accounting
+    {C : Context} (A : WitnessAccounting C)
+    (hbound : HasSaturatedSupportBound C A) :
+    SaturatedSupportBoundProfile C :=
+  { witnessBudget0 := witnessBudget A
+    hbound := by
+      simpa [HasSaturatedSupportBound, saturatedSupportBoundOfAccounting]
+        using hbound }
+
+/--
+Profile of an honest cumulative saturated-support bound.
+-/
+structure CumulativeSaturatedSupportBoundProfile (C : Context) where
+  cumulativeWitnessSet : Finset ℕ
+  hsub : cumulativeWitnessSet ⊆ C.S
+  hcard : supportCard cumulativeWitnessSet ≤ supportCard C.S
+  hbound :
+    supportCard C.S ≤
+      saturatedSupportBoundOfCumulativeWitnesses C.y
+        (supportCard cumulativeWitnessSet)
+
+/--
+Build a cumulative saturated-support profile from an explicit assumption.
+-/
+def cumulativeSaturatedSupportBoundProfile_of_assumption
+    {C : Context} (W : Finset ℕ)
+    (hsub : W ⊆ C.S)
+    (hcard : supportCard W ≤ supportCard C.S)
+    (hbound :
+      supportCard C.S ≤
+        saturatedSupportBoundOfCumulativeWitnesses C.y (supportCard W)) :
+    CumulativeSaturatedSupportBoundProfile C :=
+  { cumulativeWitnessSet := W
+    hsub := hsub
+    hcard := hcard
+    hbound := hbound }
+
+/--
+Build a cumulative saturated-support profile from a lock chain once the
+corresponding cumulative bound is available.
+-/
+def cumulativeSaturatedSupportBoundProfile_of_genericChainToSSLock
+    {C : Context} (G : GenericChainToSSLock C)
+    (hbound :
+      supportCard C.S ≤
+        saturatedSupportBoundOfCumulativeWitnesses C.y
+          (supportCard (genericChainWitnessSet G.chain))) :
+    CumulativeSaturatedSupportBoundProfile C :=
+  { cumulativeWitnessSet := genericChainWitnessSet G.chain
+    hsub := genericChainWitnessSet_subset_support G.chain
+    hcard := card_genericChainWitnessSet_le_supportCard G.chain
+    hbound := hbound }
+
+/--
+Build a local classified saturated-support profile from a lock chain once the
+corresponding classified accounting bound is available.
+-/
+noncomputable def saturatedSupportBoundProfile_of_genericChainToSSLock
+    {C : Context} (G : GenericChainToSSLock C)
+    (hbound :
+      supportCard C.S ≤
+        saturatedSupportBoundOfAccounting
+          (witnessAccountingOfGenericChainToSSLock G)) :
+    SaturatedSupportBoundProfile C :=
+  { witnessBudget0 := witnessBudget (witnessAccountingOfGenericChainToSSLock G)
+    hbound := by
+      simpa [witnessBudget, saturatedSupportBoundOfAccounting, saturatedSupportBound]
+        using hbound }
+
+/--
+Mixed bridge profile carrying both:
+- the local classified accounting-side bound,
+- the honest cumulative witness-side bound.
+-/
+structure SaturatedSupportBridgeProfile (C : Context) where
+  localAccounting : WitnessAccounting C
+  entangledLocalSet : Finset ℕ
+  cumulativeWitnessSet : Finset ℕ
+  hlocalCard : supportCard entangledLocalSet ≤ supportCard C.S
+  hcumulativeCard : supportCard cumulativeWitnessSet ≤ supportCard C.S
+  hlocalBound :
+    supportCard C.S ≤
+      saturatedSupportBoundOfAccounting localAccounting
+  hcumulativeBound :
+    supportCard C.S ≤
+      saturatedSupportBoundOfCumulativeWitnesses C.y
+        (supportCard cumulativeWitnessSet)
+
+/--
+Canonical mixed bridge profile associated to a lock chain, once the two
+corresponding bounds are supplied.
+-/
+noncomputable def saturatedSupportBridgeProfile_of_genericChainToSSLock
+    {C : Context} (G : GenericChainToSSLock C)
+    (hlocal :
+      supportCard C.S ≤
+        saturatedSupportBoundOfAccounting
+          (witnessAccountingOfGenericChainToSSLock G))
+    (hcumulative :
+      supportCard C.S ≤
+        saturatedSupportBoundOfCumulativeWitnesses C.y
+          (supportCard (genericChainWitnessSet G.chain))) :
+    SaturatedSupportBridgeProfile C :=
+  { localAccounting := witnessAccountingOfGenericChainToSSLock G
+    entangledLocalSet :=
+      entangledWitnessSet (witnessAccountingOfGenericChainToSSLock G)
+    cumulativeWitnessSet := genericChainWitnessSet G.chain
+    hlocalCard :=
+      card_entangledWitnessSet_of_genericChainToSSLock_le_supportCard G
+    hcumulativeCard :=
+      card_genericChainWitnessSet_le_supportCard G.chain
+    hlocalBound := hlocal
+    hcumulativeBound := hcumulative }
+
+/--
+The cumulative saturated-support bound dominates `KmaxB`.
+-/
+theorem KmaxB_le_saturatedSupportBoundOfCumulativeWitnesses
+    (y w : ℕ) :
+    KmaxB y ≤ saturatedSupportBoundOfCumulativeWitnesses y w := by
+  simp [saturatedSupportBoundOfCumulativeWitnesses]
+
+/--
+The cumulative saturated-support bound dominates its witness-budget argument.
+-/
+theorem cumulativeWitnessBudget_le_saturatedSupportBoundOfCumulativeWitnesses
+    (y w : ℕ) :
+    w ≤ saturatedSupportBoundOfCumulativeWitnesses y w := by
+  simp [saturatedSupportBoundOfCumulativeWitnesses]
+
+/--
+The cumulative saturated-support bound attached to a lock chain dominates the
+cumulative witness budget of that chain.
+-/
+theorem cumulativeWitnessBudget_le_saturatedSupportBoundOf_genericChainToSSLock
+    {C : Context} (G : GenericChainToSSLock C) :
+    supportCard (genericChainWitnessSet G.chain) ≤
+      saturatedSupportBoundOfCumulativeWitnesses C.y
+        (supportCard (genericChainWitnessSet G.chain)) := by
+  simp [saturatedSupportBoundOfCumulativeWitnesses]
+
+/--
+The cumulative saturated-support bound attached to a lock chain dominates the
+descent budget `KmaxB`.
+-/
+theorem KmaxB_le_saturatedSupportBoundOf_genericChainToSSLock_cumulative
+    {C : Context} (G : GenericChainToSSLock C) :
+    KmaxB C.y ≤
+      saturatedSupportBoundOfCumulativeWitnesses C.y
+        (supportCard (genericChainWitnessSet G.chain)) := by
+  simp [saturatedSupportBoundOfCumulativeWitnesses]
+
 end CaseB
 end Lehmer

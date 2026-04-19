@@ -67,6 +67,13 @@ theorem SSLock_iff_epsBSaturated (C : Context) :
   simp [SSLock]
 
 /--
+A locked context is exactly a context that is no longer non-saturated.
+-/
+theorem SSLock_iff_not_ContextNonSaturated (C : Context) :
+    SSLock C ↔ ¬ ContextNonSaturated C := by
+  simp [SSLock, EpsBSaturated, ContextSaturated, Saturated]
+
+/--
 A locked context is not in the descent regime.
 -/
 theorem not_ContextNonSaturated_of_SSLock (C : Context)
@@ -82,6 +89,23 @@ theorem not_ContextDescentEligible_of_SSLock (C : Context)
     ¬ ContextDescentEligible C := by
   intro hdes
   exact (not_ContextNonSaturated_of_SSLock C hlock) hdes.1
+
+/--
+On a nonempty support, being locked is equivalent to not being
+descent-eligible.
+-/
+theorem SSLock_iff_not_ContextDescentEligible_of_nonempty
+    (C : Context)
+    (hS : C.S.Nonempty) :
+    SSLock C ↔ ¬ ContextDescentEligible C := by
+  constructor
+  · intro hlock
+    exact not_ContextDescentEligible_of_SSLock C hlock
+  · intro hnot
+    have hns : ¬ ContextNonSaturated C := by
+      intro hctx
+      exact hnot ⟨hctx, hS⟩
+    simpa [SSLock, EpsBSaturated, ContextSaturated, Saturated] using hns
 
 /--
 Every locked context gives a trivial descent window of length `0`.
@@ -101,6 +125,21 @@ structure GenericChainToSSLock (C : Context) where
   chain : GenericChain C terminal
   hbudget : GenericChainWithinBudget chain
   hlock : SSLock terminal
+
+@[simp] theorem GenericChainToSSLock_terminal_level
+    {C : Context} (G : GenericChainToSSLock C) :
+    G.terminal.y = C.y := by
+  exact GenericChain_preserves_level G.chain
+
+@[simp] theorem GenericChainToSSLock_budget
+    {C : Context} (G : GenericChainToSSLock C) :
+    genericChainLength G.chain ≤ KmaxB C.y := by
+  simpa [GenericChainWithinBudget_def] using G.hbudget
+
+@[simp] theorem GenericChainToSSLock_terminal_locked
+    {C : Context} (G : GenericChainToSSLock C) :
+    SSLock G.terminal := by
+  exact G.hlock
 
 /--
 A trivial generic chain to lock exists when the starting context is already
@@ -126,6 +165,76 @@ def genericChainToSSLock_of_saturated {C : Context}
   hlock := SSLock_of_epsBSaturated G.terminal G.hsaturated
 
 /--
+Explicit terminal profile exported by the local strategy-1 lock layer.
+-/
+structure SSLockTerminalProfile (C : Context) where
+  terminal : Context
+  hlevel : terminal.y = C.y
+  hlock : SSLock terminal
+  hbudget : ℕ
+  hk : hbudget ≤ KmaxB C.y
+
+/--
+Canonical terminal profile induced by a generic chain to lock.
+-/
+def ssLockTerminalProfile_of_genericChainToSSLock
+    {C : Context}
+    (G : GenericChainToSSLock C) :
+    SSLockTerminalProfile C :=
+  { terminal := G.terminal
+    hlevel := GenericChain_preserves_level G.chain
+    hlock := G.hlock
+    hbudget := genericChainLength G.chain
+    hk := by
+      simpa [GenericChainWithinBudget_def] using G.hbudget }
+
+/--
+Explicit bridge seed from the local strategy-1 lock output to the common
+strategy-1/strategy-2 spec interface.
+-/
+def caseBStrategyBridgeSeed_of_genericChainToSSLock
+    {C : Context}
+    (_G : GenericChainToSSLock C) :
+    CaseBStrategyBridgeSeed C :=
+  caseBStrategyBridgeSeed_of_context C
+
+@[simp] theorem caseBStrategyBridgeSeed_of_genericChainToSSLock_y
+    {C : Context}
+    (G : GenericChainToSSLock C) :
+    (caseBStrategyBridgeSeed_of_genericChainToSSLock G).y0 = C.y := by
+  rfl
+
+@[simp] theorem caseBStrategyBridgeSeed_of_genericChainToSSLock_omega
+    {C : Context}
+    (G : GenericChainToSSLock C) :
+    (caseBStrategyBridgeSeed_of_genericChainToSSLock G).omega0 = supportCard C.S := by
+  rfl
+
+/--
+A richer profile view of a generic chain to lock.
+-/
+structure GenericChainToSSLockProfile (C : Context) where
+  terminal : Context
+  chain : GenericChain C terminal
+  hlevel : terminal.y = C.y
+  hbudget : genericChainLength chain ≤ KmaxB C.y
+  hlock : SSLock terminal
+
+/--
+Canonical profile associated to a generic chain to lock.
+-/
+def genericChainToSSLockProfile_of_lockChain
+    {C : Context}
+    (G : GenericChainToSSLock C) :
+    GenericChainToSSLockProfile C :=
+  { terminal := G.terminal
+    chain := G.chain
+    hlevel := GenericChain_preserves_level G.chain
+    hbudget := by
+      simpa [GenericChainWithinBudget_def] using G.hbudget
+    hlock := G.hlock }
+
+/--
 Witness accounting attached to a generic chain reaching a locked terminal
 context.
 -/
@@ -143,6 +252,26 @@ theorem card_witnessAccountingOfGenericChainToSSLock_le_supportCard
   exact card_witnessAccountingOfGenericChain_le_supportCard G.chain
 
 /--
+Accounting-side profile exported from a lock chain.
+-/
+structure SSLockAccountingProfile (C : Context) where
+  lockChain : GenericChainToSSLock C
+  accounting : WitnessAccounting C
+  hwitness :
+    supportCard (witnessSet C accounting) ≤ supportCard C.S
+
+/--
+Canonical accounting profile induced by a generic chain to lock.
+-/
+def ssLockAccountingProfile_of_genericChainToSSLock
+    {C : Context}
+    (G : GenericChainToSSLock C) :
+    SSLockAccountingProfile C :=
+  { lockChain := G
+    accounting := witnessAccountingOfGenericChainToSSLock G
+    hwitness := card_witnessAccountingOfGenericChainToSSLock_le_supportCard G }
+
+/--
 If the descent window has already reached a saturated terminal context, then
 that terminal context is locked.
 -/
@@ -157,7 +286,8 @@ Any descent window induces a trivial lock package at its terminal context.
 def terminalLockWitness_of_descentWindow {C : Context}
     (W : DescentWindow C) :
     GenericChainToSSLock W.terminal :=
-  trivialGenericChainToSSLock W.terminal (SSLock_of_epsBSaturated W.terminal W.hterminal_saturated)
+  trivialGenericChainToSSLock W.terminal
+    (SSLock_of_epsBSaturated W.terminal W.hterminal_saturated)
 
 /--
 A locked context still satisfies the same Case B level as itself.

@@ -1,98 +1,94 @@
 -- FILE: Lean/Lehmer/Support/PotentialP.lean
 import Lehmer.Prelude
-import Lehmer.Basic.Defs
 import Lehmer.Basic.SupportProd
+import Lehmer.Basic.SupportLcm
+import Lehmer.Basic.PrimeSupport
+import Lehmer.Support.IncrementRatio
 
 namespace Lehmer
 namespace Support
 
 open Lehmer.Basic
 
-/--
-The basic support potential
-`P(S) = log(L(S)) / log(n_S)`.
--/
-noncomputable def potentialP (S : Finset ℕ) : ℝ :=
+/-- The continuous support potential `P(S) = log L(S) / log n_S`. -/
+noncomputable def supportPotential (S : Finset ℕ) : ℝ :=
   Real.log (supportLcm S) / Real.log (supportProd S)
 
-/--
-Paper-style alias for the support potential.
--/
-noncomputable abbrev P (S : Finset ℕ) : ℝ :=
-  potentialP S
+@[simp] theorem supportPotential_def (S : Finset ℕ) :
+    supportPotential S = Real.log (supportLcm S) / Real.log (supportProd S) := rfl
 
-@[simp] theorem potentialP_def (S : Finset ℕ) :
-    potentialP S = Real.log (supportLcm S) / Real.log (supportProd S) := rfl
+/-- If all elements of `S` are prime, then `supportProd S` is positive. -/
+theorem supportProd_pos_of_all_prime {S : Finset ℕ}
+    (hS : ∀ p ∈ S, Nat.Prime p) :
+    0 < supportProd S := by
+  apply Basic.supportProd_pos
+  intro p hp
+  exact Nat.lt_of_lt_of_le (by decide : 0 < 2) (hS p hp).two_le
 
-@[simp] theorem P_def (S : Finset ℕ) :
-    P S = Real.log (supportLcm S) / Real.log (supportProd S) := rfl
+/-- If all elements of `S` are prime, then `supportProd S` is nonzero. -/
+theorem supportProd_ne_zero_of_all_prime {S : Finset ℕ}
+    (hS : ∀ p ∈ S, Nat.Prime p) :
+    supportProd S ≠ 0 := by
+  exact Nat.ne_of_gt (supportProd_pos_of_all_prime hS)
 
-@[simp] theorem P_eq_potentialP (S : Finset ℕ) :
-    P S = potentialP S := rfl
+/-- If all elements of `S` are prime, then `supportLcm S` is nonzero. -/
+theorem supportLcm_ne_zero_of_all_prime {S : Finset ℕ}
+    (hS : ∀ p ∈ S, Nat.Prime p) :
+    supportLcm S ≠ 0 := by
+  exact Nat.ne_of_gt (supportLcm_pos_of_all_prime hS)
 
-@[simp] theorem potentialP_empty :
-    potentialP ∅ = Real.log (supportLcm ∅) / Real.log (supportProd ∅) := by
-  rfl
+/-- If `p ∈ S` and all elements of `S` are prime, then `supportProd S > 1`. -/
+theorem supportProd_gt_one_of_mem_of_all_prime {S : Finset ℕ} {p : ℕ}
+    (hp : p ∈ S)
+    (hS : ∀ q ∈ S, Nat.Prime q) :
+    1 < supportProd S := by
+  have hpos : 0 < supportProd S := supportProd_pos_of_all_prime hS
+  have hpdvd : p ∣ supportProd S := dvd_supportProd_of_mem hp
+  have hp2 : 2 ≤ p := (hS p hp).two_le
+  have hple : p ≤ supportProd S := Nat.le_of_dvd (Nat.succ_le_of_lt hpos) hpdvd
+  exact lt_of_lt_of_le (by decide : 1 < 2) (le_trans hp2 hple)
 
-@[simp] theorem potentialP_singleton (p : ℕ) :
-    potentialP ({p} : Finset ℕ) =
-      Real.log (supportLcm ({p} : Finset ℕ)) /
-      Real.log (supportProd ({p} : Finset ℕ)) := by
-  rfl
-
-/--
-If all members of the support are prime and the support is nonempty,
-then the support product is not `1`.
--/
-theorem supportProd_ne_one_of_all_prime_nonempty
-    {S : Finset ℕ}
-    (hprime : ∀ p ∈ S, Nat.Prime p)
-    (hne : S.Nonempty) :
-    supportProd S ≠ 1 := by
+/-- If `S` is nonempty and all elements of `S` are prime, then `log(supportProd S)` is positive. -/
+theorem log_supportProd_pos_of_nonempty_of_all_prime {S : Finset ℕ}
+    (hne : S.Nonempty)
+    (hS : ∀ p ∈ S, Nat.Prime p) :
+    0 < Real.log (supportProd S) := by
   rcases hne with ⟨p, hp⟩
-  have hpprime : Nat.Prime p := hprime p hp
-  have hpdvd : p ∣ supportProd S := by
-    exact dvd_supportProd hp
-  intro hprod
-  have : p ∣ 1 := by
-    simpa [hprod] using hpdvd
-  exact hpprime.not_dvd_one this
+  have hgt_nat : 1 < supportProd S := supportProd_gt_one_of_mem_of_all_prime hp hS
+  have hgt_real : (1 : ℝ) < (supportProd S : ℝ) := by
+    exact_mod_cast hgt_nat
+  simpa using Real.log_pos hgt_real
 
 /--
-Well-formedness of the denominator logarithm under the natural arithmetic
-support assumptions used in the manuscript.
+Logarithmic decomposition of the modular resource through the increment ratio.
 -/
-theorem potentialP_wellformed_of_all_prime_nonempty
-    {S : Finset ℕ}
-    (hprime : ∀ p ∈ S, Nat.Prime p)
-    (hne : S.Nonempty) :
-    Real.log (supportProd S) ≠ 0 := by
-  have hpos_nat : 0 < supportProd S := by
-    apply supportProd_pos
-    intro p hp
-    exact Nat.Prime.pos (hprime p hp)
-  have hpos_real : 0 < (supportProd S : ℝ) := by
-    exact_mod_cast hpos_nat
-  have hne1 : supportProd S ≠ 1 := by
-    exact supportProd_ne_one_of_all_prime_nonempty hprime hne
-  intro hlog
-  have hexp := congrArg Real.exp hlog
-  have hone_real : (supportProd S : ℝ) = 1 := by
-    simpa [Real.exp_log hpos_real] using hexp
-  have hone_nat : supportProd S = 1 := by
-    exact_mod_cast hone_real
-  exact hne1 hone_nat
+theorem log_supportLcm_eq_log_erase_add_log_increment
+    {S : Finset ℕ} {p : ℕ}
+    (hS : ∀ q ∈ S, Nat.Prime q) :
+    Real.log (supportLcm S) =
+      Real.log (supportLcm (S.erase p)) + Real.log (incrementRatio S p) := by
+  have hinc_pos : 0 < incrementRatio S p := incrementRatio_pos_of_all_prime hS
+  have herase_pos : 0 < supportLcm (S.erase p) := supportLcm_erase_pos_of_all_prime hS
+  have hEq : (supportLcm S : ℝ) =
+      (incrementRatio S p : ℝ) * (supportLcm (S.erase p) : ℝ) := by
+    exact_mod_cast supportLcm_eq_incrementRatio_mul_supportLcm_erase S p
+  rw [hEq]
+  rw [Real.log_mul
+    (by exact_mod_cast (Nat.ne_of_gt hinc_pos))
+    (by exact_mod_cast (Nat.ne_of_gt herase_pos))]
+  ring
 
 /--
-Alias form of the previous well-formedness statement.
+Rewriting of the support potential by exposing the increment contribution in the
+numerator.
 -/
-theorem P_wellformed_of_all_prime_nonempty
-    {S : Finset ℕ}
-    (hprime : ∀ p ∈ S, Nat.Prime p)
-    (hne : S.Nonempty) :
-    Real.log (supportProd S) ≠ 0 := by
-  simpa [P, potentialP] using
-    potentialP_wellformed_of_all_prime_nonempty hprime hne
+theorem supportPotential_eq_log_erase_add_log_increment_div_log_supportProd
+    {S : Finset ℕ} {p : ℕ}
+    (hS : ∀ q ∈ S, Nat.Prime q) :
+    supportPotential S =
+      (Real.log (supportLcm (S.erase p)) + Real.log (incrementRatio S p)) /
+        Real.log (supportProd S) := by
+  rw [supportPotential_def, log_supportLcm_eq_log_erase_add_log_increment hS]
 
 end Support
 end Lehmer

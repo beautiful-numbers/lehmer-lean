@@ -35,6 +35,10 @@ open Classical
 /--
 A witness is counted as entangled when the accounting datum classifies it on the
 entangled side.
+
+This remains a **local classified** notion attached to a `WitnessAccounting C`.
+It is not meant to classify cumulatively all pivots of an entire generic chain
+in the initial context `C`.
 -/
 def IsEntangledWitness {C : Context} (A : WitnessAccounting C) (p : ℕ) : Prop :=
   ∃ hp : p ∈ witnessSet C A, ∃ hent : EntangledWitness C p,
@@ -43,9 +47,11 @@ def IsEntangledWitness {C : Context} (A : WitnessAccounting C) (p : ℕ) : Prop 
 /--
 The entangled witness set extracted from a witness accounting datum.
 
-At the current stage, entanglement scarcity is formulated as a support-bounded
-subfamily of the witness set consisting of the primes classified on the
-entangled side of the generic/entangled dichotomy.
+This is a **local classified** extraction from `WitnessAccounting C`. It should
+be distinguished from the honest cumulative chain-side object
+`genericChainWitnessSet`, which only records cumulative support membership and
+cardinality data, not a full reclassification of all pivots in the initial
+context.
 -/
 noncomputable def entangledWitnessSet {C : Context} (A : WitnessAccounting C) : Finset ℕ := by
   classical
@@ -105,8 +111,9 @@ theorem card_entangledWitnessSet_le_supportCard {C : Context}
 /--
 Entanglement scarcity predicate.
 
-This is the finite-support scarcity interface: entangled witnesses form a
-support-bounded set.
+This remains the **local classified** scarcity interface attached to
+`WitnessAccounting C`. For cumulative honest chain-side scarcity data, use the
+profiles introduced below.
 -/
 def EntanglementScarce (C : Context) (A : WitnessAccounting C) : Prop :=
   supportCard (entangledWitnessSet A) ≤ supportCard C.S
@@ -201,6 +208,154 @@ theorem entanglementScarce_of_genericChainToSSLock
     {C : Context} (G : GenericChainToSSLock C) :
     EntanglementScarce C (witnessAccountingOfGenericChainToSSLock G) := by
   exact card_entangledWitnessSet_of_genericChainToSSLock_le_supportCard G
+
+/--
+Honest cumulative scarcity profile of a generic chain.
+
+This is the cumulative witness-side object compatible with the separation
+introduced in `WitnessAccounting.lean`: it remembers the cumulative witness set,
+its support inclusion, and its cardinality bound, without pretending to
+reclassify the whole chain in the initial context.
+-/
+structure GenericChainScarcityProfile (C : Context) where
+  terminal : Context
+  cumulativeWitnessSet : Finset ℕ
+  hsub : cumulativeWitnessSet ⊆ C.S
+  hcard : supportCard cumulativeWitnessSet ≤ supportCard C.S
+
+/--
+Canonical cumulative scarcity profile induced by a generic chain.
+-/
+def genericChainScarcityProfile_of_chain
+    {C D : Context} (Γ : GenericChain C D) :
+    GenericChainScarcityProfile C :=
+  { terminal := D
+    cumulativeWitnessSet := genericChainWitnessSet Γ
+    hsub := genericChainWitnessSet_subset_support Γ
+    hcard := card_genericChainWitnessSet_le_supportCard Γ }
+
+/--
+Terminal cumulative scarcity profile induced by a generic chain to saturation.
+-/
+structure GenericChainToSaturatedScarcityProfile (C : Context) where
+  satChain : GenericChainToSaturated C
+  cumulativeWitnessSet : Finset ℕ
+  hsub : cumulativeWitnessSet ⊆ C.S
+  hcard : supportCard cumulativeWitnessSet ≤ supportCard C.S
+
+/--
+Canonical terminal cumulative scarcity profile from a saturated generic chain.
+-/
+def genericChainToSaturatedScarcityProfile_of_chain
+    {C : Context} (G : GenericChainToSaturated C) :
+    GenericChainToSaturatedScarcityProfile C :=
+  { satChain := G
+    cumulativeWitnessSet := genericChainWitnessSet G.chain
+    hsub := genericChainWitnessSet_subset_support G.chain
+    hcard := card_genericChainWitnessSet_le_supportCard G.chain }
+
+/--
+Terminal cumulative scarcity profile induced by a generic chain to lock.
+-/
+structure GenericChainToSSLockScarcityProfile (C : Context) where
+  lockChain : GenericChainToSSLock C
+  cumulativeWitnessSet : Finset ℕ
+  hsub : cumulativeWitnessSet ⊆ C.S
+  hcard : supportCard cumulativeWitnessSet ≤ supportCard C.S
+
+/--
+Canonical terminal cumulative scarcity profile from a lock chain.
+-/
+def genericChainToSSLockScarcityProfile_of_chain
+    {C : Context} (G : GenericChainToSSLock C) :
+    GenericChainToSSLockScarcityProfile C :=
+  { lockChain := G
+    cumulativeWitnessSet := genericChainWitnessSet G.chain
+    hsub := genericChainWitnessSet_subset_support G.chain
+    hcard := card_genericChainWitnessSet_le_supportCard G.chain }
+
+/--
+Mixed bridge profile exposing both:
+- the local entangled reading extracted from the minimal classified accounting,
+- and the honest cumulative witness set of the whole generic chain.
+-/
+structure GenericChainEntanglementBridgeProfile (C : Context) where
+  terminal : Context
+  localAccounting : WitnessAccounting C
+  entangledLocalSet : Finset ℕ
+  cumulativeWitnessSet : Finset ℕ
+  hlocalSub : entangledLocalSet ⊆ C.S
+  hcumulativeSub : cumulativeWitnessSet ⊆ C.S
+  hlocalCard : supportCard entangledLocalSet ≤ supportCard C.S
+  hcumulativeCard : supportCard cumulativeWitnessSet ≤ supportCard C.S
+
+/--
+Canonical mixed entanglement bridge profile associated to a generic chain.
+-/
+noncomputable def genericChainEntanglementBridgeProfile_of_chain
+    {C D : Context} (Γ : GenericChain C D) :
+    GenericChainEntanglementBridgeProfile C :=
+  { terminal := D
+    localAccounting := witnessAccountingOfGenericChain Γ
+    entangledLocalSet := entangledWitnessSet (witnessAccountingOfGenericChain Γ)
+    cumulativeWitnessSet := genericChainWitnessSet Γ
+    hlocalSub := by
+      intro p hp
+      exact mem_support_of_mem_entangledWitnessSet
+        (witnessAccountingOfGenericChain Γ) hp
+    hcumulativeSub := genericChainWitnessSet_subset_support Γ
+    hlocalCard := card_entangledWitnessSet_le_supportCard
+      (witnessAccountingOfGenericChain Γ)
+    hcumulativeCard := card_genericChainWitnessSet_le_supportCard Γ }
+
+/--
+Support-boundedness of the cumulative witness set of a generic chain.
+-/
+theorem supportCard_cumulativeWitnessSet_of_genericChain_le_supportCard
+    {C D : Context} (Γ : GenericChain C D) :
+    supportCard (genericChainWitnessSet Γ) ≤ supportCard C.S := by
+  exact card_genericChainWitnessSet_le_supportCard Γ
+
+/--
+Support-boundedness of the cumulative witness set of a generic chain to
+saturation.
+-/
+theorem supportCard_cumulativeWitnessSet_of_genericChainToSaturated_le_supportCard
+    {C : Context} (G : GenericChainToSaturated C) :
+    supportCard (genericChainWitnessSet G.chain) ≤ supportCard C.S := by
+  exact card_genericChainWitnessSet_le_supportCard G.chain
+
+/--
+Support-boundedness of the cumulative witness set of a generic chain to lock.
+-/
+theorem supportCard_cumulativeWitnessSet_of_genericChainToSSLock_le_supportCard
+    {C : Context} (G : GenericChainToSSLock C) :
+    supportCard (genericChainWitnessSet G.chain) ≤ supportCard C.S := by
+  exact card_genericChainWitnessSet_le_supportCard G.chain
+
+/--
+Lock-side mixed entanglement bridge profile.
+-/
+structure SSLockEntanglementBridgeProfile (C : Context) where
+  lockChain : GenericChainToSSLock C
+  localAccounting : WitnessAccounting C
+  entangledLocalSet : Finset ℕ
+  cumulativeWitnessSet : Finset ℕ
+  hlocalCard : supportCard entangledLocalSet ≤ supportCard C.S
+  hcumulativeCard : supportCard cumulativeWitnessSet ≤ supportCard C.S
+
+/--
+Canonical lock-side mixed entanglement bridge profile.
+-/
+noncomputable def ssLockEntanglementBridgeProfile_of_chain
+    {C : Context} (G : GenericChainToSSLock C) :
+    SSLockEntanglementBridgeProfile C :=
+  { lockChain := G
+    localAccounting := witnessAccountingOfGenericChainToSSLock G
+    entangledLocalSet := entangledWitnessSet (witnessAccountingOfGenericChainToSSLock G)
+    cumulativeWitnessSet := genericChainWitnessSet G.chain
+    hlocalCard := card_entangledWitnessSet_of_genericChainToSSLock_le_supportCard G
+    hcumulativeCard := card_genericChainWitnessSet_le_supportCard G.chain }
 
 end CaseB
 end Lehmer

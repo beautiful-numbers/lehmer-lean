@@ -78,39 +78,45 @@ noncomputable def py0 (y : ℕ) (k : ℕ) : ℕ :=
     py0 y k = py y (k + 1) := rfl
 
 @[simp] theorem py0_zero (y : ℕ) :
-    py0 y 0 = nextPrimeGe y := by
-  simp [py0]
+    py0 y 0 = nextPrimeGe y := rfl
 
 @[simp] theorem py0_succ (y k : ℕ) :
-    py0 y (k + 1) = nextPrimeGe (py0 y k + 1) := by
-  simp [py0, py_succ_succ]
+    py0 y (k + 1) = nextPrimeGe (py0 y k + 1) := rfl
 
 theorem py_prime_of_one_le {y i : ℕ} (hi : 1 ≤ i) :
     Nat.Prime (py y i) := by
-  rcases Nat.exists_eq_add_of_le hi with ⟨k, rfl⟩
+  have h_ex : ∃ k, i = k + 1 := Nat.exists_eq_succ_of_ne_zero (ne_of_gt hi)
+  rcases h_ex with ⟨k, rfl⟩
   cases k with
   | zero =>
-      simpa using nextPrimeGe_prime y
+      exact nextPrimeGe_prime y
   | succ k =>
-      simpa [py_succ_succ] using nextPrimeGe_prime (py y (k + 1) + 1)
+      have h : py y (k + 1 + 1) = nextPrimeGe (py y (k + 1) + 1) := rfl
+      rw [h]
+      exact nextPrimeGe_prime _
 
 theorem py_ge_of_one_le {y i : ℕ} (hi : 1 ≤ i) :
     y ≤ py y i := by
-  rcases Nat.exists_eq_add_of_le hi with ⟨k, rfl⟩
+  have h_ex : ∃ k, i = k + 1 := Nat.exists_eq_succ_of_ne_zero (ne_of_gt hi)
+  rcases h_ex with ⟨k, rfl⟩
+  clear hi
   induction k with
   | zero =>
-      simpa using nextPrimeGe_ge y
+      exact nextPrimeGe_ge y
   | succ k ih =>
-      have hstep : py y (k + 1) + 1 ≤ py y (k + 2) := by
-        simpa [py_succ_succ] using nextPrimeGe_ge (py y (k + 1) + 1)
-      exact le_trans ih (le_trans (Nat.le_succ _) hstep)
+      have h1 : py y (k + 1) + 1 ≤ nextPrimeGe (py y (k + 1) + 1) := nextPrimeGe_ge _
+      have h2 : py y (k + 1 + 1) = nextPrimeGe (py y (k + 1) + 1) := rfl
+      rw [h2]
+      exact le_trans ih (le_trans (Nat.le_succ _) h1)
 
 theorem py_lt_succ_of_one_le {y i : ℕ} (hi : 1 ≤ i) :
     py y i < py y (i + 1) := by
-  rcases Nat.exists_eq_add_of_le hi with ⟨k, rfl⟩
-  have hstep : py y (k + 1) + 1 ≤ py y (k + 2) := by
-    simpa [py_succ_succ] using nextPrimeGe_ge (py y (k + 1) + 1)
-  exact lt_of_lt_of_le (Nat.lt_succ_self _) hstep
+  have h_ex : ∃ k, i = k + 1 := Nat.exists_eq_succ_of_ne_zero (ne_of_gt hi)
+  rcases h_ex with ⟨k, rfl⟩
+  have h1 : py y (k + 1) + 1 ≤ nextPrimeGe (py y (k + 1) + 1) := nextPrimeGe_ge _
+  have h2 : py y (k + 1 + 1) = nextPrimeGe (py y (k + 1) + 1) := rfl
+  rw [h2]
+  exact lt_of_lt_of_le (Nat.lt_succ_self _) h1
 
 theorem py0_prime (y k : ℕ) :
     Nat.Prime (py0 y k) := by
@@ -122,7 +128,10 @@ theorem py0_ge (y k : ℕ) :
 
 theorem py0_lt_succ (y k : ℕ) :
     py0 y k < py0 y (k + 1) := by
-  simpa [py0] using py_lt_succ_of_one_le (Nat.succ_le_succ (Nat.zero_le k))
+  have h_eq : py0 y (k + 1) = nextPrimeGe (py0 y k + 1) := rfl
+  rw [h_eq]
+  have h1 : py0 y k + 1 ≤ nextPrimeGe (py0 y k + 1) := nextPrimeGe_ge _
+  exact lt_of_lt_of_le (Nat.lt_succ_self _) h1
 
 theorem py0_strictMono (y : ℕ) :
     StrictMono (py0 y) := by
@@ -136,11 +145,9 @@ noncomputable def firstPrimesFrom (y m : ℕ) : Finset ℕ :=
 
 theorem card_firstPrimesFrom (y m : ℕ) :
     (firstPrimesFrom y m).card = m := by
-  classical
   unfold firstPrimesFrom
-  rw [Finset.card_image_of_injective]
-  · simp
-  · exact (py0_strictMono y).injective
+  rw [Finset.card_image_of_injective _ (StrictMono.injective (py0_strictMono y))]
+  exact Finset.card_range m
 
 theorem mem_firstPrimesFrom_iff
     {y m p : ℕ} :
@@ -172,12 +179,12 @@ def UB (S : Finset ℕ) : ℚ :=
   S.prod pivotFactor
 
 @[simp] theorem UB_empty :
-    UB ∅ = 1 := by
-  simp [UB]
+    UB ∅ = 1 := rfl
 
 @[simp] theorem UB_insert {S : Finset ℕ} {p : ℕ} (hp : p ∉ S) :
     UB (insert p S) = pivotFactor p * UB S := by
-  simp [UB, hp]
+  unfold UB
+  rw [Finset.prod_insert hp]
 
 @[simp] theorem UB_def (S : Finset ℕ) :
     UB S = S.prod pivotFactor := rfl
@@ -187,27 +194,26 @@ Paper-facing worst-case envelope:
 `UBm y m = ∏_{i=1}^m p_{y,i}/(p_{y,i}-1)`, with `UBm y 0 = 1`.
 -/
 noncomputable def UBm (y m : ℕ) : ℚ :=
-  ∏ k in Finset.range m, pivotFactor (py0 y k)
+  ∏ k ∈ Finset.range m, pivotFactor (py0 y k)
 
 @[simp] theorem UBm_zero (y : ℕ) :
-    UBm y 0 = 1 := by
-  simp [UBm]
+    UBm y 0 = 1 := rfl
 
 @[simp] theorem UBm_succ (y m : ℕ) :
     UBm y (m + 1) = UBm y m * pivotFactor (py0 y m) := by
-  rw [UBm, UBm, Finset.prod_range_succ]
-  ring
+  unfold UBm
+  rw [Finset.prod_range_succ]
 
 theorem UBm_eq_prod_range (y m : ℕ) :
-    UBm y m = ∏ k in Finset.range m, pivotFactor (py0 y k) := rfl
+    UBm y m = ∏ k ∈ Finset.range m, pivotFactor (py0 y k) := rfl
 
 theorem UBm_eq_UB_firstPrimesFrom (y m : ℕ) :
     UBm y m = UB (firstPrimesFrom y m) := by
   classical
   unfold UBm UB firstPrimesFrom
   rw [Finset.prod_image]
-  · rfl
-  · exact (py0_strictMono y).injective.injOn _
+  intro a _ b _ hab
+  exact StrictMono.injective (py0_strictMono y) hab
 
 theorem pivotFactor_pos_of_prime {p : ℕ} (hp : Nat.Prime p) :
     0 < pivotFactor p := by
@@ -226,25 +232,20 @@ theorem pivotFactor_nonneg_of_prime {p : ℕ} (hp : Nat.Prime p) :
 
 theorem pivotFactor_eq_one_add_inv {p : ℕ} (hp : 2 ≤ p) :
     pivotFactor p = 1 + 1 / (((p - 1 : ℕ) : ℚ)) := by
-  have hp1 : 1 ≤ p := le_trans (by decide : 1 ≤ 2) hp
+  have hp1 : 1 ≤ p := le_trans (by decide) hp
   have hden : (((p - 1 : ℕ) : ℚ)) ≠ 0 := by
-    have hpnz : (p - 1 : ℕ) ≠ 0 := Nat.sub_ne_zero_of_lt (lt_of_lt_of_le (by decide : 1 < 2) hp)
-    intro hq
-    have : (p - 1 : ℕ) = 0 := by exact_mod_cast hq
-    exact hpnz this
+    have hpnz : (p - 1 : ℕ) ≠ 0 := Nat.sub_ne_zero_of_lt (lt_of_lt_of_le (by decide) hp)
+    exact_mod_cast hpnz
   rw [pivotFactor_def]
   have hrepr : (p : ℚ) = (((p - 1 : ℕ) : ℚ)) + 1 := by
     rw [Nat.cast_sub hp1]
     ring
-  rw [hrepr]
-  field_simp [hden]
-  ring
+  rw [hrepr, add_div, div_self hden]
 
 theorem UBm_pos (y m : ℕ) :
     0 < UBm y m := by
   unfold UBm
-  classical
-  exact Finset.prod_pos (fun p hp => pivotFactor_pos_of_prime (py0_prime y _))
+  exact Finset.prod_pos (fun p _ => pivotFactor_pos_of_prime (py0_prime y p))
 
 theorem UBm_nonneg (y m : ℕ) :
     0 ≤ UBm y m := by
@@ -255,11 +256,11 @@ theorem one_le_pivotFactor_of_prime {p : ℕ} (hp : Nat.Prime p) :
   have hp2 : 2 ≤ p := hp.two_le
   rw [pivotFactor_eq_one_add_inv hp2]
   have hden_pos : (0 : ℚ) < (((p - 1 : ℕ) : ℚ)) := by
-    have hp1 : 1 ≤ p := le_trans (by decide : 1 ≤ 2) hp2
+    have hp1 : 1 ≤ p := le_trans (by decide) hp2
     rw [Nat.cast_sub hp1]
     exact sub_pos.mpr (by exact_mod_cast hp2)
   have hinv_nonneg : (0 : ℚ) ≤ 1 / (((p - 1 : ℕ) : ℚ)) := by
-    exact inv_nonneg.mpr (le_of_lt hden_pos)
+    exact div_nonneg (by norm_num) (le_of_lt hden_pos)
   linarith
 
 theorem UBm_le_succ (y m : ℕ) :
@@ -324,7 +325,6 @@ theorem factor_antitone_on_two_le {a b : ℕ} (ha : 2 ≤ a) (hab : a ≤ b) :
       have hane : (((a - 1 : ℕ) : ℚ)) ≠ 0 := ne_of_gt hqa
       have hbne : (((b - 1 : ℕ) : ℚ)) ≠ 0 := ne_of_gt hqb
       field_simp [hane, hbne]
-      ring
     have h_diff2 : 0 ≤ 1 / (((a - 1 : ℕ) : ℚ)) - 1 / (((b - 1 : ℕ) : ℚ)) := by
       rw [← h_eq]
       exact h_div
@@ -335,13 +335,9 @@ theorem factor_antitone_on_two_le {a b : ℕ} (ha : 2 ≤ a) (hab : a ≤ b) :
 theorem UBm_antitone_in_y {y₁ y₂ m : ℕ} (hy : y₁ ≤ y₂) :
     UBm y₂ m ≤ UBm y₁ m := by
   unfold UBm
-  classical
-  refine Finset.prod_le_prod ?_ ?_
-  · intro k hk
-    exact pivotFactor_nonneg_of_prime (py0_prime y₂ k)
-  · intro k hk
-    have hpy : py0 y₁ k ≤ py0 y₂ k := py0_monotone_in_y hy
-    exact factor_antitone_on_two_le (py0_prime y₁ k).two_le hpy
+  exact Finset.prod_le_prod
+    (fun k _ => pivotFactor_nonneg_of_prime (py0_prime y₂ k))
+    (fun k _ => factor_antitone_on_two_le (py0_prime y₁ k).two_le (py0_monotone_in_y hy))
 
 theorem prod_pivotFactor_pos_of_all_prime {S : Finset ℕ}
     (hprime : ∀ p ∈ S, Nat.Prime p) :
@@ -358,6 +354,23 @@ theorem prod_pivotFactor_pos_of_all_prime {S : Finset ℕ}
       rw [Finset.prod_insert ha]
       exact mul_pos (pivotFactor_pos_of_prime ha_prime) (ih hs_prime)
 
+theorem py0_shift (y k : ℕ) :
+    py0 y (k + 1) = py0 (py0 y 0 + 1) k := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+      change nextPrimeGe (py0 y (k + 1) + 1) = nextPrimeGe (py0 (py0 y 0 + 1) k + 1)
+      rw [ih]
+
+theorem UBm_succ_first (y m : ℕ) :
+    UBm y (m + 1) = pivotFactor (py0 y 0) * UBm (py0 y 0 + 1) m := by
+  unfold UBm
+  rw [Finset.prod_range_succ', mul_comm]
+  apply congrArg (fun x => pivotFactor (py0 y 0) * x)
+  apply Finset.prod_congr rfl
+  intro k _
+  rw [py0_shift]
+
 private theorem worst_case_monotone_envelope_prod :
     ∀ S : Finset ℕ, ∀ y : ℕ,
       (∀ p ∈ S, Nat.Prime p) →
@@ -373,52 +386,46 @@ private theorem worst_case_monotone_envelope_prod :
     have ha_mem : a ∈ S := Finset.min'_mem S hS
     have ha_prime : Nat.Prime a := hprime a ha_mem
     have hy_a : y ≤ a := hge a ha_mem
+    have h_not_in_T : a ∉ T := by
+      intro h
+      exact (Finset.mem_erase.mp h).1 rfl
     have hT_ss : T ⊂ S := by
-      refine Finset.ssubset_iff_subset_ne.mpr ?_
-      constructor
-      · intro x hx
-        exact Finset.mem_of_mem_erase hx
-      · intro hEq
-        have : a ∈ T := by simpa [hEq] using ha_mem
-        exact (Finset.mem_erase.mp this).1 rfl
-    have hT_prime : ∀ p ∈ T, Nat.Prime p := by
-      intro p hp
-      exact hprime p (Finset.mem_of_mem_erase hp)
+      refine Finset.ssubset_iff_subset_ne.mpr ⟨Finset.erase_subset a S, ?_⟩
+      intro hEq
+      have h_in_T : a ∈ T := by
+        rw [hEq]
+        exact ha_mem
+      exact h_not_in_T h_in_T
+    have hT_prime : ∀ p ∈ T, Nat.Prime p := fun p hp => hprime p (Finset.mem_erase.mp hp).2
     have hT_ge : ∀ p ∈ T, a + 1 ≤ p := by
       intro p hp
-      have hpS : p ∈ S := Finset.mem_of_mem_erase hp
+      have hpS : p ∈ S := (Finset.mem_erase.mp hp).2
       have hmin : a ≤ p := Finset.min'_le S p hpS
-      have hne : a ≠ p := Ne.symm ((Finset.mem_erase.mp hp).1)
+      have hne : a ≠ p := Ne.symm (Finset.mem_erase.mp hp).1
       exact Nat.succ_le_of_lt (lt_of_le_of_ne hmin hne)
-    have htail : T.prod pivotFactor ≤ UBm (a + 1) T.card := by
-      exact ih T hT_ss (a + 1) hT_prime hT_ge
+    have htail : T.prod pivotFactor ≤ UBm (a + 1) T.card := ih T hT_ss (a + 1) hT_prime hT_ge
     have hhead : pivotFactor a ≤ pivotFactor (py0 y 0) := by
-      have hnext_le_a : nextPrimeGe y ≤ a := nextPrimeGe_le_of_prime_ge ha_prime hy_a
-      simpa [py0] using factor_antitone_on_two_le (nextPrimeGe_prime y).two_le hnext_le_a
-    have hprod_nonneg : 0 ≤ T.prod pivotFactor := by
-      exact le_of_lt (prod_pivotFactor_pos_of_all_prime hT_prime)
+      have hnext_le_a : py0 y 0 ≤ a := nextPrimeGe_le_of_prime_ge ha_prime hy_a
+      exact factor_antitone_on_two_le (nextPrimeGe_prime y).two_le hnext_le_a
+    have hprod_nonneg : 0 ≤ T.prod pivotFactor := le_of_lt (prod_pivotFactor_pos_of_all_prime hT_prime)
     have hcard : T.card + 1 = S.card := Finset.card_erase_add_one ha_mem
     calc
       S.prod pivotFactor = pivotFactor a * T.prod pivotFactor := by
-        dsimp [T, a]
-        have h_ins : insert a (S.erase a) = S := Finset.insert_erase ha_mem
-        have h_not_mem : a ∉ S.erase a := by simp
-        calc
-          S.prod pivotFactor = (insert a (S.erase a)).prod pivotFactor := by rw [h_ins]
-          _ = pivotFactor a * (S.erase a).prod pivotFactor := Finset.prod_insert h_not_mem
+        have : insert a T = S := Finset.insert_erase ha_mem
+        nth_rw 1 [← this]
+        exact Finset.prod_insert h_not_in_T
       _ ≤ pivotFactor (py0 y 0) * UBm (a + 1) T.card := by
         exact mul_le_mul hhead htail hprod_nonneg (pivotFactor_nonneg_of_prime (py0_prime y 0))
-      _ ≤ pivotFactor (py0 y 0) * UBm y T.card := by
-        have htail' : UBm (a + 1) T.card ≤ UBm y T.card := UBm_antitone_in_y hy_a
+      _ ≤ pivotFactor (py0 y 0) * UBm (py0 y 0 + 1) T.card := by
+        have hnext_le_a : py0 y 0 ≤ a := nextPrimeGe_le_of_prime_ge ha_prime hy_a
+        have htail' : UBm (a + 1) T.card ≤ UBm (py0 y 0 + 1) T.card :=
+          UBm_antitone_in_y (Nat.succ_le_succ hnext_le_a)
         exact mul_le_mul_of_nonneg_left htail' (pivotFactor_nonneg_of_prime (py0_prime y 0))
-      _ ≤ UBm y (T.card + 1) := by
-        rw [UBm_succ]
-        have hmono : UBm y T.card ≤ UBm y T.card := le_rfl
-        simpa [py0]
+      _ = UBm y (T.card + 1) := (UBm_succ_first y T.card).symm
       _ = UBm y S.card := by rw [hcard]
   · have hSE : S = ∅ := Finset.not_nonempty_iff_eq_empty.mp hS
     subst hSE
-    simp [UBm_zero]
+    simp
 
 /--
 Worst-case monotone envelope:
@@ -437,21 +444,20 @@ Support-level worst-case envelope for a `y`-rough integer.
 -/
 theorem UB_primeSupport_le_UBm_of_yrough {y n : ℕ} (hy : YRough y n) :
     UB (primeSupport n) ≤ UBm y (primeSupport n).card := by
-  simpa [UB] using
-    worst_case_monotone_envelope (primeSupport n) y
-      (by
-        intro p hp
-        exact prime_of_mem_primeSupport hp)
-      (by
-        intro p hp
-        exact hy p (prime_of_mem_primeSupport hp) (dvd_of_mem_primeSupport hp))
+  apply worst_case_monotone_envelope
+  · intro p hp
+    exact prime_of_mem_primeSupport hp
+  · intro p hp
+    exact hy p (prime_of_mem_primeSupport hp) (dvd_of_mem_primeSupport hp)
 
 /--
 Legacy rational-product form used downstream.
 -/
 theorem prod_primeSupport_le_UBm_of_yrough {y n : ℕ} (hy : YRough y n) :
     (primeSupport n).prod pivotFactor ≤ UBm y (primeSupport n).card := by
-  simpa [UB] using UB_primeSupport_le_UBm_of_yrough hy
+  have h_eq : UB (primeSupport n) = (primeSupport n).prod pivotFactor := rfl
+  rw [← h_eq]
+  exact UB_primeSupport_le_UBm_of_yrough hy
 
 end Pivot
 end Lehmer
