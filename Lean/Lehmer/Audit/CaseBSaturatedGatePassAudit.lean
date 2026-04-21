@@ -3,207 +3,179 @@
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
 - Lehmer.Basic.Defs : def
-- Lehmer.CaseB.CaseBClassAudit : def thm
-- Lehmer.CaseB.TerminalBridgeAudit : def thm
-- Lehmer.CaseB.Dominance.NoCrossingGlobalAudit : def thm
-- Lehmer.CaseB.CaseBContradictionAudit : thm
+- Lehmer.CaseB.Spec : struct spec def
+- Lehmer.Audit.CaseB.CaseBSaturatedProgressAudit : def thm
+- Lehmer.Audit.CaseB.CaseBGatePassTraceAudit : def thm
+- Lehmer.Audit.CaseB.CaseBGatePassClassificationAudit : def thm
+- Lehmer.Audit.CaseB.CaseBGatePassLockAudit : def thm
+- Lehmer.Audit.CaseB.CaseBGatePassWitnessAccountingAudit : def thm
+- Lehmer.Audit.CaseB.CaseBGatePassSupplyAudit : def thm
+- Lehmer.Audit.CaseB.CaseBGatePassTerminal : def thm
+- Lehmer.Audit.CaseB.CaseBGatePassContradiction : def thm
 -/
 
 import Lehmer.Prelude
 import Lehmer.Basic.Defs
-import Lehmer.CaseB.CaseBClassAudit
-import Lehmer.CaseB.TerminalBridgeAudit
-import Lehmer.CaseB.Dominance.NoCrossingGlobalAudit
-import Lehmer.CaseB.CaseBContradictionAudit
+import Lehmer.CaseB.Spec
+import Lehmer.Audit.CaseB.CaseBSaturatedProgressAudit
+import Lehmer.Audit.CaseB.CaseBGatePassTraceAudit
+import Lehmer.Audit.CaseB.CaseBGatePassClassificationAudit
+import Lehmer.Audit.CaseB.CaseBGatePassLockAudit
+import Lehmer.Audit.CaseB.CaseBGatePassWitnessAccountingAudit
+import Lehmer.Audit.CaseB.CaseBGatePassSupplyAudit
+import Lehmer.Audit.CaseB.CaseBGatePassTerminal
+import Lehmer.Audit.CaseB.CaseBGatePassContradiction
 
 namespace Lehmer
-namespace Audit
+namespace CaseB
 
 open Lehmer.Basic
-open Lehmer.CaseB
-open Lehmer.Pivot (pivotVal)
 
-/--
-Audit-facing candidate predicate for the saturated gate-pass branch.
--/
-def AuditCandidate (n : ℕ) : Prop :=
-  LehmerComposite n
+inductive CaseBSaturatedGatePassAuditTag (C : Context) : Type where
+  | gatePass (G : AuditCaseBGatePassData C)
 
-@[simp] theorem AuditCandidate_def (n : ℕ) :
-    AuditCandidate n = LehmerComposite n := rfl
+inductive CaseBSaturatedGatePassAuditRouting (C : Context) : Type where
+  | gatePass
+      (G : AuditCaseBGatePassData C)
+      (contradictionRouting : CaseBGatePassContradictionRouting C)
+      (hcontr :
+        contradictionRouting = caseBGatePassContradictionRouting_of_gatePass G) :
+      CaseBSaturatedGatePassAuditRouting C
 
-/--
-Audit-facing saturated gate-pass state.
+def caseBSaturatedGatePassAuditRouting_of_gatePass
+    {C : Context}
+    (G : AuditCaseBGatePassData C) :
+    CaseBSaturatedGatePassAuditRouting C :=
+  CaseBSaturatedGatePassAuditRouting.gatePass
+    G
+    (caseBGatePassContradictionRouting_of_gatePass G)
+    rfl
 
-At the currently exported audit interface, the locally consumable gate-pass
-branch is exactly the conjunction of:
-- audited entry into the Case B window;
-- audited terminal structural bridge data.
+noncomputable def caseBSaturatedGatePassAuditRouting_of_contradictionRouting
+    (C : Context)
+    (R : CaseBGatePassContradictionRouting C) :
+    CaseBSaturatedGatePassAuditRouting C := by
+  cases R with
+  | gatePass G _ _ =>
+      exact caseBSaturatedGatePassAuditRouting_of_gatePass G
 
-This is the minimal exact state already exposed by the main audit-side Case B
-pipeline for the branch that is closed internally by the Case B structural
-contradiction.
--/
-def AuditCaseBSaturatedGatePassState (n : ℕ) : Prop :=
-  AuditCaseBClass n ∧ CaseBTerminalDataAudit n
+noncomputable def caseBSaturatedGatePassAuditRouting_of_state
+    (C : Context)
+    (hC : AuditCaseBGatePassState C) :
+    CaseBSaturatedGatePassAuditRouting C :=
+  caseBSaturatedGatePassAuditRouting_of_contradictionRouting C
+    (caseBGatePassContradictionRouting_of_state C hC)
 
-@[simp] theorem AuditCaseBSaturatedGatePassState_def (n : ℕ) :
-    AuditCaseBSaturatedGatePassState n =
-      (AuditCaseBClass n ∧ CaseBTerminalDataAudit n) := rfl
+namespace CaseBSaturatedGatePassAuditRouting
 
-@[simp] theorem AuditCaseBSaturatedGatePassState_iff (n : ℕ) :
-    AuditCaseBSaturatedGatePassState n ↔
-      AuditCaseBClass n ∧ CaseBTerminalDataAudit n := by
-  rfl
+def tag
+    {C : Context} :
+    CaseBSaturatedGatePassAuditRouting C → CaseBSaturatedGatePassAuditTag C
+  | .gatePass G _ _ => CaseBSaturatedGatePassAuditTag.gatePass G
 
-/--
-Explicit reading of the audited saturated gate-pass state in terms of the exact
-Case B window plus its audited terminal structural bridge.
--/
-@[simp] theorem AuditCaseBSaturatedGatePassState_explicit (n : ℕ) :
-    AuditCaseBSaturatedGatePassState n ↔
-      Ystar ≤ pivotVal n ∧ CaseBTerminalDataAudit n := by
-  constructor
-  · intro h
-    rcases h with ⟨hB, hT⟩
-    exact ⟨Lehmer.CaseB.audit_windowB_sound hB, hT⟩
-  · intro h
-    rcases h with ⟨hy, hT⟩
-    exact ⟨Lehmer.CaseB.audit_windowB_complete hy, hT⟩
+def contradictionRouting
+    {C : Context} :
+    CaseBSaturatedGatePassAuditRouting C → CaseBGatePassContradictionRouting C
+  | .gatePass _ R _ => R
 
-/--
-Audit-facing terminal structural data actually consumed by the saturated
-gate-pass contradiction.
--/
-abbrev CaseBSaturatedGatePassTerminalDataAudit (n : ℕ) : Prop :=
-  CaseBTerminalDataAudit n
+@[simp] theorem tag_gatePass
+    {C : Context}
+    (G : AuditCaseBGatePassData C)
+    (R : CaseBGatePassContradictionRouting C)
+    (hR : R = caseBGatePassContradictionRouting_of_gatePass G) :
+    tag (.gatePass G R hR) = CaseBSaturatedGatePassAuditTag.gatePass G := rfl
 
-@[simp] theorem CaseBSaturatedGatePassTerminalDataAudit_def (n : ℕ) :
-    CaseBSaturatedGatePassTerminalDataAudit n = CaseBTerminalDataAudit n := rfl
+@[simp] theorem contradictionRouting_gatePass
+    {C : Context}
+    (G : AuditCaseBGatePassData C)
+    (R : CaseBGatePassContradictionRouting C)
+    (hR : R = caseBGatePassContradictionRouting_of_gatePass G) :
+    contradictionRouting (.gatePass G R hR) = R := rfl
 
-theorem CaseBSaturatedGatePassTerminalDataAudit_expand (n : ℕ) :
-    CaseBSaturatedGatePassTerminalDataAudit n ↔ CaseBTerminalDataAudit n := by
-  rfl
+theorem contradictionRouting_sound
+    {C : Context}
+    (R : CaseBSaturatedGatePassAuditRouting C) :
+    ∃ _ : AuditCaseBGatePassData C, True := by
+  exact caseBGatePassContradictionRouting_sound R.contradictionRouting
 
-/--
-Closed audit-facing no-crossing input actually consumed by the saturated
-gate-pass contradiction.
--/
-abbrev CaseBSaturatedGatePassNoCrossingAudit : Prop :=
-  NoCrossingBeyondYstarAudit
+theorem is_gatePass
+    {C : Context}
+    (R : CaseBSaturatedGatePassAuditRouting C) :
+    ∃ _ : AuditCaseBGatePassData C, True := by
+  cases R with
+  | gatePass G _ _ =>
+      exact ⟨G, trivial⟩
 
-@[simp] theorem CaseBSaturatedGatePassNoCrossingAudit_def :
-    CaseBSaturatedGatePassNoCrossingAudit = NoCrossingBeyondYstarAudit := rfl
+end CaseBSaturatedGatePassAuditRouting
 
-/--
-Local terminal contradiction for the saturated gate-pass branch.
--/
-theorem caseB_saturated_gatePass_terminal
-    {n : ℕ}
-    (hCand : AuditCandidate n)
-    (hstate : AuditCaseBSaturatedGatePassState n)
-    (hNoCrossing : CaseBSaturatedGatePassNoCrossingAudit) :
-    False := by
-  rcases hstate with ⟨hB, hterminal⟩
-  exact caseB_impossibleAudit hCand hB hterminal hNoCrossing
+theorem caseBSaturatedGatePassAuditRouting_sound
+    {C : Context}
+    (R : CaseBSaturatedGatePassAuditRouting C) :
+    ∃ _ : AuditCaseBGatePassData C, True := by
+  cases R with
+  | gatePass G _ _ =>
+      exact ⟨G, trivial⟩
 
-/--
-Closed reformulation of the local terminal contradiction.
--/
-theorem caseB_saturated_gatePass_terminal_closed
-    {n : ℕ}
-    (hCand : AuditCandidate n)
-    (hstate : AuditCaseBSaturatedGatePassState n)
-    (hNoCrossing : CaseBSaturatedGatePassNoCrossingAudit) :
-    False := by
-  exact caseB_saturated_gatePass_terminal hCand hstate hNoCrossing
+theorem progress_audit_of_state
+    (C : Context)
+    (hC : AuditCaseBGatePassState C) :
+    ∃ _ : AuditCaseBGatePassData C, True := by
+  exact exists_gatePass_of_state C hC
 
-/--
-Explicit paper-facing local closure theorem for the saturated gate-pass branch.
--/
-theorem caseB_saturated_gatePass_terminal_explicit
-    {n : ℕ}
-    (hCand : LehmerComposite n)
-    (hy : Ystar ≤ pivotVal n)
-    (hterminal : CaseBTerminalDataAudit n)
-    (hNoCrossing : NoCrossingBeyondYstarAudit) :
-    False := by
-  have hstate : AuditCaseBSaturatedGatePassState n := by
-    exact ⟨Lehmer.CaseB.audit_windowB_complete hy, hterminal⟩
-  exact caseB_saturated_gatePass_terminal hCand hstate hNoCrossing
+theorem exists_trace_audit_of_state
+    (C : Context)
+    (hC : AuditCaseBGatePassState C) :
+    ∃ _ : CaseBGatePassExhaustiveTrace C, True := by
+  exact ⟨caseBGatePassExhaustiveTrace_of_state C hC, trivial⟩
 
-/--
-Strong local audit certificate for the saturated gate-pass branch.
--/
-structure CaseBSaturatedGatePassCertificate (n : ℕ) where
-  hstate : AuditCaseBSaturatedGatePassState n
-  hterminal : CaseBSaturatedGatePassTerminalDataAudit n
-  hNoCrossing : CaseBSaturatedGatePassNoCrossingAudit
-  hclosed : False
+theorem exists_classification_audit_of_state
+    (C : Context)
+    (hC : AuditCaseBGatePassState C) :
+    ∃ _ : CaseBGatePassExhaustiveTraceClassification C, True := by
+  exact exists_caseBGatePassExhaustiveTraceClassification_of_state C hC
 
-/--
-Canonical constructor of the strong local saturated gate-pass certificate.
--/
-def mkCaseBSaturatedGatePassCertificate
-    {n : ℕ}
-    (hCand : AuditCandidate n)
-    (hstate : AuditCaseBSaturatedGatePassState n)
-    (hNoCrossing : CaseBSaturatedGatePassNoCrossingAudit) :
-    CaseBSaturatedGatePassCertificate n := by
-  rcases hstate with ⟨hB, hterminal⟩
-  exact
-    { hstate := ⟨hB, hterminal⟩
-      hterminal := hterminal
-      hNoCrossing := hNoCrossing
-      hclosed := caseB_impossibleAudit hCand hB hterminal hNoCrossing }
+theorem exists_lock_audit_of_state
+    (C : Context)
+    (hC : AuditCaseBGatePassState C) :
+    ∃ _ : CaseBGatePassLockRouting C, True := by
+  exact exists_caseBGatePassLockRouting_of_state C hC
 
-/--
-Direct local consumption theorem for the saturated gate-pass branch.
--/
-theorem caseB_saturated_gatePass_consumed
-    {n : ℕ}
-    (hCand : AuditCandidate n)
-    (hstate : AuditCaseBSaturatedGatePassState n)
-    (hNoCrossing : CaseBSaturatedGatePassNoCrossingAudit) :
-    CaseBSaturatedGatePassCertificate n :=
-  mkCaseBSaturatedGatePassCertificate hCand hstate hNoCrossing
+theorem exists_witness_audit_of_state
+    (C : Context)
+    (hC : AuditCaseBGatePassState C) :
+    ∃ _ : CaseBGatePassWitnessAccountingRouting C, True := by
+  exact exists_caseBGatePassWitnessAccountingRouting_of_state C hC
 
-/--
-Local sufficiency theorem: the explicitly listed tools suffice to close the
-saturated gate-pass branch.
--/
-theorem caseB_saturated_gatePass_sufficiency
-    {n : ℕ}
-    (hCand : AuditCandidate n)
-    (hstate : AuditCaseBSaturatedGatePassState n)
-    (hNoCrossing : CaseBSaturatedGatePassNoCrossingAudit) :
-    False := by
-  exact (caseB_saturated_gatePass_consumed hCand hstate hNoCrossing).hclosed
+theorem exists_supply_audit_of_state
+    (C : Context)
+    (hC : AuditCaseBGatePassState C) :
+    ∃ _ : CaseBGatePassSupplyRouting C, True := by
+  exact exists_caseBGatePassSupplyRouting_of_state C hC
 
-/--
-No hidden dependency at the state level.
--/
-theorem caseB_saturated_gatePass_no_hidden_dependency_state (n : ℕ) :
-    AuditCaseBSaturatedGatePassState n =
-      (AuditCaseBClass n ∧ CaseBTerminalDataAudit n) := rfl
+theorem exists_terminal_audit_of_state
+    (C : Context)
+    (hC : AuditCaseBGatePassState C) :
+    ∃ _ : CaseBGatePassTerminalRouting C, True := by
+  exact exists_caseBGatePassTerminalRouting_of_state C hC
 
-/--
-No hidden dependency at the terminal-data level.
--/
-theorem caseB_saturated_gatePass_no_hidden_dependency_terminal (n : ℕ) :
-    CaseBSaturatedGatePassTerminalDataAudit n = CaseBTerminalDataAudit n := rfl
+theorem exists_contradiction_audit_of_state
+    (C : Context)
+    (hC : AuditCaseBGatePassState C) :
+    ∃ _ : CaseBGatePassContradictionRouting C, True := by
+  exact exists_caseBGatePassContradictionRouting_of_state C hC
 
-/--
-No hidden dependency at the closure level: local closure is exactly the
-terminal contradiction theorem consumed with the explicit audited inputs.
--/
-theorem caseB_saturated_gatePass_no_hidden_dependency_closure
-    {n : ℕ}
-    (hCand : AuditCandidate n)
-    (hstate : AuditCaseBSaturatedGatePassState n)
-    (hNoCrossing : CaseBSaturatedGatePassNoCrossingAudit) :
-    False := by
-  exact caseB_saturated_gatePass_terminal hCand hstate hNoCrossing
+theorem exists_saturatedGatePassAudit_of_state
+    (C : Context)
+    (hC : AuditCaseBGatePassState C) :
+    ∃ _ : CaseBSaturatedGatePassAuditRouting C, True := by
+  exact ⟨caseBSaturatedGatePassAuditRouting_of_state C hC, trivial⟩
 
-end Audit
+theorem exists_final_audit_branch_of_state
+    (C : Context)
+    (hC : AuditCaseBGatePassState C) :
+    ∃ _ : AuditCaseBGatePassData C, True := by
+  exact caseBSaturatedGatePassAuditRouting_sound
+    (caseBSaturatedGatePassAuditRouting_of_state C hC)
+
+end CaseB
 end Lehmer

@@ -11,7 +11,6 @@ IMPORT CLASSIFICATION
 - Lehmer.CaseB.Descent.LocalCompleteness : def thm
 - Lehmer.CaseB.Descent.DescentSkeleton : def thm
 - Lehmer.CaseB.Saturation.SSLock : def thm
-- Lehmer.Audit.CaseB.CaseBPurelyGenericDischarge : def thm
 -/
 
 import Lehmer.Prelude
@@ -24,12 +23,12 @@ import Lehmer.CaseB.Descent.KmaxB
 import Lehmer.CaseB.Descent.LocalCompleteness
 import Lehmer.CaseB.Descent.DescentSkeleton
 import Lehmer.CaseB.Saturation.SSLock
-import Lehmer.Audit.CaseB.CaseBPurelyGenericDischarge
 
 namespace Lehmer
 namespace CaseB
 
 open Lehmer.Basic
+open Classical
 
 def AuditCaseBNonSaturatedState (C : Context) : Prop :=
   ContextNonSaturated C ∧ C.S.Nonempty
@@ -68,6 +67,61 @@ theorem AuditCaseBLocalBoundaryData_of_nonSaturatedState
 abbrev AuditCaseBPurelyGenericBranch (C : Context) : Prop :=
   ContextPurelyGeneric C
 
+def AuditCaseBDischargeApplies (C : Context) : Prop :=
+  ContextPurelyGeneric C
+
+@[simp] theorem AuditCaseBDischargeApplies_def (C : Context) :
+    AuditCaseBDischargeApplies C = ContextPurelyGeneric C := rfl
+
+structure AuditCaseBDischargeData (C : Context) where
+  hdis : AuditCaseBDischargeApplies C
+
+theorem auditCaseBDischargeApplies_of_purelyGeneric
+    {C : Context} (hpg : AuditCaseBPurelyGenericBranch C) :
+    AuditCaseBDischargeApplies C := by
+  exact hpg
+
+theorem auditCaseBDischargeApplies_of_boundary_and_no_entangled
+    {C : Context}
+    (hB : AuditCaseBLocalBoundaryData C)
+    (hno : ¬ ∃ p : ℕ, EntangledPrime C.S p C.y) :
+    AuditCaseBDischargeApplies C := by
+  rcases hB with hpg | hent
+  · exact hpg
+  · exact False.elim (hno hent)
+
+theorem auditCaseBDischargeApplies_of_state_and_no_entangled
+    {C : Context}
+    (hC : AuditCaseBNonSaturatedState C)
+    (hno : ¬ ∃ p : ℕ, EntangledPrime C.S p C.y) :
+    AuditCaseBDischargeApplies C := by
+  exact auditCaseBDischargeApplies_of_boundary_and_no_entangled
+    (AuditCaseBLocalBoundaryData_of_nonSaturatedState hC) hno
+
+def auditCaseBDischargeData_of_purelyGeneric
+    {C : Context} (hpg : AuditCaseBPurelyGenericBranch C) :
+    AuditCaseBDischargeData C :=
+  { hdis := auditCaseBDischargeApplies_of_purelyGeneric hpg }
+
+def auditCaseBDischargeData_of_boundary_and_no_entangled
+    (C : Context)
+    (hB : AuditCaseBLocalBoundaryData C)
+    (hno : ¬ ∃ p : ℕ, EntangledPrime C.S p C.y) :
+    AuditCaseBDischargeData C :=
+  { hdis := auditCaseBDischargeApplies_of_boundary_and_no_entangled hB hno }
+
+def auditCaseBDischargeData_of_state_and_no_entangled
+    (C : Context)
+    (hC : AuditCaseBNonSaturatedState C)
+    (hno : ¬ ∃ p : ℕ, EntangledPrime C.S p C.y) :
+    AuditCaseBDischargeData C :=
+  { hdis := auditCaseBDischargeApplies_of_state_and_no_entangled hC hno }
+
+theorem AuditCaseBDischargeData.applies
+    {C : Context} (D : AuditCaseBDischargeData C) :
+    AuditCaseBDischargeApplies C := by
+  exact D.hdis
+
 structure AuditCaseBEntangledStepData (C : Context) where
   p : ℕ
   hent : EntangledPrime C.S p C.y
@@ -96,10 +150,13 @@ noncomputable def auditCaseBEntangledStepData_of_boundary
     (hnot : ¬ ContextPurelyGeneric C) :
     AuditCaseBEntangledStepData C := by
   classical
-  rcases hB with hpg | hent
-  · exact False.elim (hnot hpg)
-  · rcases hent with ⟨p, hp⟩
-    exact { p := p, hent := hp }
+  have hent : ∃ p : ℕ, EntangledPrime C.S p C.y := by
+    rcases hB with hpg | hent
+    · exact False.elim (hnot hpg)
+    · exact hent
+  exact
+    { p := Classical.choose hent
+      hent := Classical.choose_spec hent }
 
 theorem auditCaseBEntangledStepData_of_boundary_spec
     (C : Context)
@@ -110,18 +167,17 @@ theorem auditCaseBEntangledStepData_of_boundary_spec
   exact (auditCaseBEntangledStepData_of_boundary C hB hnot).hent
 
 def AuditCaseBExhaustiveLocalOutcome (C : Context) : Prop :=
-  (∃ D : AuditCaseBDischargeData C, True) ∨
-  (∃ E : AuditCaseBEntangledStepData C, True)
+  (∃ _ : AuditCaseBDischargeData C, True) ∨
+  (∃ _ : AuditCaseBEntangledStepData C, True)
 
 @[simp] theorem AuditCaseBExhaustiveLocalOutcome_def (C : Context) :
     AuditCaseBExhaustiveLocalOutcome C =
-      ((∃ D : AuditCaseBDischargeData C, True) ∨
-       (∃ E : AuditCaseBEntangledStepData C, True)) := rfl
+      ((∃ _ : AuditCaseBDischargeData C, True) ∨
+       (∃ _ : AuditCaseBEntangledStepData C, True)) := rfl
 
 theorem AuditCaseBExhaustiveLocalOutcome_of_boundary
     {C : Context} (hB : AuditCaseBLocalBoundaryData C) :
     AuditCaseBExhaustiveLocalOutcome C := by
-  classical
   rcases hB with hpg | hent
   · exact Or.inl ⟨auditCaseBDischargeData_of_purelyGeneric hpg, trivial⟩
   · rcases hent with ⟨p, hp⟩
@@ -136,28 +192,28 @@ theorem AuditCaseBExhaustiveLocalOutcome_of_nonSaturatedState
 theorem exists_discharge_or_entangled_of_nonSaturatedState
     (C : Context)
     (hC : AuditCaseBNonSaturatedState C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
   exact AuditCaseBExhaustiveLocalOutcome_of_nonSaturatedState hC
 
 theorem exists_discharge_of_purelyGeneric
     (C : Context)
     (hpg : AuditCaseBPurelyGenericBranch C) :
-    ∃ D : AuditCaseBDischargeData C, True := by
+    ∃ _ : AuditCaseBDischargeData C, True := by
   exact ⟨auditCaseBDischargeData_of_purelyGeneric hpg, trivial⟩
 
 theorem exists_entangled_of_boundary_not_purelyGeneric
     (C : Context)
     (hB : AuditCaseBLocalBoundaryData C)
     (hnot : ¬ ContextPurelyGeneric C) :
-    ∃ E : AuditCaseBEntangledStepData C, True := by
+    ∃ _ : AuditCaseBEntangledStepData C, True := by
   exact ⟨auditCaseBEntangledStepData_of_boundary C hB hnot, trivial⟩
 
 theorem AuditCaseBExhaustiveLocalOutcome.discharge
     {C : Context}
     (hO : AuditCaseBExhaustiveLocalOutcome C)
-    (hnot : ¬ ∃ E : AuditCaseBEntangledStepData C, True) :
-    ∃ D : AuditCaseBDischargeData C, True := by
+    (hnot : ¬ ∃ _ : AuditCaseBEntangledStepData C, True) :
+    ∃ _ : AuditCaseBDischargeData C, True := by
   rcases hO with hD | hE
   · exact hD
   · exact False.elim (hnot hE)
@@ -165,8 +221,8 @@ theorem AuditCaseBExhaustiveLocalOutcome.discharge
 theorem AuditCaseBExhaustiveLocalOutcome.entangled
     {C : Context}
     (hO : AuditCaseBExhaustiveLocalOutcome C)
-    (hnot : ¬ ∃ D : AuditCaseBDischargeData C, True) :
-    ∃ E : AuditCaseBEntangledStepData C, True := by
+    (hnot : ¬ ∃ _ : AuditCaseBDischargeData C, True) :
+    ∃ _ : AuditCaseBEntangledStepData C, True := by
   rcases hO with hD | hE
   · exact False.elim (hnot hD)
   · exact hE
@@ -248,20 +304,23 @@ noncomputable def auditCaseBBackboneStep_of_gainProgressData
     (hP : AuditCaseBGainProgressData C) :
     AuditCaseBBackboneStep C := by
   classical
-  rcases hP with ⟨p, hp, hgain⟩
+  let p : ℕ := Classical.choose hP
+  have hpkg : Removable C.S p ∧ ContextGainCriterion C p := Classical.choose_spec hP
   exact
     { p := p
       C' := nextContext C p
-      hstep := contextControlledRemoval_canonical C p hp
-      hgain := hgain
-      hdec := contextDescentLength_strict_decrease_of_removable C p hp }
+      hstep := contextControlledRemoval_canonical C p hpkg.1
+      hgain := hpkg.2
+      hdec := by
+        exact contextDescentLength_strict_decrease_of_removable C p hpkg.1 }
 
 theorem contextDescentLength_decreases_of_AuditCaseBGainProgressData
     (C : Context)
     (hP : AuditCaseBGainProgressData C) :
     let B := auditCaseBBackboneStep_of_gainProgressData C hP
     contextDescentLength B.C' < contextDescentLength C := by
-  simp [auditCaseBBackboneStep_of_gainProgressData]
+  dsimp
+  exact (auditCaseBBackboneStep_of_gainProgressData C hP).hdec
 
 structure AuditCaseBNonSaturatedBranch (C : Context) where
   backbone : AuditCaseBBackboneStep C
@@ -307,14 +366,14 @@ noncomputable def auditCaseBNonSaturatedBranch_of_state_and_gainProgress
 theorem exists_AuditCaseBNonSaturatedBranch_of_gainProgressData
     (C : Context)
     (hP : AuditCaseBGainProgressData C) :
-    ∃ B : AuditCaseBNonSaturatedBranch C, True := by
+    ∃ _ : AuditCaseBNonSaturatedBranch C, True := by
   exact ⟨auditCaseBNonSaturatedBranch_of_gainProgressData C hP, trivial⟩
 
 theorem exists_AuditCaseBNonSaturatedBranch_of_state_and_gainProgress
     (C : Context)
     (hC : AuditCaseBNonSaturatedState C)
     (hP : AuditCaseBGainProgressData C) :
-    ∃ B : AuditCaseBNonSaturatedBranch C, True := by
+    ∃ _ : AuditCaseBNonSaturatedBranch C, True := by
   exact ⟨auditCaseBNonSaturatedBranch_of_state_and_gainProgress C hC hP, trivial⟩
 
 theorem auditCaseBNonSaturatedBranch_contextDescentLength_decreases
@@ -328,9 +387,9 @@ theorem contextDescentLength_decreases_of_AuditCaseBNonSaturatedState_and_gainPr
     (hP : AuditCaseBGainProgressData C) :
     let B := auditCaseBNonSaturatedBranch_of_state_and_gainProgress C hC hP
     contextDescentLength B.backbone.C' < contextDescentLength C := by
-  simp [auditCaseBNonSaturatedBranch_of_state_and_gainProgress,
-    auditCaseBNonSaturatedBranch_of_gainProgressData,
-    auditCaseBBackboneStep_of_gainProgressData]
+  dsimp [auditCaseBNonSaturatedBranch_of_state_and_gainProgress,
+    auditCaseBNonSaturatedBranch_of_gainProgressData]
+  exact (auditCaseBBackboneStep_of_gainProgressData C hP).hdec
 
 end CaseB
 end Lehmer

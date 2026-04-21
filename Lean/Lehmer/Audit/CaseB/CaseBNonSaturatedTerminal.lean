@@ -73,7 +73,7 @@ noncomputable def caseBNonSaturatedTerminalRouting_of_supplyRouting
     (C : Context)
     (R : CaseBNonSaturatedSupplyRouting C) :
     CaseBNonSaturatedTerminalRouting C := by
-  cases R.tag with
+  cases R with
   | discharge D =>
       exact caseBNonSaturatedTerminalRouting_of_discharge D
   | entangled E =>
@@ -102,8 +102,7 @@ def supplyRouting
 
 def dischargeTerminal
     {C : Context} :
-    CaseBNonSaturatedTerminalRouting C →
-      Option (Σ A : WitnessAccounting C, HasSupplyBound C A)
+    CaseBNonSaturatedTerminalRouting C → Option (DischargeSupplyData C)
   | .discharge D _ _ =>
       (caseBNonSaturatedSupplyRouting_of_discharge D).dischargeSupply
   | .entangled E _ _ =>
@@ -137,7 +136,7 @@ def dischargeTerminal
     (hR : R = caseBNonSaturatedSupplyRouting_of_entangled E) :
     supplyRouting (.entangled E R hR) = R := rfl
 
-@[simp] theorem dischargeTerminal_discharge
+theorem dischargeTerminal_discharge
     {C : Context}
     (D : AuditCaseBDischargeData C)
     (R : CaseBNonSaturatedSupplyRouting C)
@@ -145,7 +144,7 @@ def dischargeTerminal
     dischargeTerminal (.discharge D R hR) =
       (caseBNonSaturatedSupplyRouting_of_discharge D).dischargeSupply := rfl
 
-@[simp] theorem dischargeTerminal_entangled
+theorem dischargeTerminal_entangled
     {C : Context}
     (E : AuditCaseBEntangledStepData C)
     (R : CaseBNonSaturatedSupplyRouting C)
@@ -156,8 +155,8 @@ def dischargeTerminal
 theorem supplyRouting_sound
     {C : Context}
     (R : CaseBNonSaturatedTerminalRouting C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
   exact caseBNonSaturatedSupplyRouting_sound R.supplyRouting
 
 theorem dischargeTerminal_eq_supplyRouting
@@ -165,24 +164,23 @@ theorem dischargeTerminal_eq_supplyRouting
     (R : CaseBNonSaturatedTerminalRouting C) :
     R.dischargeTerminal = R.supplyRouting.dischargeSupply := by
   cases R with
-  | discharge D R hR =>
+  | discharge _ _ hR =>
       cases hR
       rfl
-  | entangled E R hR =>
+  | entangled _ _ hR =>
       cases hR
       rfl
 
 theorem dischargeTerminal_eq_some_or_none
     {C : Context}
     (R : CaseBNonSaturatedTerminalRouting C) :
-    (∃ P : Σ A : WitnessAccounting C, HasSupplyBound C A,
-        R.dischargeTerminal = some P) ∨
+    (∃ P : DischargeSupplyData C, R.dischargeTerminal = some P) ∨
       R.dischargeTerminal = none := by
   cases R with
-  | discharge D R hR =>
+  | discharge D _ hR =>
       cases hR
       exact Or.inl ⟨dischargeSupplyData_of_discharge C D, rfl⟩
-  | entangled E R hR =>
+  | entangled _ _ hR =>
       cases hR
       exact Or.inr rfl
 
@@ -191,15 +189,13 @@ theorem dischargeTerminal_some_of_dischargeTag
     (R : CaseBNonSaturatedTerminalRouting C)
     (h : ∃ D : AuditCaseBDischargeData C,
       R.tag = CaseBNonSaturatedTerminalTag.discharge D) :
-    ∃ P : Σ A : WitnessAccounting C, HasSupplyBound C A,
-      R.dischargeTerminal = some P := by
-  rcases h with ⟨D, hD⟩
+    ∃ P : DischargeSupplyData C, R.dischargeTerminal = some P := by
   cases R with
-  | discharge D' R hR =>
-      cases hD
+  | discharge D _ hR =>
       cases hR
       exact ⟨dischargeSupplyData_of_discharge C D, rfl⟩
-  | entangled E R hR =>
+  | entangled _ _ _ =>
+      rcases h with ⟨D, hD⟩
       cases hD
 
 theorem dischargeTerminal_none_of_entangledTag
@@ -208,20 +204,19 @@ theorem dischargeTerminal_none_of_entangledTag
     (h : ∃ E : AuditCaseBEntangledStepData C,
       R.tag = CaseBNonSaturatedTerminalTag.entangled E) :
     R.dischargeTerminal = none := by
-  rcases h with ⟨E, hE⟩
   cases R with
-  | discharge D R hR =>
+  | discharge _ _ _ =>
+      rcases h with ⟨E, hE⟩
       cases hE
-  | entangled E' R hR =>
-      cases hE
+  | entangled _ _ hR =>
       cases hR
       rfl
 
 theorem is_discharge
     {C : Context}
     (R : CaseBNonSaturatedTerminalRouting C)
-    (hnot : ¬ ∃ E : AuditCaseBEntangledStepData C, True) :
-    ∃ D : AuditCaseBDischargeData C, True := by
+    (hnot : ¬ ∃ _ : AuditCaseBEntangledStepData C, True) :
+    ∃ _ : AuditCaseBDischargeData C, True := by
   cases R with
   | discharge D _ _ =>
       exact ⟨D, trivial⟩
@@ -231,8 +226,8 @@ theorem is_discharge
 theorem is_entangled
     {C : Context}
     (R : CaseBNonSaturatedTerminalRouting C)
-    (hnot : ¬ ∃ D : AuditCaseBDischargeData C, True) :
-    ∃ E : AuditCaseBEntangledStepData C, True := by
+    (hnot : ¬ ∃ _ : AuditCaseBDischargeData C, True) :
+    ∃ _ : AuditCaseBEntangledStepData C, True := by
   cases R with
   | discharge D _ _ =>
       exact False.elim (hnot ⟨D, trivial⟩)
@@ -244,8 +239,8 @@ end CaseBNonSaturatedTerminalRouting
 theorem caseBNonSaturatedTerminalRouting_sound
     {C : Context}
     (R : CaseBNonSaturatedTerminalRouting C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
   cases R with
   | discharge D _ _ =>
       exact Or.inl ⟨D, trivial⟩
@@ -255,34 +250,34 @@ theorem caseBNonSaturatedTerminalRouting_sound
 theorem dischargeTerminal_eq_some_of_tag_discharge
     {C : Context}
     (D : AuditCaseBDischargeData C) :
-    ∃ P : Σ A : WitnessAccounting C, HasSupplyBound C A,
+    ∃ P : DischargeSupplyData C,
       (caseBNonSaturatedTerminalRouting_of_discharge D).dischargeTerminal = some P := by
-  exact dischargeSupply_eq_some_of_tag_discharge D
+  exact ⟨dischargeSupplyData_of_discharge C D, rfl⟩
 
 theorem dischargeTerminal_eq_none_of_tag_entangled
     {C : Context}
     (E : AuditCaseBEntangledStepData C) :
     (caseBNonSaturatedTerminalRouting_of_entangled E).dischargeTerminal = none := by
-  exact dischargeSupply_eq_none_of_tag_entangled E
+  rfl
 
 theorem exists_caseBNonSaturatedTerminalRouting_of_state
     (C : Context)
     (hC : AuditCaseBNonSaturatedState C) :
-    ∃ R : CaseBNonSaturatedTerminalRouting C, True := by
+    ∃ _ : CaseBNonSaturatedTerminalRouting C, True := by
   exact ⟨caseBNonSaturatedTerminalRouting_of_state C hC, trivial⟩
 
 theorem exists_terminal_branch_of_state
     (C : Context)
     (hC : AuditCaseBNonSaturatedState C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
   exact caseBNonSaturatedTerminalRouting_sound
     (caseBNonSaturatedTerminalRouting_of_state C hC)
 
 theorem exists_dischargeTerminal_or_none_of_state
     (C : Context)
     (hC : AuditCaseBNonSaturatedState C) :
-    (∃ P : Σ A : WitnessAccounting C, HasSupplyBound C A,
+    (∃ P : DischargeSupplyData C,
         (caseBNonSaturatedTerminalRouting_of_state C hC).dischargeTerminal = some P) ∨
       (caseBNonSaturatedTerminalRouting_of_state C hC).dischargeTerminal = none := by
   exact CaseBNonSaturatedTerminalRouting.dischargeTerminal_eq_some_or_none

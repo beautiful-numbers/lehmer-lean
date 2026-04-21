@@ -9,7 +9,6 @@ IMPORT CLASSIFICATION
 - Lehmer.CaseB.Descent.P2Decrease : thm
 - Lehmer.CaseB.Descent.DescentSkeleton : def thm
 - Lehmer.CaseB.Saturation.SSLock : def thm
-- Lehmer.Audit.CaseB.CaseBPurelyGenericDischarge : def thm
 - Lehmer.Audit.CaseB.CaseBNonSaturatedProgressAudit : def thm
 - Lehmer.Audit.CaseB.CaseBNonSaturatedTraceAudit : def thm
 -/
@@ -22,7 +21,6 @@ import Lehmer.CaseB.Descent.Gain
 import Lehmer.CaseB.Descent.P2Decrease
 import Lehmer.CaseB.Descent.DescentSkeleton
 import Lehmer.CaseB.Saturation.SSLock
-import Lehmer.Audit.CaseB.CaseBPurelyGenericDischarge
 import Lehmer.Audit.CaseB.CaseBNonSaturatedProgressAudit
 import Lehmer.Audit.CaseB.CaseBNonSaturatedTraceAudit
 
@@ -30,39 +28,80 @@ namespace Lehmer
 namespace CaseB
 
 open Lehmer.Basic
+open Classical
 
 inductive CaseBNonSaturatedExhaustiveClassificationTag (C : Context) : Type where
   | discharge (D : AuditCaseBDischargeData C)
   | entangled (E : AuditCaseBEntangledStepData C)
 
-structure CaseBNonSaturatedExhaustiveTraceClassification (C : Context) where
-  trace : CaseBNonSaturatedExhaustiveTrace C
-  tag : CaseBNonSaturatedExhaustiveClassificationTag C
+inductive CaseBNonSaturatedExhaustiveTraceClassification (C : Context) : Type where
+  | discharge (D : AuditCaseBDischargeData C) :
+      CaseBNonSaturatedExhaustiveTraceClassification C
+  | entangled (E : AuditCaseBEntangledStepData C) :
+      CaseBNonSaturatedExhaustiveTraceClassification C
+
+namespace CaseBNonSaturatedExhaustiveTraceClassification
+
+def trace
+    {C : Context} :
+    CaseBNonSaturatedExhaustiveTraceClassification C →
+      CaseBNonSaturatedExhaustiveTrace C
+  | .discharge D => CaseBNonSaturatedExhaustiveTrace.discharge C D
+  | .entangled E => CaseBNonSaturatedExhaustiveTrace.entangled C E
+
+def tag
+    {C : Context} :
+    CaseBNonSaturatedExhaustiveTraceClassification C →
+      CaseBNonSaturatedExhaustiveClassificationTag C
+  | .discharge D => CaseBNonSaturatedExhaustiveClassificationTag.discharge D
+  | .entangled E => CaseBNonSaturatedExhaustiveClassificationTag.entangled E
+
+@[simp] theorem trace_discharge
+    {C : Context} (D : AuditCaseBDischargeData C) :
+    trace (CaseBNonSaturatedExhaustiveTraceClassification.discharge D) =
+      CaseBNonSaturatedExhaustiveTrace.discharge C D := rfl
+
+@[simp] theorem trace_entangled
+    {C : Context} (E : AuditCaseBEntangledStepData C) :
+    trace (CaseBNonSaturatedExhaustiveTraceClassification.entangled E) =
+      CaseBNonSaturatedExhaustiveTrace.entangled C E := rfl
+
+@[simp] theorem tag_discharge
+    {C : Context} (D : AuditCaseBDischargeData C) :
+    tag (CaseBNonSaturatedExhaustiveTraceClassification.discharge D) =
+      CaseBNonSaturatedExhaustiveClassificationTag.discharge D := rfl
+
+@[simp] theorem tag_entangled
+    {C : Context} (E : AuditCaseBEntangledStepData C) :
+    tag (CaseBNonSaturatedExhaustiveTraceClassification.entangled E) =
+      CaseBNonSaturatedExhaustiveClassificationTag.entangled E := rfl
+
+end CaseBNonSaturatedExhaustiveTraceClassification
 
 def caseBNonSaturatedExhaustiveTraceClassification_of_discharge
     {C : Context}
     (D : AuditCaseBDischargeData C) :
     CaseBNonSaturatedExhaustiveTraceClassification C :=
-  { trace := CaseBNonSaturatedExhaustiveTrace.discharge C D
-    tag := CaseBNonSaturatedExhaustiveClassificationTag.discharge D }
+  CaseBNonSaturatedExhaustiveTraceClassification.discharge D
 
 def caseBNonSaturatedExhaustiveTraceClassification_of_entangled
     {C : Context}
     (E : AuditCaseBEntangledStepData C) :
     CaseBNonSaturatedExhaustiveTraceClassification C :=
-  { trace := CaseBNonSaturatedExhaustiveTrace.entangled C E
-    tag := CaseBNonSaturatedExhaustiveClassificationTag.entangled E }
+  CaseBNonSaturatedExhaustiveTraceClassification.entangled E
 
 noncomputable def caseBNonSaturatedExhaustiveTraceClassification_of_outcome
     (C : Context)
     (hO : AuditCaseBExhaustiveLocalOutcome C) :
     CaseBNonSaturatedExhaustiveTraceClassification C := by
   classical
-  rcases hO with hD | hE
-  · rcases hD with ⟨D, _⟩
-    exact caseBNonSaturatedExhaustiveTraceClassification_of_discharge D
-  · rcases hE with ⟨E, _⟩
-    exact caseBNonSaturatedExhaustiveTraceClassification_of_entangled E
+  by_cases hD : ∃ _ : AuditCaseBDischargeData C, True
+  · exact caseBNonSaturatedExhaustiveTraceClassification_of_discharge (Classical.choose hD)
+  · have hE : ∃ _ : AuditCaseBEntangledStepData C, True := by
+      rcases hO with hD' | hE'
+      · exact False.elim (hD hD')
+      · exact hE'
+    exact caseBNonSaturatedExhaustiveTraceClassification_of_entangled (Classical.choose hE)
 
 noncomputable def caseBNonSaturatedExhaustiveTraceClassification_of_state
     (C : Context)
@@ -74,9 +113,9 @@ noncomputable def caseBNonSaturatedExhaustiveTraceClassification_of_state
 theorem CaseBNonSaturatedExhaustiveTraceClassification.is_discharge
     {C : Context}
     (K : CaseBNonSaturatedExhaustiveTraceClassification C)
-    (hnot : ¬ ∃ E : AuditCaseBEntangledStepData C, True) :
-    ∃ D : AuditCaseBDischargeData C, True := by
-  cases K.tag with
+    (hnot : ¬ ∃ _ : AuditCaseBEntangledStepData C, True) :
+    ∃ _ : AuditCaseBDischargeData C, True := by
+  cases K with
   | discharge D =>
       exact ⟨D, trivial⟩
   | entangled E =>
@@ -85,9 +124,9 @@ theorem CaseBNonSaturatedExhaustiveTraceClassification.is_discharge
 theorem CaseBNonSaturatedExhaustiveTraceClassification.is_entangled
     {C : Context}
     (K : CaseBNonSaturatedExhaustiveTraceClassification C)
-    (hnot : ¬ ∃ D : AuditCaseBDischargeData C, True) :
-    ∃ E : AuditCaseBEntangledStepData C, True := by
-  cases K.tag with
+    (hnot : ¬ ∃ _ : AuditCaseBDischargeData C, True) :
+    ∃ _ : AuditCaseBEntangledStepData C, True := by
+  cases K with
   | discharge D =>
       exact False.elim (hnot ⟨D, trivial⟩)
   | entangled E =>
@@ -96,20 +135,23 @@ theorem CaseBNonSaturatedExhaustiveTraceClassification.is_entangled
 theorem CaseBNonSaturatedExhaustiveTraceClassification.trace_eq_of_discharge
     {C : Context}
     (D : AuditCaseBDischargeData C) :
-    (caseBNonSaturatedExhaustiveTraceClassification_of_discharge D).trace =
+    (CaseBNonSaturatedExhaustiveTraceClassification.trace
+      (caseBNonSaturatedExhaustiveTraceClassification_of_discharge D)) =
       CaseBNonSaturatedExhaustiveTrace.discharge C D := rfl
 
 theorem CaseBNonSaturatedExhaustiveTraceClassification.trace_eq_of_entangled
     {C : Context}
     (E : AuditCaseBEntangledStepData C) :
-    (caseBNonSaturatedExhaustiveTraceClassification_of_entangled E).trace =
+    (CaseBNonSaturatedExhaustiveTraceClassification.trace
+      (caseBNonSaturatedExhaustiveTraceClassification_of_entangled E)) =
       CaseBNonSaturatedExhaustiveTrace.entangled C E := rfl
 
 theorem CaseBNonSaturatedExhaustiveTraceClassification.terminal_eq_start
     {C : Context}
     (K : CaseBNonSaturatedExhaustiveTraceClassification C) :
-    CaseBNonSaturatedExhaustiveTrace.terminal K.trace = C := by
-  cases K.tag with
+    CaseBNonSaturatedExhaustiveTrace.terminal
+      (CaseBNonSaturatedExhaustiveTraceClassification.trace K) = C := by
+  cases K with
   | discharge D =>
       rfl
   | entangled E =>
@@ -118,8 +160,9 @@ theorem CaseBNonSaturatedExhaustiveTraceClassification.terminal_eq_start
 theorem CaseBNonSaturatedExhaustiveTraceClassification.length_eq_zero
     {C : Context}
     (K : CaseBNonSaturatedExhaustiveTraceClassification C) :
-    CaseBNonSaturatedExhaustiveTrace.length K.trace = 0 := by
-  cases K.tag with
+    CaseBNonSaturatedExhaustiveTrace.length
+      (CaseBNonSaturatedExhaustiveTraceClassification.trace K) = 0 := by
+  cases K with
   | discharge D =>
       rfl
   | entangled E =>
@@ -128,22 +171,27 @@ theorem CaseBNonSaturatedExhaustiveTraceClassification.length_eq_zero
 theorem CaseBNonSaturatedExhaustiveTraceClassification.preserves_level
     {C : Context}
     (K : CaseBNonSaturatedExhaustiveTraceClassification C) :
-    (CaseBNonSaturatedExhaustiveTrace.terminal K.trace).y = C.y := by
-  exact CaseBNonSaturatedExhaustiveTrace.preserves_level K.trace
+    (CaseBNonSaturatedExhaustiveTrace.terminal
+      (CaseBNonSaturatedExhaustiveTraceClassification.trace K)).y = C.y := by
+  exact CaseBNonSaturatedExhaustiveTrace.preserves_level
+    (CaseBNonSaturatedExhaustiveTraceClassification.trace K)
 
 theorem CaseBNonSaturatedExhaustiveTraceClassification.terminal_contextDescentLength_le
     {C : Context}
     (K : CaseBNonSaturatedExhaustiveTraceClassification C) :
-    contextDescentLength (CaseBNonSaturatedExhaustiveTrace.terminal K.trace) ≤
+    contextDescentLength
+        (CaseBNonSaturatedExhaustiveTrace.terminal
+          (CaseBNonSaturatedExhaustiveTraceClassification.trace K)) ≤
       contextDescentLength C := by
-  exact CaseBNonSaturatedExhaustiveTrace.terminal_contextDescentLength_le K.trace
+  exact CaseBNonSaturatedExhaustiveTrace.terminal_contextDescentLength_le
+    (CaseBNonSaturatedExhaustiveTraceClassification.trace K)
 
 theorem caseBNonSaturatedExhaustiveTraceClassification_sound
     {C : Context}
     (K : CaseBNonSaturatedExhaustiveTraceClassification C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
-  cases K.tag with
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
+  cases K with
   | discharge D =>
       exact Or.inl ⟨D, trivial⟩
   | entangled E =>
@@ -152,7 +200,7 @@ theorem caseBNonSaturatedExhaustiveTraceClassification_sound
 theorem exists_caseBNonSaturatedExhaustiveTraceClassification_of_state
     (C : Context)
     (hC : AuditCaseBNonSaturatedState C) :
-    ∃ K : CaseBNonSaturatedExhaustiveTraceClassification C, True := by
+    ∃ _ : CaseBNonSaturatedExhaustiveTraceClassification C, True := by
   exact ⟨caseBNonSaturatedExhaustiveTraceClassification_of_state C hC, trivial⟩
 
 structure CaseBNonSaturatedCanonicalTraceClassification (C : Context) where
@@ -297,13 +345,13 @@ theorem caseBNonSaturatedTraceClassificationProfile_length_decrease
 theorem exists_caseBNonSaturatedCanonicalTraceClassification_of_branch
     {C : Context}
     (B : AuditCaseBNonSaturatedBranch C) :
-    ∃ K : CaseBNonSaturatedCanonicalTraceClassification C, True := by
+    ∃ _ : CaseBNonSaturatedCanonicalTraceClassification C, True := by
   exact ⟨caseBNonSaturatedCanonicalTraceClassification_of_branch B, trivial⟩
 
 theorem exists_caseBNonSaturatedTraceClassificationProfile_of_branch
     {C : Context}
     (B : AuditCaseBNonSaturatedBranch C) :
-    ∃ P : CaseBNonSaturatedTraceClassificationProfile C, True := by
+    ∃ _ : CaseBNonSaturatedTraceClassificationProfile C, True := by
   exact ⟨caseBNonSaturatedTraceClassificationProfile_of_branch B, trivial⟩
 
 end CaseB

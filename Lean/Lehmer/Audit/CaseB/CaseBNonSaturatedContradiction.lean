@@ -77,11 +77,11 @@ noncomputable def caseBNonSaturatedContradictionRouting_of_terminalRouting
     (C : Context)
     (R : CaseBNonSaturatedTerminalRouting C) :
     CaseBNonSaturatedContradictionRouting C := by
-  rcases caseBNonSaturatedTerminalRouting_sound R with hD | hE
-  · rcases hD with ⟨D, _⟩
-    exact caseBNonSaturatedContradictionRouting_of_discharge D
-  · rcases hE with ⟨E, _⟩
-    exact caseBNonSaturatedContradictionRouting_of_entangled E
+  cases R with
+  | discharge D _ _ =>
+      exact caseBNonSaturatedContradictionRouting_of_discharge D
+  | entangled E _ _ =>
+      exact caseBNonSaturatedContradictionRouting_of_entangled E
 
 noncomputable def caseBNonSaturatedContradictionRouting_of_state
     (C : Context)
@@ -135,15 +135,15 @@ def terminalRouting
 theorem terminalRouting_sound
     {C : Context}
     (R : CaseBNonSaturatedContradictionRouting C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
   exact caseBNonSaturatedTerminalRouting_sound R.terminalRouting
 
 theorem is_discharge
     {C : Context}
     (R : CaseBNonSaturatedContradictionRouting C)
-    (hnot : ¬ ∃ E : AuditCaseBEntangledStepData C, True) :
-    ∃ D : AuditCaseBDischargeData C, True := by
+    (hnot : ¬ ∃ _ : AuditCaseBEntangledStepData C, True) :
+    ∃ _ : AuditCaseBDischargeData C, True := by
   cases R with
   | discharge D _ _ =>
       exact ⟨D, trivial⟩
@@ -153,8 +153,8 @@ theorem is_discharge
 theorem is_entangled
     {C : Context}
     (R : CaseBNonSaturatedContradictionRouting C)
-    (hnot : ¬ ∃ D : AuditCaseBDischargeData C, True) :
-    ∃ E : AuditCaseBEntangledStepData C, True := by
+    (hnot : ¬ ∃ _ : AuditCaseBDischargeData C, True) :
+    ∃ _ : AuditCaseBEntangledStepData C, True := by
   cases R with
   | discharge D _ _ =>
       exact False.elim (hnot ⟨D, trivial⟩)
@@ -166,8 +166,8 @@ end CaseBNonSaturatedContradictionRouting
 theorem caseBNonSaturatedContradictionRouting_sound
     {C : Context}
     (R : CaseBNonSaturatedContradictionRouting C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
   cases R with
   | discharge D _ _ =>
       exact Or.inl ⟨D, trivial⟩
@@ -177,14 +177,14 @@ theorem caseBNonSaturatedContradictionRouting_sound
 theorem exists_caseBNonSaturatedContradictionRouting_of_state
     (C : Context)
     (hC : AuditCaseBNonSaturatedState C) :
-    ∃ R : CaseBNonSaturatedContradictionRouting C, True := by
+    ∃ _ : CaseBNonSaturatedContradictionRouting C, True := by
   exact ⟨caseBNonSaturatedContradictionRouting_of_state C hC, trivial⟩
 
 theorem exists_contradiction_branch_of_state
     (C : Context)
     (hC : AuditCaseBNonSaturatedState C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
   exact caseBNonSaturatedContradictionRouting_sound
     (caseBNonSaturatedContradictionRouting_of_state C hC)
 

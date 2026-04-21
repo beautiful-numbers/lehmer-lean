@@ -6,7 +6,6 @@ IMPORT CLASSIFICATION
 - Lehmer.CaseB.Spec : struct spec def
 - Lehmer.CaseB.Saturation.GenericChains : def thm
 - Lehmer.CaseB.Saturation.SSLock : def thm
-- Lehmer.Audit.CaseB.CaseBPurelyGenericDischarge : def thm
 - Lehmer.Audit.CaseB.CaseBNonSaturatedProgressAudit : def thm
 - Lehmer.Audit.CaseB.CaseBNonSaturatedTraceAudit : def thm
 - Lehmer.Audit.CaseB.CaseBNonSaturatedClassificationAudit : def thm
@@ -17,7 +16,6 @@ import Lehmer.Basic.Defs
 import Lehmer.CaseB.Spec
 import Lehmer.CaseB.Saturation.GenericChains
 import Lehmer.CaseB.Saturation.SSLock
-import Lehmer.Audit.CaseB.CaseBPurelyGenericDischarge
 import Lehmer.Audit.CaseB.CaseBNonSaturatedProgressAudit
 import Lehmer.Audit.CaseB.CaseBNonSaturatedTraceAudit
 import Lehmer.Audit.CaseB.CaseBNonSaturatedClassificationAudit
@@ -79,8 +77,8 @@ noncomputable def caseBNonSaturatedLockRouting_of_state
 theorem CaseBNonSaturatedLockRouting.is_discharge
     {C : Context}
     (R : CaseBNonSaturatedLockRouting C)
-    (hnot : ¬ ∃ E : AuditCaseBEntangledStepData C, True) :
-    ∃ D : AuditCaseBDischargeData C, True := by
+    (hnot : ¬ ∃ _ : AuditCaseBEntangledStepData C, True) :
+    ∃ _ : AuditCaseBDischargeData C, True := by
   cases R.tag with
   | discharge D =>
       exact ⟨D, trivial⟩
@@ -90,8 +88,8 @@ theorem CaseBNonSaturatedLockRouting.is_discharge
 theorem CaseBNonSaturatedLockRouting.is_entangled
     {C : Context}
     (R : CaseBNonSaturatedLockRouting C)
-    (hnot : ¬ ∃ D : AuditCaseBDischargeData C, True) :
-    ∃ E : AuditCaseBEntangledStepData C, True := by
+    (hnot : ¬ ∃ _ : AuditCaseBDischargeData C, True) :
+    ∃ _ : AuditCaseBEntangledStepData C, True := by
   cases R.tag with
   | discharge D =>
       exact False.elim (hnot ⟨D, trivial⟩)
@@ -101,8 +99,8 @@ theorem CaseBNonSaturatedLockRouting.is_entangled
 theorem caseBNonSaturatedLockRouting_sound
     {C : Context}
     (R : CaseBNonSaturatedLockRouting C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
   cases R.tag with
   | discharge D =>
       exact Or.inl ⟨D, trivial⟩
@@ -117,43 +115,42 @@ theorem CaseBNonSaturatedLockRouting.trace_preserves_level
 theorem CaseBNonSaturatedLockRouting.trace_length_eq_zero
     {C : Context} (R : CaseBNonSaturatedLockRouting C) :
     CaseBNonSaturatedExhaustiveTrace.length R.trace = 0 := by
-  exact CaseBNonSaturatedExhaustiveTraceClassification.length_eq_zero R.classification
+  cases R.trace <;> rfl
 
 theorem CaseBNonSaturatedLockRouting.trace_terminal_eq_start
     {C : Context} (R : CaseBNonSaturatedLockRouting C) :
     CaseBNonSaturatedExhaustiveTrace.terminal R.trace = C := by
-  exact CaseBNonSaturatedExhaustiveTraceClassification.terminal_eq_start R.classification
+  cases R.trace <;> rfl
 
 theorem CaseBNonSaturatedLockRouting.trace_terminal_contextDescentLength_le
     {C : Context} (R : CaseBNonSaturatedLockRouting C) :
     contextDescentLength (CaseBNonSaturatedExhaustiveTrace.terminal R.trace) ≤
       contextDescentLength C := by
-  exact CaseBNonSaturatedExhaustiveTraceClassification.terminal_contextDescentLength_le
-    R.classification
+  exact CaseBNonSaturatedExhaustiveTrace.terminal_contextDescentLength_le R.trace
 
 theorem CaseBNonSaturatedLockRouting.classification_sound
     {C : Context} (R : CaseBNonSaturatedLockRouting C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
   exact caseBNonSaturatedExhaustiveTraceClassification_sound R.classification
 
 theorem CaseBNonSaturatedLockRouting.trace_is_exhaustive
     {C : Context} (R : CaseBNonSaturatedLockRouting C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
   exact exhaustiveTrace_is_discharge_or_entangled R.trace
 
 theorem exists_caseBNonSaturatedLockRouting_of_state
     (C : Context)
     (hC : AuditCaseBNonSaturatedState C) :
-    ∃ R : CaseBNonSaturatedLockRouting C, True := by
+    ∃ _ : CaseBNonSaturatedLockRouting C, True := by
   exact ⟨caseBNonSaturatedLockRouting_of_state C hC, trivial⟩
 
 theorem exists_discharge_or_entangled_lockRouting_of_state
     (C : Context)
     (hC : AuditCaseBNonSaturatedState C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
   exact caseBNonSaturatedLockRouting_sound
     (caseBNonSaturatedLockRouting_of_state C hC)
 
@@ -391,7 +388,7 @@ theorem exists_caseBNonSaturatedLockAssembly_of_branch
           (caseBNonSaturatedBackboneTrace_of_branch B))
     (hlock : SSLock terminal)
     (hbudget : GenericChainWithinBudget chain) :
-    ∃ A : CaseBNonSaturatedLockAssembly C, True := by
+    ∃ _ : CaseBNonSaturatedLockAssembly C, True := by
   exact ⟨
     caseBNonSaturatedLockAssembly_of_branch
       B terminal chain hterminal hlock hbudget,
@@ -409,7 +406,7 @@ theorem exists_genericChainToSSLock_of_auditCaseBNonSaturatedBranch
           (caseBNonSaturatedBackboneTrace_of_branch B))
     (hlock : SSLock terminal)
     (hbudget : GenericChainWithinBudget chain) :
-    ∃ G : GenericChainToSSLock C, True := by
+    ∃ _ : GenericChainToSSLock C, True := by
   exact ⟨
     genericChainToSSLock_of_auditCaseBNonSaturatedBranch
       B terminal chain hterminal hlock hbudget,

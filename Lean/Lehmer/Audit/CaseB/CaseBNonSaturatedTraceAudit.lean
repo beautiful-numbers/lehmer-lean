@@ -10,7 +10,6 @@ IMPORT CLASSIFICATION
 - Lehmer.CaseB.Descent.KmaxB : param thm
 - Lehmer.CaseB.Descent.DescentSkeleton : def thm
 - Lehmer.CaseB.Saturation.SSLock : def thm
-- Lehmer.Audit.CaseB.CaseBPurelyGenericDischarge : def thm
 - Lehmer.Audit.CaseB.CaseBNonSaturatedProgressAudit : def thm
 -/
 
@@ -23,13 +22,13 @@ import Lehmer.CaseB.Descent.P2Decrease
 import Lehmer.CaseB.Descent.KmaxB
 import Lehmer.CaseB.Descent.DescentSkeleton
 import Lehmer.CaseB.Saturation.SSLock
-import Lehmer.Audit.CaseB.CaseBPurelyGenericDischarge
 import Lehmer.Audit.CaseB.CaseBNonSaturatedProgressAudit
 
 namespace Lehmer
 namespace CaseB
 
 open Lehmer.Basic
+open Classical
 
 inductive CaseBNonSaturatedExhaustiveTrace : Context → Type where
   | discharge (C : Context) (D : AuditCaseBDischargeData C) :
@@ -42,8 +41,8 @@ namespace CaseBNonSaturatedExhaustiveTrace
 def start {C : Context} (_T : CaseBNonSaturatedExhaustiveTrace C) : Context :=
   C
 
-@[simp] theorem start_eq {C : Context} (T : CaseBNonSaturatedExhaustiveTrace C) :
-    T.start = C := rfl
+@[simp] theorem start_eq {C : Context} (_T : CaseBNonSaturatedExhaustiveTrace C) :
+    start _T = C := rfl
 
 def terminal {C : Context} :
     CaseBNonSaturatedExhaustiveTrace C → Context
@@ -93,10 +92,14 @@ noncomputable def caseBNonSaturatedExhaustiveTrace_of_outcome
     (hO : AuditCaseBExhaustiveLocalOutcome C) :
     CaseBNonSaturatedExhaustiveTrace C := by
   classical
-  rcases hO with hD | hE
-  · rcases hD with ⟨D, _⟩
+  by_cases hD : ∃ _ : AuditCaseBDischargeData C, True
+  · let D : AuditCaseBDischargeData C := Classical.choose hD
     exact CaseBNonSaturatedExhaustiveTrace.discharge C D
-  · rcases hE with ⟨E, _⟩
+  · have hE : ∃ _ : AuditCaseBEntangledStepData C, True := by
+      rcases hO with hD' | hE'
+      · exact False.elim (hD hD')
+      · exact hE'
+    let E : AuditCaseBEntangledStepData C := Classical.choose hE
     exact CaseBNonSaturatedExhaustiveTrace.entangled C E
 
 noncomputable def caseBNonSaturatedExhaustiveTrace_of_state
@@ -108,18 +111,18 @@ noncomputable def caseBNonSaturatedExhaustiveTrace_of_state
 
 theorem exhaustiveTrace_is_discharge_or_entangled
     {C : Context} (T : CaseBNonSaturatedExhaustiveTrace C) :
-    (∃ D : AuditCaseBDischargeData C, True) ∨
-    (∃ E : AuditCaseBEntangledStepData C, True) := by
+    (∃ _ : AuditCaseBDischargeData C, True) ∨
+    (∃ _ : AuditCaseBEntangledStepData C, True) := by
   cases T with
-  | discharge C D =>
+  | discharge D =>
       exact Or.inl ⟨D, trivial⟩
-  | entangled C E =>
+  | entangled E =>
       exact Or.inr ⟨E, trivial⟩
 
 theorem exists_exhaustiveTrace_of_nonSaturatedState
     (C : Context)
     (hC : AuditCaseBNonSaturatedState C) :
-    ∃ T : CaseBNonSaturatedExhaustiveTrace C, True := by
+    ∃ _ : CaseBNonSaturatedExhaustiveTrace C, True := by
   exact ⟨caseBNonSaturatedExhaustiveTrace_of_state C hC, trivial⟩
 
 inductive CaseBNonSaturatedBackboneTrace : Context → Type where
@@ -135,8 +138,8 @@ namespace CaseBNonSaturatedBackboneTrace
 def start {C : Context} (_T : CaseBNonSaturatedBackboneTrace C) : Context :=
   C
 
-@[simp] theorem start_eq {C : Context} (T : CaseBNonSaturatedBackboneTrace C) :
-    T.start = C := rfl
+@[simp] theorem start_eq {C : Context} (_T : CaseBNonSaturatedBackboneTrace C) :
+    start _T = C := rfl
 
 def terminal {C : Context} :
     CaseBNonSaturatedBackboneTrace C → Context
@@ -170,20 +173,20 @@ theorem preserves_level
     {C : Context} (T : CaseBNonSaturatedBackboneTrace C) :
     (terminal T).y = C.y := by
   induction T with
-  | nil C =>
+  | nil _ =>
       rfl
-  | cons B T ih =>
-      calc
-        (terminal T).y = B.backbone.C'.y := ih
-        _ = C.y := B.preserves_level
+  | @cons C B T ih =>
+      change (terminal T).y = C.y
+      exact Eq.trans ih (AuditCaseBNonSaturatedBranch.preserves_level B)
 
 theorem terminal_contextDescentLength_le
     {C : Context} (T : CaseBNonSaturatedBackboneTrace C) :
     contextDescentLength (terminal T) ≤ contextDescentLength C := by
   induction T with
-  | nil C =>
+  | nil _ =>
       exact le_rfl
-  | cons B T ih =>
+  | @cons C B T ih =>
+      change contextDescentLength (terminal T) ≤ contextDescentLength C
       exact le_trans ih (Nat.le_of_lt B.length_decrease)
 
 theorem measure_decreases_cons
@@ -196,7 +199,7 @@ theorem measure_decreases_cons
 
 theorem wellFounded_by_contextDescentLength :
     WellFounded (fun C' C => contextDescentLength C' < contextDescentLength C) := by
-  exact measure_wf contextDescentLength
+  simpa using (measure (fun C : Context => contextDescentLength C)).wf
 
 theorem finite
     {C : Context} (T : CaseBNonSaturatedBackboneTrace C) :
