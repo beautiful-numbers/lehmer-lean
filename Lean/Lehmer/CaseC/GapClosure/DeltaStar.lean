@@ -2,15 +2,17 @@
 /-
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
-- Lehmer.CaseC.GapClosure.SupportProfiles : def
-- Lehmer.CaseC.GapClosure.NonIntegrality : def
-- Lehmer.CaseC.GapClosure.TruncatedFamily : def
+- Lehmer.Basic.Defs : def
+- Lehmer.CaseC.Spec : def
+- Lehmer.CaseC.GapClosure.SupportProfiles : def thm
+- Lehmer.CaseC.GapClosure.Rigidity : def thm
 -/
 
 import Lehmer.Prelude
+import Lehmer.Basic.Defs
+import Lehmer.CaseC.Spec
 import Lehmer.CaseC.GapClosure.SupportProfiles
-import Lehmer.CaseC.GapClosure.NonIntegrality
-import Lehmer.CaseC.GapClosure.TruncatedFamily
+import Lehmer.CaseC.GapClosure.Rigidity
 
 namespace Lehmer
 namespace CaseC
@@ -18,94 +20,152 @@ namespace GapClosure
 
 open Lehmer.Basic
 
-/--
-The set of support gaps arising from the truncated family at parameters `(y, W)`.
--/
-def truncatedGapSet (y W : ℕ) : Set ℚ :=
-  {d | ∃ S : Finset ℕ, InTruncatedFamily y W S ∧ d = Delta S}
+structure DeltaStarData (P : Params) (D : ClosureData P) where
+  value : ℕ
 
-/--
-The positive gap predicate for a support in the truncated family.
--/
-def PositiveGapAt (y W : ℕ) (S : Finset ℕ) : Prop :=
-  InTruncatedFamily y W S ∧ 0 < Delta S
+@[simp] theorem DeltaStarData.value_mk (P : Params) (D : ClosureData P) (n : ℕ) :
+    (DeltaStarData.mk n : DeltaStarData P D).value = n := rfl
 
-@[simp] theorem truncatedGapSet_def (y W : ℕ) :
-    truncatedGapSet y W =
-      {d | ∃ S : Finset ℕ, InTruncatedFamily y W S ∧ d = Delta S} := rfl
+def deltaStarValue (P : Params) (D : ClosureData P) (X : DeltaStarData P D) : ℕ :=
+  X.value
 
-@[simp] theorem PositiveGapAt_def (y W : ℕ) (S : Finset ℕ) :
-    PositiveGapAt y W S = (InTruncatedFamily y W S ∧ 0 < Delta S) := rfl
+@[simp] theorem deltaStarValue_def (P : Params) (D : ClosureData P) (X : DeltaStarData P D) :
+    deltaStarValue P D X = X.value := rfl
 
-/--
-The abstract minimal positive gap attached to the truncated family at `(y, W)`.
+@[simp] theorem deltaStarValue_mk (P : Params) (D : ClosureData P) (n : ℕ) :
+    deltaStarValue P D (DeltaStarData.mk n) = n := rfl
 
-At this stage it is only a placeholder datum; positivity must be supplied
-explicitly before using it in a denominator.
--/
-def deltaStar (_y _W : ℕ) : ℚ :=
-  0
+def PositiveDeltaStar (P : Params) (D : ClosureData P) (X : DeltaStarData P D) : Prop :=
+  0 < deltaStarValue P D X
 
-/--
-Paper-style alias for the minimal positive gap.
--/
-abbrev DeltaStar (y W : ℕ) : ℚ :=
-  deltaStar y W
+@[simp] theorem PositiveDeltaStar_def (P : Params) (D : ClosureData P) (X : DeltaStarData P D) :
+    PositiveDeltaStar P D X = (0 < deltaStarValue P D X) := rfl
 
-@[simp] theorem deltaStar_def (y W : ℕ) :
-    deltaStar y W = 0 := rfl
+@[simp] theorem PositiveDeltaStar_mk (P : Params) (D : ClosureData P) (n : ℕ) :
+    PositiveDeltaStar P D (DeltaStarData.mk n) = (0 < n) := rfl
 
-@[simp] theorem DeltaStar_def (y W : ℕ) :
-    DeltaStar y W = deltaStar y W := rfl
+theorem deltaStar_eq_of_value_eq (P : Params) (D : ClosureData P)
+    {X Y : DeltaStarData P D} :
+    deltaStarValue P D X = deltaStarValue P D Y → X = Y := by
+  intro h
+  cases X
+  cases Y
+  simp [deltaStarValue] at h
+  cases h
+  rfl
 
-/--
-At this placeholder stage, `Δ*` is definitionally nonnegative.
--/
-theorem deltaStar_nonneg (y W : ℕ) :
-    0 ≤ deltaStar y W := by
-  simp [deltaStar]
+@[ext] theorem DeltaStarData.ext (P : Params) (D : ClosureData P)
+    {X Y : DeltaStarData P D}
+    (h : deltaStarValue P D X = deltaStarValue P D Y) : X = Y :=
+  deltaStar_eq_of_value_eq P D h
 
-/--
-If a support contributes to the truncated family with positive gap, then its gap
-belongs to the truncated gap set.
--/
-theorem Delta_mem_truncatedGapSet {y W : ℕ} {S : Finset ℕ}
-    (hS : InTruncatedFamily y W S) :
-    Delta S ∈ truncatedGapSet y W := by
-  refine ⟨S, hS, rfl⟩
+theorem positiveDeltaStar_or_not (P : Params) (D : ClosureData P) (X : DeltaStarData P D) :
+    PositiveDeltaStar P D X ∨ ¬ PositiveDeltaStar P D X := by
+  exact Classical.em _
 
-/--
-Interface form: once a lower bound by `Δ*(y, W)` has been established for a
-given nonintegral truncated-family support, it can be reused under the
-canonical file-local name.
--/
-theorem deltaStar_lower_bound_of_assumption
-    {y W : ℕ} {S : Finset ℕ}
-    (_hS : InTruncatedFamily y W S)
-    (_hNI : NonIntegral S)
-    (hbound : deltaStar y W ≤ Delta S) :
-    deltaStar y W ≤ Delta S := by
-  exact hbound
+structure RigidDeltaStarPackage (P : Params) (D : ClosureData P) where
+  family : SupportProfileFamily
+  rigid : RigidProfileFamily P D family
+  delta : DeltaStarData P D
 
-/--
-Paper-style alias form of the previous interface lemma.
--/
-theorem DeltaStar_lower_bound_of_assumption
-    {y W : ℕ} {S : Finset ℕ}
-    (_hS : InTruncatedFamily y W S)
-    (_hNI : NonIntegral S)
-    (hbound : deltaStar y W ≤ Delta S) :
-    DeltaStar y W ≤ Delta S := by
-  simpa [DeltaStar] using hbound
+@[simp] theorem RigidDeltaStarPackage.family_mk (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily) (hF : RigidProfileFamily P D F) (δ : DeltaStarData P D) :
+    (RigidDeltaStarPackage.mk F hF δ).family = F := rfl
 
-/--
-Explicit positivity interface for `Δ*`.
--/
-theorem deltaStar_pos_of_assumption
-    (y W : ℕ)
-    (hpos : 0 < deltaStar y W) :
-    0 < deltaStar y W := by
-  exact hpos
+@[simp] theorem RigidDeltaStarPackage.rigid_mk (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily) (hF : RigidProfileFamily P D F) (δ : DeltaStarData P D) :
+    (RigidDeltaStarPackage.mk F hF δ).rigid = hF := rfl
+
+@[simp] theorem RigidDeltaStarPackage.delta_mk (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily) (hF : RigidProfileFamily P D F) (δ : DeltaStarData P D) :
+    (RigidDeltaStarPackage.mk F hF δ).delta = δ := rfl
+
+def rigidDeltaStarFamily (P : Params) (D : ClosureData P) (X : RigidDeltaStarPackage P D) :
+    SupportProfileFamily :=
+  X.family
+
+@[simp] theorem rigidDeltaStarFamily_def (P : Params) (D : ClosureData P)
+    (X : RigidDeltaStarPackage P D) :
+    rigidDeltaStarFamily P D X = X.family := rfl
+
+def rigidDeltaStarValue (P : Params) (D : ClosureData P) (X : RigidDeltaStarPackage P D) : ℕ :=
+  deltaStarValue P D X.delta
+
+@[simp] theorem rigidDeltaStarValue_def (P : Params) (D : ClosureData P)
+    (X : RigidDeltaStarPackage P D) :
+    rigidDeltaStarValue P D X = deltaStarValue P D X.delta := rfl
+
+def rigidDeltaStarPositive (P : Params) (D : ClosureData P) (X : RigidDeltaStarPackage P D) : Prop :=
+  PositiveDeltaStar P D X.delta
+
+@[simp] theorem rigidDeltaStarPositive_def (P : Params) (D : ClosureData P)
+    (X : RigidDeltaStarPackage P D) :
+    rigidDeltaStarPositive P D X = PositiveDeltaStar P D X.delta := rfl
+
+theorem rigidDeltaStarPackage_member_rigid (P : Params) (D : ClosureData P)
+    (X : RigidDeltaStarPackage P D) :
+    ∀ R, R ∈ X.family → RigidProfile P D R := by
+  intro R hR
+  exact rigidProfileFamily_mem P D X.family X.rigid R hR
+
+def rigidDeltaStarHead? (P : Params) (D : ClosureData P)
+    (X : RigidDeltaStarPackage P D) : Option SupportProfile :=
+  familyHead? X.family
+
+@[simp] theorem rigidDeltaStarHead?_def (P : Params) (D : ClosureData P)
+    (X : RigidDeltaStarPackage P D) :
+    rigidDeltaStarHead? P D X = familyHead? X.family := rfl
+
+theorem rigidDeltaStarFamily_nil_or_cons (P : Params) (D : ClosureData P)
+    (X : RigidDeltaStarPackage P D) :
+    X.family = [] ∨ ∃ R F, X.family = R :: F := by
+  exact rigidFamily_exhaustive X.family
+
+@[simp] theorem rigidDeltaStarHead?_nil (P : Params) (D : ClosureData P)
+    (hF : RigidProfileFamily P D []) (δ : DeltaStarData P D) :
+    rigidDeltaStarHead? P D (RigidDeltaStarPackage.mk [] hF δ) = none := rfl
+
+@[simp] theorem rigidDeltaStarHead?_cons (P : Params) (D : ClosureData P)
+    (R : SupportProfile) (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D (R :: F)) (δ : DeltaStarData P D) :
+    rigidDeltaStarHead? P D (RigidDeltaStarPackage.mk (R :: F) hF δ) = some R := rfl
+
+theorem rigidDeltaStarHead_rigid (P : Params) (D : ClosureData P)
+    (R : SupportProfile) (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D (R :: F)) (_δ : DeltaStarData P D) :
+    RigidProfile P D R := by
+  exact rigidProfileFamily_head P D R F hF
+
+theorem rigidDeltaStarTail_rigid (P : Params) (D : ClosureData P)
+    (R : SupportProfile) (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D (R :: F)) (_δ : DeltaStarData P D) :
+    RigidProfileFamily P D F := by
+  exact rigidProfileFamily_tail P D R F hF
+
+def deltaStarZero (P : Params) (D : ClosureData P) : DeltaStarData P D :=
+  DeltaStarData.mk 0
+
+@[simp] theorem deltaStarZero_value (P : Params) (D : ClosureData P) :
+    deltaStarValue P D (deltaStarZero P D) = 0 := rfl
+
+theorem not_positive_deltaStarZero (P : Params) (D : ClosureData P) :
+    ¬ PositiveDeltaStar P D (deltaStarZero P D) := by
+  simp [deltaStarZero, PositiveDeltaStar, deltaStarValue]
+
+def deltaStarSucc (P : Params) (D : ClosureData P) (X : DeltaStarData P D) : DeltaStarData P D :=
+  DeltaStarData.mk (Nat.succ (deltaStarValue P D X))
+
+@[simp] theorem deltaStarSucc_value (P : Params) (D : ClosureData P) (X : DeltaStarData P D) :
+    deltaStarValue P D (deltaStarSucc P D X) = Nat.succ (deltaStarValue P D X) := rfl
+
+theorem positive_deltaStarSucc (P : Params) (D : ClosureData P) (X : DeltaStarData P D) :
+    PositiveDeltaStar P D (deltaStarSucc P D X) := by
+  simp [PositiveDeltaStar, deltaStarSucc, deltaStarValue]
+
+theorem rigidDeltaStarPositive_or_not (P : Params) (D : ClosureData P)
+    (X : RigidDeltaStarPackage P D) :
+    rigidDeltaStarPositive P D X ∨ ¬ rigidDeltaStarPositive P D X := by
+  exact Classical.em _
 
 end GapClosure
 end CaseC

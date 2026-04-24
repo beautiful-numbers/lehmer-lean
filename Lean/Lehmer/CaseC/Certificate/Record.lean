@@ -2,142 +2,267 @@
 /-
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
-- Lehmer.CaseC.Certificate.Format : def thm
+- Lehmer.Basic.Defs : def
+- Lehmer.CaseC.Spec : def
+- Lehmer.CaseC.Certificate.Format : def
 -/
 
 import Lehmer.Prelude
+import Lehmer.Basic.Defs
+import Lehmer.CaseC.Spec
 import Lehmer.CaseC.Certificate.Format
 
 namespace Lehmer
 namespace CaseC
 namespace Certificate
 
-/--
-A certificate record is a formatted node together with its own identifier.
--/
-structure Record where
-  id : ℕ
-  data : NodeFormat
-  deriving Repr
+open Lehmer.Basic
 
-/-- Accessor-style alias for the record identifier. -/
-abbrev recordId (R : Record) : ℕ := R.id
+def IsEmptinessRecord (r : RecordData) : Prop :=
+  recordKind r = LocalClosureKind.emptiness
 
-/-- Accessor-style alias for the underlying node format. -/
-abbrev recordData (R : Record) : NodeFormat := R.data
+def IsExclusionRecord (r : RecordData) : Prop :=
+  recordKind r = LocalClosureKind.exclusion
 
-/-- Accessor-style alias for the record kind. -/
-abbrev recordKind (R : Record) : NodeKind := R.data.kind
+def IsFiniteReductionRecord (r : RecordData) : Prop :=
+  recordKind r = LocalClosureKind.finiteReduction
 
-/-- Accessor-style alias for the record guard. -/
-abbrev recordGuard (R : Record) : Guard := R.data.guard
+@[simp] theorem IsEmptinessRecord_def (r : RecordData) :
+    IsEmptinessRecord r = (recordKind r = LocalClosureKind.emptiness) := rfl
 
-/-- Accessor-style alias for the record priority. -/
-abbrev recordPriority (R : Record) : Priority := R.data.priority
+@[simp] theorem IsExclusionRecord_def (r : RecordData) :
+    IsExclusionRecord r = (recordKind r = LocalClosureKind.exclusion) := rfl
 
-/-- Accessor-style alias for the child references of the record. -/
-abbrev recordChildren (R : Record) : List ℕ := R.data.children
+@[simp] theorem IsFiniteReductionRecord_def (r : RecordData) :
+    IsFiniteReductionRecord r = (recordKind r = LocalClosureKind.finiteReduction) := rfl
 
-/-- Accessor-style alias for the local justification tag. -/
-abbrev recordJustification (R : Record) : Justification := R.data.justification
+def recordPrefix (r : RecordData) : Prefix :=
+  r.pref
 
-/-- Accessor-style alias for the local descent measure. -/
-abbrev recordMeasure (R : Record) : Measure := R.data.measure
+@[simp] theorem recordPrefix_def (r : RecordData) :
+    recordPrefix r = r.pref := rfl
 
-@[simp] theorem recordId_def (R : Record) :
-    recordId R = R.id := rfl
+def recordSupport (r : RecordData) : Support :=
+  r.pref.support
 
-@[simp] theorem recordData_def (R : Record) :
-    recordData R = R.data := rfl
+@[simp] theorem recordSupport_def (r : RecordData) :
+    recordSupport r = r.pref.support := rfl
 
-@[simp] theorem recordKind_def (R : Record) :
-    recordKind R = R.data.kind := rfl
+def recordClosure (r : RecordData) : LocalClosure :=
+  r.closure
 
-@[simp] theorem recordGuard_def (R : Record) :
-    recordGuard R = R.data.guard := rfl
+@[simp] theorem recordClosure_def (r : RecordData) :
+    recordClosure r = r.closure := rfl
 
-@[simp] theorem recordPriority_def (R : Record) :
-    recordPriority R = R.data.priority := rfl
+def recordHasChild (r : RecordData) (p : Prefix) : Prop :=
+  p ∈ recordChildren r
 
-@[simp] theorem recordChildren_def (R : Record) :
-    recordChildren R = R.data.children := rfl
+@[simp] theorem recordHasChild_def (r : RecordData) (p : Prefix) :
+    recordHasChild r p = (p ∈ recordChildren r) := rfl
 
-@[simp] theorem recordJustification_def (R : Record) :
-    recordJustification R = R.data.justification := rfl
+def certificateHasRecord (C : GlobalCertificate) (r : RecordData) : Prop :=
+  r ∈ certificateRecords C
 
-@[simp] theorem recordMeasure_def (R : Record) :
-    recordMeasure R = R.data.measure := rfl
+@[simp] theorem certificateHasRecord_def (C : GlobalCertificate) (r : RecordData) :
+    certificateHasRecord C r = (r ∈ certificateRecords C) := rfl
 
-/--
-The underlying format-level well-formedness of a record.
--/
-def WellFormedRecordFormat (R : Record) : Prop :=
-  WellFormedFormat R.data
+theorem IsEmptinessRecord.not_exclusion (r : RecordData) :
+    IsEmptinessRecord r → ¬ IsExclusionRecord r := by
+  intro hE hX
+  have h : LocalClosureKind.emptiness = LocalClosureKind.exclusion := by
+    calc
+      LocalClosureKind.emptiness = recordKind r := hE.symm
+      _ = LocalClosureKind.exclusion := hX
+  exact localClosureKind_emptiness_ne_exclusion h
 
-@[simp] theorem WellFormedRecordFormat_def (R : Record) :
-    WellFormedRecordFormat R = WellFormedFormat R.data := rfl
+theorem IsEmptinessRecord.not_finiteReduction (r : RecordData) :
+    IsEmptinessRecord r → ¬ IsFiniteReductionRecord r := by
+  intro hE hF
+  have h : LocalClosureKind.emptiness = LocalClosureKind.finiteReduction := by
+    calc
+      LocalClosureKind.emptiness = recordKind r := hE.symm
+      _ = LocalClosureKind.finiteReduction := hF
+  exact localClosureKind_emptiness_ne_finiteReduction h
 
-/--
-A terminal record is a record whose node kind is terminal.
--/
-def IsTerminalRecord (R : Record) : Prop :=
-  R.data.kind = NodeKind.terminal
+theorem IsExclusionRecord.not_emptiness (r : RecordData) :
+    IsExclusionRecord r → ¬ IsEmptinessRecord r := by
+  intro hX hE
+  exact (IsEmptinessRecord.not_exclusion r hE) hX
 
-/--
-A split record is a record whose node kind is split.
--/
-def IsSplitRecord (R : Record) : Prop :=
-  R.data.kind = NodeKind.split
+theorem IsExclusionRecord.not_finiteReduction (r : RecordData) :
+    IsExclusionRecord r → ¬ IsFiniteReductionRecord r := by
+  intro hX hF
+  have h : LocalClosureKind.exclusion = LocalClosureKind.finiteReduction := by
+    calc
+      LocalClosureKind.exclusion = recordKind r := hX.symm
+      _ = LocalClosureKind.finiteReduction := hF
+  exact localClosureKind_exclusion_ne_finiteReduction h
 
-@[simp] theorem IsTerminalRecord_def (R : Record) :
-    IsTerminalRecord R = (R.data.kind = NodeKind.terminal) := rfl
+theorem IsFiniteReductionRecord.not_emptiness (r : RecordData) :
+    IsFiniteReductionRecord r → ¬ IsEmptinessRecord r := by
+  intro hF hE
+  exact (IsEmptinessRecord.not_finiteReduction r hE) hF
 
-@[simp] theorem IsSplitRecord_def (R : Record) :
-    IsSplitRecord R = (R.data.kind = NodeKind.split) := rfl
+theorem IsFiniteReductionRecord.not_exclusion (r : RecordData) :
+    IsFiniteReductionRecord r → ¬ IsExclusionRecord r := by
+  intro hF hX
+  exact (IsExclusionRecord.not_finiteReduction r hX) hF
 
-/--
-A record is locally shape-valid if its underlying format is well-formed.
--/
-def ShapeValid (R : Record) : Prop :=
-  WellFormedRecordFormat R
-
-@[simp] theorem ShapeValid_def (R : Record) :
-    ShapeValid R = WellFormedRecordFormat R := rfl
-
-/--
-A terminal record with empty children is shape-valid.
--/
-theorem shapeValid_terminal
-    (i : ℕ) (g : Guard) (p : Priority) (j : Justification) (m : Measure) :
-    ShapeValid
-      { id := i
-        data :=
-          { kind := NodeKind.terminal
-            guard := g
-            priority := p
-            children := []
-            justification := j
-            measure := m } } := by
-  exact wellFormed_terminal g p j m
-
-/--
-A split record with nonempty children satisfies the split-shape condition.
--/
-theorem splitShape_record_of_children_nonempty
-    (R : Record)
-    (hkind : recordKind R = NodeKind.split)
-    (hchildren : recordChildren R ≠ []) :
-    IsSplitShape R.data := by
-  exact splitShape_of_children_nonempty R.data hkind hchildren
+theorem record_exhaustive (r : RecordData) :
+    IsEmptinessRecord r ∨ IsExclusionRecord r ∨ IsFiniteReductionRecord r := by
+  cases h : recordKind r with
+  | emptiness =>
+      left
+      exact h
+  | exclusion =>
+      right
+      left
+      exact h
+  | finiteReduction =>
+      right
+      right
+      exact h
 
 /--
-Two records are id-disjoint if they do not share the same identifier.
+Routing of a local prefix-record into one of the three paper-level closure modes:
+emptiness / exclusion / finite splitting.
+This is a classification layer only; local soundness/completeness is handled later.
 -/
-def IdDisjoint (R₁ R₂ : Record) : Prop :=
-  R₁.id ≠ R₂.id
+inductive RecordRouting where
+  | emptiness (r : RecordData)
+  | exclusion (r : RecordData)
+  | finiteReduction (r : RecordData)
 
-@[simp] theorem IdDisjoint_def (R₁ R₂ : Record) :
-    IdDisjoint R₁ R₂ = (R₁.id ≠ R₂.id) := rfl
+def recordRouting (r : RecordData) : RecordRouting :=
+  match r.closure.kind with
+  | LocalClosureKind.emptiness => RecordRouting.emptiness r
+  | LocalClosureKind.exclusion => RecordRouting.exclusion r
+  | LocalClosureKind.finiteReduction => RecordRouting.finiteReduction r
+
+def RecordRouting.record : RecordRouting → RecordData
+  | .emptiness r => r
+  | .exclusion r => r
+  | .finiteReduction r => r
+
+@[simp] theorem RecordRouting.record_emptiness (r : RecordData) :
+    (RecordRouting.emptiness r).record = r := rfl
+
+@[simp] theorem RecordRouting.record_exclusion (r : RecordData) :
+    (RecordRouting.exclusion r).record = r := rfl
+
+@[simp] theorem RecordRouting.record_finiteReduction (r : RecordData) :
+    (RecordRouting.finiteReduction r).record = r := rfl
+
+theorem RecordRouting.sound (rr : RecordRouting) :
+    rr.record = rr.record := rfl
+
+def RecordRouting.tag : RecordRouting → LocalClosureKind
+  | .emptiness _ => LocalClosureKind.emptiness
+  | .exclusion _ => LocalClosureKind.exclusion
+  | .finiteReduction _ => LocalClosureKind.finiteReduction
+
+@[simp] theorem RecordRouting.tag_emptiness (r : RecordData) :
+    (RecordRouting.emptiness r).tag = LocalClosureKind.emptiness := rfl
+
+@[simp] theorem RecordRouting.tag_exclusion (r : RecordData) :
+    (RecordRouting.exclusion r).tag = LocalClosureKind.exclusion := rfl
+
+@[simp] theorem RecordRouting.tag_finiteReduction (r : RecordData) :
+    (RecordRouting.finiteReduction r).tag = LocalClosureKind.finiteReduction := rfl
+
+@[simp] theorem recordRouting_tag (r : RecordData) :
+    (recordRouting r).tag = recordKind r := by
+  cases r with
+  | mk pref closure =>
+      cases closure with
+      | mk kind children =>
+          cases kind <;> rfl
+
+theorem recordRouting_spec (r : RecordData) :
+    (recordRouting r = RecordRouting.emptiness r ∧ IsEmptinessRecord r) ∨
+    (recordRouting r = RecordRouting.exclusion r ∧ IsExclusionRecord r) ∨
+    (recordRouting r = RecordRouting.finiteReduction r ∧ IsFiniteReductionRecord r) := by
+  cases r with
+  | mk pref closure =>
+      cases closure with
+      | mk kind children =>
+          cases kind
+          · left
+            exact ⟨rfl, rfl⟩
+          · right
+            left
+            exact ⟨rfl, rfl⟩
+          · right
+            right
+            exact ⟨rfl, rfl⟩
+
+@[simp] theorem recordRouting_record (r : RecordData) :
+    (recordRouting r).record = r := by
+  cases r with
+  | mk pref closure =>
+      cases closure with
+      | mk kind children =>
+          cases kind <;> rfl
+
+theorem RecordRouting.is_emptiness (r : RecordData) :
+    (recordRouting r = RecordRouting.emptiness r) ↔ IsEmptinessRecord r := by
+  constructor
+  · intro h
+    have ht : (recordRouting r).tag = LocalClosureKind.emptiness := by
+      simp [h]
+    simp [recordRouting_tag] at ht
+    exact ht
+  · intro hE
+    cases r with
+    | mk pref closure =>
+        cases closure with
+        | mk kind children =>
+            cases kind
+            · rfl
+            · exact False.elim ((IsEmptinessRecord.not_exclusion
+                ⟨pref, ⟨LocalClosureKind.exclusion, children⟩⟩ hE) rfl)
+            · exact False.elim ((IsEmptinessRecord.not_finiteReduction
+                ⟨pref, ⟨LocalClosureKind.finiteReduction, children⟩⟩ hE) rfl)
+
+theorem RecordRouting.is_exclusion (r : RecordData) :
+    (recordRouting r = RecordRouting.exclusion r) ↔ IsExclusionRecord r := by
+  constructor
+  · intro h
+    have ht : (recordRouting r).tag = LocalClosureKind.exclusion := by
+      simp [h]
+    simp [recordRouting_tag] at ht
+    exact ht
+  · intro hX
+    cases r with
+    | mk pref closure =>
+        cases closure with
+        | mk kind children =>
+            cases kind
+            · exact False.elim ((IsExclusionRecord.not_emptiness
+                ⟨pref, ⟨LocalClosureKind.emptiness, children⟩⟩ hX) rfl)
+            · rfl
+            · exact False.elim ((IsExclusionRecord.not_finiteReduction
+                ⟨pref, ⟨LocalClosureKind.finiteReduction, children⟩⟩ hX) rfl)
+
+theorem RecordRouting.is_finiteReduction (r : RecordData) :
+    (recordRouting r = RecordRouting.finiteReduction r) ↔ IsFiniteReductionRecord r := by
+  constructor
+  · intro h
+    have ht : (recordRouting r).tag = LocalClosureKind.finiteReduction := by
+      simp [h]
+    simp [recordRouting_tag] at ht
+    exact ht
+  · intro hF
+    cases r with
+    | mk pref closure =>
+        cases closure with
+        | mk kind children =>
+            cases kind
+            · exact False.elim ((IsFiniteReductionRecord.not_emptiness
+                ⟨pref, ⟨LocalClosureKind.emptiness, children⟩⟩ hF) rfl)
+            · exact False.elim ((IsFiniteReductionRecord.not_exclusion
+                ⟨pref, ⟨LocalClosureKind.exclusion, children⟩⟩ hF) rfl)
+            · rfl
 
 end Certificate
 end CaseC

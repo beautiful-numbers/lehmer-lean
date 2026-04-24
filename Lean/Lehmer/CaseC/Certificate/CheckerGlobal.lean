@@ -2,175 +2,221 @@
 /-
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
+- Lehmer.Basic.Defs : def
+- Lehmer.CaseC.Spec : def
+- Lehmer.CaseC.Certificate.Format : def
 - Lehmer.CaseC.Certificate.Record : def thm
+- Lehmer.CaseC.Certificate.Priority : def thm
 - Lehmer.CaseC.Certificate.Coverage : def thm
-- Lehmer.CaseC.Certificate.CheckerLocal : def thm
+- Lehmer.CaseC.Certificate.SoundnessLocal : def thm
+- Lehmer.CaseC.Certificate.CompletenessLocal : def thm
+- Lehmer.CaseC.Certificate.SoundnessGlobal : def thm
+- Lehmer.CaseC.Certificate.CompletenessGlobal : def thm
 -/
 
 import Lehmer.Prelude
+import Lehmer.Basic.Defs
+import Lehmer.CaseC.Spec
+import Lehmer.CaseC.Certificate.Format
 import Lehmer.CaseC.Certificate.Record
+import Lehmer.CaseC.Certificate.Priority
 import Lehmer.CaseC.Certificate.Coverage
-import Lehmer.CaseC.Certificate.CheckerLocal
+import Lehmer.CaseC.Certificate.SoundnessLocal
+import Lehmer.CaseC.Certificate.CompletenessLocal
+import Lehmer.CaseC.Certificate.SoundnessGlobal
+import Lehmer.CaseC.Certificate.CompletenessGlobal
 
 namespace Lehmer
 namespace CaseC
 namespace Certificate
 
-/--
-Lookup of a record by identifier inside a certificate list.
+open Lehmer.Basic
 
-For the current global checker, this is the basic retrieval mechanism used to
-resolve child references.
--/
-def findRecord? (cid : ℕ) : List Record → Option Record
-  | [] => none
-  | R :: Rs => if recordId R = cid then some R else findRecord? cid Rs
+def GloballyCheckedCertificate (C : GlobalCertificate) : Prop :=
+  GloballySoundCertificate C ∧ GloballyCompleteCertificate C
 
-@[simp] theorem findRecord?_nil (cid : ℕ) :
-    findRecord? cid [] = none := rfl
+@[simp] theorem GloballyCheckedCertificate_def (C : GlobalCertificate) :
+    GloballyCheckedCertificate C =
+      (GloballySoundCertificate C ∧ GloballyCompleteCertificate C) := rfl
 
-@[simp] theorem findRecord?_cons_eq (cid : ℕ) (R : Record) (Rs : List Record)
-    (h : recordId R = cid) :
-    findRecord? cid (R :: Rs) = some R := by
-  simp [findRecord?, h]
+theorem globallyCheckedCertificate_sound (C : GlobalCertificate) :
+    GloballyCheckedCertificate C → GloballySoundCertificate C := by
+  intro h
+  exact h.1
 
-@[simp] theorem findRecord?_cons_ne (cid : ℕ) (R : Record) (Rs : List Record)
-    (h : recordId R ≠ cid) :
-    findRecord? cid (R :: Rs) = findRecord? cid Rs := by
-  simp [findRecord?, h]
+theorem globallyCheckedCertificate_complete (C : GlobalCertificate) :
+    GloballyCheckedCertificate C → GloballyCompleteCertificate C := by
+  intro h
+  exact h.2
 
-/--
-Resolve a list of child ids into records using a certificate environment.
-If one child id is missing, resolution fails.
--/
-def resolveChildren? (cert : List Record) : List ℕ → Option (List Record)
-  | [] => some []
-  | cid :: cids =>
-      match findRecord? cid cert, resolveChildren? cert cids with
-      | some R, some Rs => some (R :: Rs)
-      | _, _ => none
+theorem globallyCheckedCertificate_coverageReady (C : GlobalCertificate) :
+    GloballyCheckedCertificate C → CoverageReadyCertificate C := by
+  intro h
+  exact h.2
 
-@[simp] theorem resolveChildren?_nil (cert : List Record) :
-    resolveChildren? cert [] = some [] := rfl
+theorem globallyCheckedCertificate_mem_sound (C : GlobalCertificate) :
+    GloballyCheckedCertificate C →
+      ∀ r, certificateHasRecord C r → LocallySoundRecord r := by
+  intro h r hr
+  exact globallySoundCertificate_mem C h.1 r hr
 
-/--
-The local child environment attached to a record inside a certificate.
--/
-def localChildren? (cert : List Record) (R : Record) : Option (List Record) :=
-  resolveChildren? cert (recordChildren R)
+theorem globallyCheckedCertificate_mem_complete (C : GlobalCertificate) :
+    GloballyCheckedCertificate C →
+      ∀ r, certificateHasRecord C r → LocallyCompleteRecord r := by
+  intro h r hr
+  exact globallyCompleteCertificate_mem C h.2 r hr
 
-@[simp] theorem localChildren?_def (cert : List Record) (R : Record) :
-    localChildren? cert R = resolveChildren? cert (recordChildren R) := rfl
+theorem globallyCheckedCertificate_mem (C : GlobalCertificate) :
+    GloballyCheckedCertificate C →
+      ∀ r, certificateHasRecord C r →
+        LocallySoundRecord r ∧ LocallyCompleteRecord r := by
+  intro h r hr
+  exact ⟨globallyCheckedCertificate_mem_sound C h r hr,
+    globallyCheckedCertificate_mem_complete C h r hr⟩
 
-/--
-Boolean global check for a single record against a certificate environment.
-It succeeds iff the child references can be resolved and the local checker
-accepts the resulting child list.
--/
-def checkRecordGlobal (cert : List Record) (R : Record) : Bool :=
-  match localChildren? cert R with
-  | some children => checkRecordLocal R children
-  | none => false
+theorem globallyCheckedCertificate_nil :
+    GloballyCheckedCertificate (GlobalCertificate.mk []) := by
+  constructor
+  · exact globallySoundCertificate_nil
+  · exact globallyCompleteCertificate_nil
 
-/--
-Boolean global checker for an entire certificate list.
--/
-def checkCertificate : List Record → Bool
-  | [] => true
-  | R :: Rs => checkRecordGlobal (R :: Rs) R && checkCertificate Rs
+theorem globallyCheckedCertificate_cons (r : RecordData) (rs : RecordFamily) :
+    GloballyCheckedCertificate (GlobalCertificate.mk (r :: rs)) ↔
+      (LocallySoundRecord r ∧ LocallyCompleteRecord r) ∧
+        GloballyCheckedCertificate (GlobalCertificate.mk rs) := by
+  constructor
+  · intro h
+    have hs := (globallySoundCertificate_cons r rs).mp h.1
+    have hc := (globallyCompleteCertificate_cons r rs).mp h.2
+    constructor
+    · exact ⟨hs.1, hc.1⟩
+    · exact ⟨hs.2, hc.2⟩
+  · intro h
+    rcases h with ⟨hhead, htail⟩
+    constructor
+    · exact (globallySoundCertificate_cons r rs).mpr ⟨hhead.1, htail.1⟩
+    · exact (globallyCompleteCertificate_cons r rs).mpr ⟨hhead.2, htail.2⟩
 
-@[simp] theorem checkRecordGlobal_none (cert : List Record) (R : Record)
-    (h : localChildren? cert R = none) :
-    checkRecordGlobal cert R = false := by
-  unfold checkRecordGlobal
-  rw [h]
+theorem globallyCheckedCertificate_of_sound_complete (C : GlobalCertificate) :
+    GloballySoundCertificate C →
+    GloballyCompleteCertificate C →
+    GloballyCheckedCertificate C := by
+  intro hs hc
+  exact ⟨hs, hc⟩
 
-@[simp] theorem checkRecordGlobal_some (cert : List Record) (R : Record)
-    (children : List Record)
-    (h : localChildren? cert R = some children) :
-    checkRecordGlobal cert R = checkRecordLocal R children := by
-  unfold checkRecordGlobal
-  rw [h]
+theorem globallyCheckedCertificate_exhaustive (C : GlobalCertificate) :
+    GloballyCheckedCertificate C ∨ ¬ GloballyCheckedCertificate C := by
+  exact Classical.em _
 
-@[simp] theorem checkCertificate_nil :
-    checkCertificate [] = true := rfl
+structure CheckerGlobalPackage where
+  certificate : GlobalCertificate
+  checked : GloballyCheckedCertificate certificate
 
-@[simp] theorem checkCertificate_cons (R : Record) (Rs : List Record) :
-    checkCertificate (R :: Rs) =
-      (checkRecordGlobal (R :: Rs) R && checkCertificate Rs) := rfl
+@[simp] theorem CheckerGlobalPackage.certificate_mk
+    (C : GlobalCertificate) (h : GloballyCheckedCertificate C) :
+    (CheckerGlobalPackage.mk C h).certificate = C := rfl
 
-/--
-If a record has no children, then resolving its children succeeds with the
-empty list.
--/
-theorem localChildren?_nil_of_no_children
-    (cert : List Record) (R : Record)
-    (h : recordChildren R = []) :
-    localChildren? cert R = some [] := by
-  simp [localChildren?, h]
+@[simp] theorem CheckerGlobalPackage.checked_mk
+    (C : GlobalCertificate) (h : GloballyCheckedCertificate C) :
+    (CheckerGlobalPackage.mk C h).checked = h := rfl
 
-/--
-A terminal record with no children passes the global check in any environment
-where its children resolve trivially.
--/
-theorem checkRecordGlobal_terminal_nil
-    (cert : List Record)
-    (i : ℕ) (g : Guard) (p : Priority) (j : Justification) (m : Measure) :
-    checkRecordGlobal cert
-      { id := i
-        data :=
-          { kind := NodeKind.terminal
-            guard := g
-            priority := p
-            children := []
-            justification := j
-            measure := m } } = true := by
-  simp [checkRecordGlobal, localChildren?, resolveChildren?, checkRecordLocal,
-    checkRecordShape, checkFormat, checkLocalChildren, checkPrioritySorted]
+theorem CheckerGlobalPackage.sound (X : CheckerGlobalPackage) :
+    GloballySoundCertificate X.certificate := by
+  exact globallyCheckedCertificate_sound X.certificate X.checked
 
-/--
-Checker-facing global coherence predicate.
+theorem CheckerGlobalPackage.complete (X : CheckerGlobalPackage) :
+    GloballyCompleteCertificate X.certificate := by
+  exact globallyCheckedCertificate_complete X.certificate X.checked
 
-At the current stage, a certificate is globally coherent if every head record:
-- resolves its declared children inside the ambient certificate,
-- is well-formed at the raw local shape level,
-- is locally covered by the resolved child list,
-and the tail is recursively globally coherent.
--/
-def GloballyCoherent : List Record → Prop
-  | [] => True
-  | R :: Rs =>
-      (∃ children,
-        localChildren? (R :: Rs) R = some children ∧
-        WellFormedRecordFormat R ∧
-        LocallyCovered R children) ∧
-      GloballyCoherent Rs
+theorem CheckerGlobalPackage.coverageReady (X : CheckerGlobalPackage) :
+    CoverageReadyCertificate X.certificate := by
+  exact globallyCheckedCertificate_coverageReady X.certificate X.checked
 
-@[simp] theorem GloballyCoherent_nil :
-    GloballyCoherent [] := by
-  trivial
+theorem CheckerGlobalPackage.mem_sound (X : CheckerGlobalPackage) :
+    ∀ r, certificateHasRecord X.certificate r → LocallySoundRecord r := by
+  intro r hr
+  exact globallyCheckedCertificate_mem_sound X.certificate X.checked r hr
 
-@[simp] theorem GloballyCoherent_cons (R : Record) (Rs : List Record) :
-    GloballyCoherent (R :: Rs) ↔
-      (∃ children,
-        localChildren? (R :: Rs) R = some children ∧
-        WellFormedRecordFormat R ∧
-        LocallyCovered R children) ∧
-      GloballyCoherent Rs := by
+theorem CheckerGlobalPackage.mem_complete (X : CheckerGlobalPackage) :
+    ∀ r, certificateHasRecord X.certificate r → LocallyCompleteRecord r := by
+  intro r hr
+  exact globallyCheckedCertificate_mem_complete X.certificate X.checked r hr
+
+theorem CheckerGlobalPackage.mem (X : CheckerGlobalPackage) :
+    ∀ r, certificateHasRecord X.certificate r →
+      LocallySoundRecord r ∧ LocallyCompleteRecord r := by
+  intro r hr
+  exact globallyCheckedCertificate_mem X.certificate X.checked r hr
+
+def checkedCertificateRecords (X : CheckerGlobalPackage) : RecordFamily :=
+  certificateRecords X.certificate
+
+@[simp] theorem checkedCertificateRecords_def (X : CheckerGlobalPackage) :
+    checkedCertificateRecords X = certificateRecords X.certificate := rfl
+
+theorem CheckerGlobalPackage.record_mem_sound (X : CheckerGlobalPackage) :
+    ∀ r, r ∈ checkedCertificateRecords X → LocallySoundRecord r := by
+  intro r hr
+  rw [checkedCertificateRecords_def] at hr
+  exact X.mem_sound r hr
+
+theorem CheckerGlobalPackage.record_mem_complete (X : CheckerGlobalPackage) :
+    ∀ r, r ∈ checkedCertificateRecords X → LocallyCompleteRecord r := by
+  intro r hr
+  rw [checkedCertificateRecords_def] at hr
+  exact X.mem_complete r hr
+
+theorem CheckerGlobalPackage.record_mem (X : CheckerGlobalPackage) :
+    ∀ r, r ∈ checkedCertificateRecords X →
+      LocallySoundRecord r ∧ LocallyCompleteRecord r := by
+  intro r hr
+  rw [checkedCertificateRecords_def] at hr
+  exact X.mem r hr
+
+def checkedCertificateHead? (X : CheckerGlobalPackage) : Option RecordData :=
+  priorityHead? (checkedCertificateRecords X)
+
+@[simp] theorem checkedCertificateHead?_def (X : CheckerGlobalPackage) :
+    checkedCertificateHead? X = priorityHead? (checkedCertificateRecords X) := rfl
+
+theorem checkedCertificateHead?_nil (h : GloballyCheckedCertificate (GlobalCertificate.mk [])) :
+    checkedCertificateHead? (CheckerGlobalPackage.mk (GlobalCertificate.mk []) h) = none := by
   rfl
 
-/--
-If the child references resolve and the head record satisfies the exact local
-conditions checked by the local checker, then the global checker accepts the head.
--/
-theorem checkRecordGlobal_true_of_resolved
-    (cert : List Record) (R : Record) (children : List Record)
-    (hres : localChildren? cert R = some children)
-    (hShape : WellFormedRecordFormat R)
-    (hLocal : LocallyCovered R children) :
-    checkRecordGlobal cert R = true := by
-  rw [checkRecordGlobal_some cert R children hres]
-  exact checkRecordLocal_true_of_shape_and_local R children hShape hLocal
+theorem checkedCertificateHead?_cons (r : RecordData) (rs : RecordFamily)
+    (h : GloballyCheckedCertificate (GlobalCertificate.mk (r :: rs))) :
+    checkedCertificateHead? (CheckerGlobalPackage.mk (GlobalCertificate.mk (r :: rs)) h) = some r := by
+  rfl
+
+theorem CheckerGlobalPackage.head_sound (r : RecordData) (rs : RecordFamily)
+    (h : GloballyCheckedCertificate (GlobalCertificate.mk (r :: rs))) :
+    LocallySoundRecord r := by
+  exact (globallyCheckedCertificate_cons r rs).mp h |>.1.1
+
+theorem CheckerGlobalPackage.head_complete (r : RecordData) (rs : RecordFamily)
+    (h : GloballyCheckedCertificate (GlobalCertificate.mk (r :: rs))) :
+    LocallyCompleteRecord r := by
+  exact (globallyCheckedCertificate_cons r rs).mp h |>.1.2
+
+theorem CheckerGlobalPackage.tail_checked (r : RecordData) (rs : RecordFamily)
+    (h : GloballyCheckedCertificate (GlobalCertificate.mk (r :: rs))) :
+    GloballyCheckedCertificate (GlobalCertificate.mk rs) := by
+  exact (globallyCheckedCertificate_cons r rs).mp h |>.2
+
+def mkCheckedCertificate (C : GlobalCertificate)
+    (hs : GloballySoundCertificate C)
+    (hc : GloballyCompleteCertificate C) : CheckerGlobalPackage :=
+  CheckerGlobalPackage.mk C ⟨hs, hc⟩
+
+@[simp] theorem mkCheckedCertificate_certificate (C : GlobalCertificate)
+    (hs : GloballySoundCertificate C)
+    (hc : GloballyCompleteCertificate C) :
+    (mkCheckedCertificate C hs hc).certificate = C := rfl
+
+@[simp] theorem mkCheckedCertificate_checked (C : GlobalCertificate)
+    (hs : GloballySoundCertificate C)
+    (hc : GloballyCompleteCertificate C) :
+    (mkCheckedCertificate C hs hc).checked = ⟨hs, hc⟩ := rfl
 
 end Certificate
 end CaseC

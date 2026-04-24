@@ -3,16 +3,12 @@
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
 - Lehmer.Basic.Defs : def
-- Lehmer.Basic.Totient : def thm
-- Lehmer.Basic.PrimeSupport : thm
-- Lehmer.Basic.OddSquarefree : thm
+- Lehmer.CaseC.Spec : def
 -/
 
 import Lehmer.Prelude
 import Lehmer.Basic.Defs
-import Lehmer.Basic.Totient
-import Lehmer.Basic.PrimeSupport
-import Lehmer.Basic.OddSquarefree
+import Lehmer.CaseC.Spec
 
 namespace Lehmer
 namespace CaseC
@@ -20,132 +16,207 @@ namespace GapClosure
 
 open Lehmer.Basic
 
-def supportIndex (S : Finset ℕ) : ℚ :=
-  S.prod (fun p => (p : ℚ) / ((p - 1 : ℕ) : ℚ))
+structure SupportProfile where
+  support : Support
 
-abbrev IS (S : Finset ℕ) : ℚ :=
-  supportIndex S
+@[simp] theorem SupportProfile.support_mk (S : Support) :
+    (SupportProfile.mk S).support = S := rfl
 
-@[simp] theorem supportIndex_def (S : Finset ℕ) :
-    supportIndex S = S.prod (fun p => (p : ℚ) / ((p - 1 : ℕ) : ℚ)) := rfl
+def profileSupport (R : SupportProfile) : Support :=
+  R.support
 
-@[simp] theorem IS_def (S : Finset ℕ) :
-    IS S = S.prod (fun p => (p : ℚ) / ((p - 1 : ℕ) : ℚ)) := rfl
+@[simp] theorem profileSupport_def (R : SupportProfile) :
+    profileSupport R = R.support := rfl
 
-@[simp] theorem supportIndex_empty :
-    supportIndex ∅ = 1 := by
-  simp [supportIndex]
+def profileCard (R : SupportProfile) : ℕ :=
+  supportCard (profileSupport R)
 
-@[simp] theorem supportIndex_singleton (p : ℕ) :
-    supportIndex ({p} : Finset ℕ) = (p : ℚ) / ((p - 1 : ℕ) : ℚ) := by
-  simp [supportIndex]
+def profileWidth (R : SupportProfile) : ℕ :=
+  profileCard R
 
-theorem supportIndex_insert {S : Finset ℕ} {p : ℕ} (hp : p ∉ S) :
-    supportIndex (insert p S) =
-      ((p : ℚ) / ((p - 1 : ℕ) : ℚ)) * supportIndex S := by
-  rw [supportIndex, Finset.prod_insert hp, supportIndex]
+@[simp] theorem profileCard_def (R : SupportProfile) :
+    profileCard R = supportCard (profileSupport R) := rfl
 
-theorem supportIndex_of_mem_erase {S : Finset ℕ} {p : ℕ} (hp : p ∈ S) :
-    supportIndex S =
-      ((p : ℚ) / ((p - 1 : ℕ) : ℚ)) * supportIndex (S.erase p) := by
-  have hp' : p ∉ S.erase p := by
-    simp
-  simpa [Finset.insert_erase hp] using
-    (supportIndex_insert (S := S.erase p) (p := p) hp')
+@[simp] theorem profileWidth_def (R : SupportProfile) :
+    profileWidth R = profileCard R := rfl
 
-def supportGap (S : Finset ℕ) : ℚ :=
-  supportIndex S - (Nat.floor (supportIndex S) : ℚ)
+@[simp] theorem profileSupport_mk (S : Support) :
+    profileSupport (SupportProfile.mk S) = S := rfl
 
-abbrev Delta (S : Finset ℕ) : ℚ :=
-  supportGap S
+@[simp] theorem profileCard_mk (S : Support) :
+    profileCard (SupportProfile.mk S) = supportCard S := rfl
 
-@[simp] theorem supportGap_def (S : Finset ℕ) :
-    supportGap S = supportIndex S - (Nat.floor (supportIndex S) : ℚ) := rfl
+@[simp] theorem profileWidth_mk (S : Support) :
+    profileWidth (SupportProfile.mk S) = supportCard S := rfl
 
-@[simp] theorem Delta_def (S : Finset ℕ) :
-    Delta S = supportIndex S - (Nat.floor (supportIndex S) : ℚ) := rfl
+def profileContains (R : SupportProfile) (p : ℕ) : Prop :=
+  p ∈ profileSupport R
 
-@[simp] theorem supportGap_empty :
-    supportGap ∅ = 0 := by
-  simp [supportGap, supportIndex]
+@[simp] theorem profileContains_def (R : SupportProfile) (p : ℕ) :
+    profileContains R p = (p ∈ profileSupport R) := rfl
 
-def supportProfileOfNat (n : ℕ) : ℚ :=
-  supportIndex (primeSupport n)
+def profileNonempty (R : SupportProfile) : Prop :=
+  (profileSupport R).Nonempty
 
-@[simp] theorem supportProfileOfNat_def (n : ℕ) :
-    supportProfileOfNat n = supportIndex (primeSupport n) := rfl
+@[simp] theorem profileNonempty_def (R : SupportProfile) :
+    profileNonempty R = (profileSupport R).Nonempty := rfl
 
-/--
-For a prime support, the support index is the quotient of the support product
-by the rational product of the shifted primes.
--/
-theorem supportIndex_eq_supportProd_div_prod_sub_one_of_prime
-    {S : Finset ℕ}
-    (hPrime : ∀ p ∈ S, Nat.Prime p) :
-    supportIndex S =
-      (supportProd S : ℚ) / (S.prod (fun p => ((p : ℚ) - 1))) := by
-  classical
-  revert hPrime
-  refine Finset.induction_on S ?_ ?_
-  · intro _
-    simp [supportIndex, supportProd]
-  · intro p T hpT ih hPrimeAll
-    have hpprime : Nat.Prime p := hPrimeAll p (Finset.mem_insert_self p T)
-    have hPrimeT : ∀ q ∈ T, Nat.Prime q := by
-      intro q hq
-      exact hPrimeAll q (Finset.mem_insert_of_mem hq)
-    have ihT := ih hPrimeT
-    have hp1 : 1 ≤ p := le_trans (by decide : 1 ≤ 2) hpprime.two_le
-    have hpm1 : (((p - 1 : ℕ) : ℚ)) = ((p : ℚ) - 1) := by
-      rw [Nat.cast_sub hp1]
-      norm_num
-    have hp_sub_ne_zero : ((p : ℚ) - 1) ≠ 0 := by
-      intro h0
-      have hp_eq_one_q : (p : ℚ) = 1 := by linarith
-      have hp_eq_one : p = 1 := by exact_mod_cast hp_eq_one_q
-      exact hpprime.ne_one hp_eq_one
-    have hprod_ne_zero : T.prod (fun q => ((q : ℚ) - 1)) ≠ 0 := by
-      refine Finset.prod_ne_zero_iff.mpr ?_
-      intro q hq
-      have hqprime : Nat.Prime q := hPrimeT q hq
-      intro h0
-      have hq_eq_one_q : (q : ℚ) = 1 := by linarith
-      have hq_eq_one : q = 1 := by exact_mod_cast hq_eq_one_q
-      exact hqprime.ne_one hq_eq_one
-    rw [supportIndex_insert hpT, supportProd_insert hpT, Finset.prod_insert hpT, ihT, hpm1]
-    field_simp [hp_sub_ne_zero, hprod_ne_zero]
-    rw [Nat.cast_mul]
+def profileEmpty (R : SupportProfile) : Prop :=
+  profileSupport R = ∅
 
-theorem supportProfileOfNat_eq_totientIndex_of_squarefree
-    {n : ℕ} (hSq : Squarefree n) :
-    supportProfileOfNat n = totientIndex n := by
-  have hPrime : ∀ p ∈ primeSupport n, Nat.Prime p := by
-    intro p hp
-    exact prime_of_mem_primeSupport hp
-  have hIndex :
-      supportIndex (primeSupport n) =
-        (supportProd (primeSupport n) : ℚ) /
-          ((primeSupport n).prod (fun p => ((p : ℚ) - 1))) := by
-    exact supportIndex_eq_supportProd_div_prod_sub_one_of_prime hPrime
-  have hNum : (supportProd (primeSupport n) : ℚ) = (n : ℚ) := by
-    exact_mod_cast supportProd_primeSupport_of_squarefree hSq
-  have hDen : totientQ n = (primeSupport n).prod (fun p => ((p : ℚ) - 1)) := by
-    exact totientQ_eq_prod_sub_one_of_squarefree hSq
-  calc
-    supportProfileOfNat n = supportIndex (primeSupport n) := by
+@[simp] theorem profileEmpty_def (R : SupportProfile) :
+    profileEmpty R = (profileSupport R = ∅) := rfl
+
+def ProfileBelow (N : ℕ) (R : SupportProfile) : Prop :=
+  SupportBelow N (profileSupport R)
+
+def ProfileWithinOmega (omega : ℕ) (R : SupportProfile) : Prop :=
+  SupportWithinOmega omega (profileSupport R)
+
+@[simp] theorem ProfileBelow_def (N : ℕ) (R : SupportProfile) :
+    ProfileBelow N R = SupportBelow N (profileSupport R) := rfl
+
+@[simp] theorem ProfileWithinOmega_def (omega : ℕ) (R : SupportProfile) :
+    ProfileWithinOmega omega R = SupportWithinOmega omega (profileSupport R) := rfl
+
+def ProfileInTruncatedFamily (P : Params) (D : ClosureData P) (R : SupportProfile) : Prop :=
+  ProfileBelow D.N R ∧ ProfileWithinOmega D.omegaHat R
+
+@[simp] theorem ProfileInTruncatedFamily_def (P : Params) (D : ClosureData P) (R : SupportProfile) :
+    ProfileInTruncatedFamily P D R = (ProfileBelow D.N R ∧ ProfileWithinOmega D.omegaHat R) := rfl
+
+theorem profileInTruncatedFamily_iff (P : Params) (D : ClosureData P) (R : SupportProfile) :
+    ProfileInTruncatedFamily P D R ↔
+      SupportBelow D.N (profileSupport R) ∧
+      SupportWithinOmega D.omegaHat (profileSupport R) := by
+  rfl
+
+@[simp] theorem ProfileBelow_mk (N : ℕ) (S : Support) :
+    ProfileBelow N (SupportProfile.mk S) = SupportBelow N S := rfl
+
+@[simp] theorem ProfileWithinOmega_mk (omega : ℕ) (S : Support) :
+    ProfileWithinOmega omega (SupportProfile.mk S) = SupportWithinOmega omega S := rfl
+
+@[simp] theorem ProfileInTruncatedFamily_mk (P : Params) (D : ClosureData P) (S : Support) :
+    ProfileInTruncatedFamily P D (SupportProfile.mk S) ↔
+      SupportBelow D.N S ∧ SupportWithinOmega D.omegaHat S := by
+  rfl
+
+theorem profile_eq_of_support_eq {R T : SupportProfile} :
+    profileSupport R = profileSupport T → R = T := by
+  intro h
+  cases R
+  cases T
+  simp [profileSupport] at h
+  cases h
+  rfl
+
+@[ext] theorem SupportProfile.ext {R T : SupportProfile}
+    (h : profileSupport R = profileSupport T) : R = T :=
+  profile_eq_of_support_eq h
+
+theorem profileEmpty_or_nonempty (R : SupportProfile) :
+    profileEmpty R ∨ profileNonempty R := by
+  by_cases h : profileSupport R = ∅
+  · left
+    exact h
+  · right
+    exact Finset.nonempty_iff_ne_empty.mpr h
+
+theorem profileNonempty_iff_not_empty (R : SupportProfile) :
+    profileNonempty R ↔ ¬ profileEmpty R := by
+  constructor
+  · intro h hEmpty
+    have hne : profileSupport R ≠ ∅ := Finset.nonempty_iff_ne_empty.mp h
+    exact hne hEmpty
+  · intro h
+    exact Finset.nonempty_iff_ne_empty.mpr (by
+      simpa [profileEmpty] using h)
+
+theorem profileInTruncatedFamily_of_support_eq (P : Params) (D : ClosureData P)
+    {R T : SupportProfile} :
+    profileSupport R = profileSupport T →
+    ProfileInTruncatedFamily P D R →
+    ProfileInTruncatedFamily P D T := by
+  intro hRT hR
+  have hEq : R = T := profile_eq_of_support_eq hRT
+  simpa [hEq] using hR
+
+theorem profileInTruncatedFamily_iff_of_support_eq (P : Params) (D : ClosureData P)
+    {R T : SupportProfile} :
+    profileSupport R = profileSupport T →
+    (ProfileInTruncatedFamily P D R ↔ ProfileInTruncatedFamily P D T) := by
+  intro hRT
+  constructor
+  · intro hR
+    exact profileInTruncatedFamily_of_support_eq P D hRT hR
+  · intro hT
+    exact profileInTruncatedFamily_of_support_eq P D hRT.symm hT
+
+abbrev SupportProfileFamily := List SupportProfile
+
+def familySupports (F : SupportProfileFamily) : List Support :=
+  F.map profileSupport
+
+@[simp] theorem familySupports_nil :
+    familySupports [] = [] := rfl
+
+@[simp] theorem familySupports_cons (R : SupportProfile) (F : SupportProfileFamily) :
+    familySupports (R :: F) = profileSupport R :: familySupports F := rfl
+
+def profileInFamily (R : SupportProfile) (F : SupportProfileFamily) : Prop :=
+  R ∈ F
+
+@[simp] theorem profileInFamily_def (R : SupportProfile) (F : SupportProfileFamily) :
+    profileInFamily R F = (R ∈ F) := rfl
+
+theorem supportProfileFamily_exhaustive (F : SupportProfileFamily) :
+    F = [] ∨ ∃ R G, F = R :: G := by
+  cases F with
+  | nil =>
+      left
       rfl
-    _ = (supportProd (primeSupport n) : ℚ) /
-          ((primeSupport n).prod (fun p => ((p : ℚ) - 1))) := by
-      exact hIndex
-    _ = (n : ℚ) / totientQ n := by
-      rw [hNum, ← hDen]
-    _ = totientIndex n := by
-      rw [totientIndex_eq]
+  | cons R G =>
+      right
+      exact ⟨R, G, rfl⟩
 
-theorem supportProfileOfNat_eq_totientIndex_of_LehmerComposite
-    {n : ℕ} (h : LehmerComposite n) :
-    supportProfileOfNat n = totientIndex n := by
-  exact supportProfileOfNat_eq_totientIndex_of_squarefree h.squarefree
+def familyHead? (F : SupportProfileFamily) : Option SupportProfile :=
+  F.head?
+
+@[simp] theorem familyHead?_nil :
+    familyHead? [] = none := rfl
+
+@[simp] theorem familyHead?_cons (R : SupportProfile) (F : SupportProfileFamily) :
+    familyHead? (R :: F) = some R := rfl
+
+def FamilyAllInTruncatedFamily (P : Params) (D : ClosureData P) (F : SupportProfileFamily) : Prop :=
+  ∀ R ∈ F, ProfileInTruncatedFamily P D R
+
+@[simp] theorem FamilyAllInTruncatedFamily_def (P : Params) (D : ClosureData P) (F : SupportProfileFamily) :
+    FamilyAllInTruncatedFamily P D F = (∀ R ∈ F, ProfileInTruncatedFamily P D R) := rfl
+
+@[simp] theorem FamilyAllInTruncatedFamily_nil (P : Params) (D : ClosureData P) :
+    FamilyAllInTruncatedFamily P D [] := by
+  intro R h
+  simp at h
+
+theorem FamilyAllInTruncatedFamily_cons (P : Params) (D : ClosureData P)
+    (R : SupportProfile) (F : SupportProfileFamily) :
+    FamilyAllInTruncatedFamily P D (R :: F) ↔
+      ProfileInTruncatedFamily P D R ∧ FamilyAllInTruncatedFamily P D F := by
+  constructor
+  · intro h
+    constructor
+    · exact h R (by simp)
+    · intro T hT
+      exact h T (by simp [hT])
+  · intro h
+    rcases h with ⟨hR, hF⟩
+    intro T hT
+    simp at hT
+    rcases hT with rfl | hT
+    · exact hR
+    · exact hF T hT
 
 end GapClosure
 end CaseC

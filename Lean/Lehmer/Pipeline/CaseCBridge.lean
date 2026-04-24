@@ -22,24 +22,19 @@ namespace Lehmer
 namespace Pipeline
 
 open Lehmer.Basic
-open Lehmer.CaseC.GapClosure
 
 /--
 Pipeline-level handledness predicate for the global Case C branch.
 
-At the current stage, this bridge records both:
-- membership in the global Case C branch selected by `GlobalSplit`,
-- and the canonical Case C-facing data already available in the active
-  gap-closure development.
-
-A stronger terminal closure theorem can later consume this handledness
-predicate.
+At the current bridge stage, handledness records that the candidate is routed to
+the global Case C branch. Richer Case C-facing data can be added once the
+corresponding canonical API is exposed by the Case C layer.
 -/
-structure CaseCHandled (n : ℕ) : Prop where
-  hBranch : InCaseC n
-  hRigidity : rigidityGap n = rigidityGap n
-  hProfile : supportProfileOfNat n = supportProfileOfNat n
-  hNonIntegralName : NatNonIntegralProfile n = NatNonIntegralProfile n
+def CaseCHandled (n : ℕ) : Prop :=
+  InCaseC n
+
+@[simp] theorem CaseCHandled_def (n : ℕ) :
+    CaseCHandled n = InCaseC n := rfl
 
 /--
 Case C handledness exposes the global Case C branch membership.
@@ -47,7 +42,7 @@ Case C handledness exposes the global Case C branch membership.
 theorem CaseCHandled.in_caseC
     {n : ℕ} (h : CaseCHandled n) :
     InCaseC n := by
-  exact h.hBranch
+  exact h
 
 /--
 Bridge theorem: any candidate classified in the global Case C branch is handled
@@ -57,7 +52,7 @@ theorem caseC_bridge
     {n : ℕ} (_hL : LehmerComposite n)
     (hC : InCaseC n) :
     CaseCHandled n := by
-  refine ⟨hC, rfl, rfl, rfl⟩
+  exact hC
 
 /--
 Equivalent bridge theorem written using the abstract branch relation from
@@ -67,7 +62,7 @@ theorem caseC_bridge_of_falls
     {n : ℕ} (_hL : LehmerComposite n)
     (hC : FallsInGlobalBranch n GlobalBranch.caseC) :
     CaseCHandled n := by
-  exact caseC_bridge _hL hC
+  exact hC
 
 /--
 Case C handledness implies membership in the declared global Case C branch.
@@ -75,32 +70,15 @@ Case C handledness implies membership in the declared global Case C branch.
 theorem caseC_handled_implies_in_caseC
     {n : ℕ} (h : CaseCHandled n) :
     InCaseC n := by
-  exact h.hBranch
+  exact h
 
 /--
-Every handled Case C candidate carries the canonical rigidity datum.
+Case C handledness is exactly the current global Case C branch condition.
 -/
-theorem caseC_handled_has_rigidity
-    {n : ℕ} (h : CaseCHandled n) :
-    rigidityGap n = rigidityGap n := by
-  exact h.hRigidity
-
-/--
-Every handled Case C candidate carries the canonical support-profile datum.
--/
-theorem caseC_handled_has_supportProfile
-    {n : ℕ} (h : CaseCHandled n) :
-    supportProfileOfNat n = supportProfileOfNat n := by
-  exact h.hProfile
-
-/--
-Every handled Case C candidate carries the canonical nonintegrality-profile
-name at the current pipeline level.
--/
-theorem caseC_handled_has_nonIntegralProfile_name
-    {n : ℕ} (h : CaseCHandled n) :
-    NatNonIntegralProfile n = NatNonIntegralProfile n := by
-  exact h.hNonIntegralName
+theorem caseC_handled_iff_in_caseC
+    {n : ℕ} :
+    CaseCHandled n ↔ InCaseC n := by
+  rfl
 
 /--
 Terminal interface for the Case C branch.

@@ -2,11 +2,17 @@
 /-
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
+- Lehmer.Basic.Defs : def
+- Lehmer.CaseC.Spec : def
+- Lehmer.CaseC.Certificate.Format : def
 - Lehmer.CaseC.Certificate.Record : def thm
 - Lehmer.CaseC.Certificate.Priority : def thm
 -/
 
 import Lehmer.Prelude
+import Lehmer.Basic.Defs
+import Lehmer.CaseC.Spec
+import Lehmer.CaseC.Certificate.Format
 import Lehmer.CaseC.Certificate.Record
 import Lehmer.CaseC.Certificate.Priority
 
@@ -14,121 +20,150 @@ namespace Lehmer
 namespace CaseC
 namespace Certificate
 
-/--
-A child record is declared by a parent record if its identifier appears in the
-parent's child-reference list.
--/
-def IsDeclaredChild (parent child : Record) : Prop :=
-  recordId child ∈ recordChildren parent
+open Lehmer.Basic
 
-@[simp] theorem IsDeclaredChild_def (parent child : Record) :
-    IsDeclaredChild parent child = (recordId child ∈ recordChildren parent) := rfl
+def RecordCoversSupport (r : RecordData) (S : Support) : Prop :=
+  S ∈ recordCylinder r
 
-/--
-A supplied list of child records matches the parent's declared child ids.
--/
-def ChildrenMatchIds (parent : Record) (children : List Record) : Prop :=
-  children.map recordId = recordChildren parent
+@[simp] theorem RecordCoversSupport_def (r : RecordData) (S : Support) :
+    RecordCoversSupport r S = (S ∈ recordCylinder r) := rfl
 
-@[simp] theorem ChildrenMatchIds_def (parent : Record) (children : List Record) :
-    ChildrenMatchIds parent children =
-      (children.map recordId = recordChildren parent) := rfl
+theorem record_covers_iff_mem_cylinder (r : RecordData) (S : Support) :
+    RecordCoversSupport r S ↔ S ∈ recordCylinder r := Iff.rfl
 
-/--
-A minimal local coverage predicate for a parent record and a supplied child list.
+theorem recordCoversSupport_iff_prefix (r : RecordData) (S : Support) :
+    RecordCoversSupport r S ↔ IsPrefixOf (recordPrefix r) S := by
+  rfl
 
-For the current checker-facing layer, local coverage means:
-- the supplied child list matches the declared child ids;
-- the child list respects the local priority discipline.
--/
-def LocallyCovered (parent : Record) (children : List Record) : Prop :=
-  ChildrenMatchIds parent children ∧ ChildrenRespectPriority parent children
+def RecordCoversState (P : Params) (r : RecordData) (U : State P) : Prop :=
+  RecordCoversSupport r U.support
 
-@[simp] theorem LocallyCovered_def (parent : Record) (children : List Record) :
-    LocallyCovered parent children =
-      (ChildrenMatchIds parent children ∧ ChildrenRespectPriority parent children) := rfl
+@[simp] theorem RecordCoversState_def (P : Params) (r : RecordData) (U : State P) :
+    RecordCoversState P r U = RecordCoversSupport r U.support := rfl
 
-/--
-A terminal record is locally covered by the empty child list.
--/
-theorem locallyCovered_terminal_nil
-    (R : Record) (_hterm : IsTerminalRecord R) (hchildren : recordChildren R = []) :
-    LocallyCovered R [] := by
+theorem recordCoversState_iff_support (P : Params) (r : RecordData) (U : State P) :
+    RecordCoversState P r U ↔ RecordCoversSupport r U.support := Iff.rfl
+
+def RecordChildrenCoverSupport (r : RecordData) (S : Support) : Prop :=
+  ∃ p ∈ recordChildren r, S ∈ Cylinder p
+
+@[simp] theorem RecordChildrenCoverSupport_def (r : RecordData) (S : Support) :
+    RecordChildrenCoverSupport r S = (∃ p ∈ recordChildren r, S ∈ Cylinder p) := rfl
+
+def RecordChildrenCoverState (P : Params) (r : RecordData) (U : State P) : Prop :=
+  RecordChildrenCoverSupport r U.support
+
+@[simp] theorem RecordChildrenCoverState_def (P : Params) (r : RecordData) (U : State P) :
+    RecordChildrenCoverState P r U = RecordChildrenCoverSupport r U.support := rfl
+
+def CertificateCoversSupport (C : GlobalCertificate) (S : Support) : Prop :=
+  ∃ r, certificateHasRecord C r ∧ RecordCoversSupport r S
+
+@[simp] theorem CertificateCoversSupport_def (C : GlobalCertificate) (S : Support) :
+    CertificateCoversSupport C S = (∃ r, certificateHasRecord C r ∧ RecordCoversSupport r S) := rfl
+
+def CertificateCoversState (P : Params) (C : GlobalCertificate) (U : State P) : Prop :=
+  CertificateCoversSupport C U.support
+
+@[simp] theorem CertificateCoversState_def (P : Params) (C : GlobalCertificate) (U : State P) :
+    CertificateCoversState P C U = CertificateCoversSupport C U.support := rfl
+
+theorem certificateCoversState_iff_support (P : Params) (C : GlobalCertificate) (U : State P) :
+    CertificateCoversState P C U ↔ CertificateCoversSupport C U.support := Iff.rfl
+
+def FamilyCoversSupport (R : RecordFamily) (S : Support) : Prop :=
+  ∃ r, r ∈ R ∧ RecordCoversSupport r S
+
+@[simp] theorem FamilyCoversSupport_def (R : RecordFamily) (S : Support) :
+    FamilyCoversSupport R S = (∃ r, r ∈ R ∧ RecordCoversSupport r S) := rfl
+
+theorem certificateCoversSupport_iff_family (C : GlobalCertificate) (S : Support) :
+    CertificateCoversSupport C S ↔ FamilyCoversSupport (certificateRecords C) S := by
   constructor
-  · simpa [ChildrenMatchIds] using hchildren.symm
-  · exact childrenRespectPriority_nil_of_no_children R hchildren
+  · intro h
+    rcases h with ⟨r, hrC, hrS⟩
+    exact ⟨r, hrC, hrS⟩
+  · intro h
+    rcases h with ⟨r, hrC, hrS⟩
+    exact ⟨r, hrC, hrS⟩
 
-/--
-If a supplied child list matches the declared child ids and already satisfies
-the priority discipline, then the parent is locally covered by that list.
--/
-theorem locallyCovered_of_match_and_priority
-    (parent : Record) (children : List Record)
-    (hIds : ChildrenMatchIds parent children)
-    (hPrio : ChildrenRespectPriority parent children) :
-    LocallyCovered parent children := by
-  exact ⟨hIds, hPrio⟩
+@[simp] theorem FamilyCoversSupport_nil (S : Support) :
+    ¬ FamilyCoversSupport [] S := by
+  intro h
+  rcases h with ⟨r, hr, _⟩
+  simp at hr
 
-/--
-A child list is pairwise id-disjoint if distinct positions carry distinct ids.
+theorem FamilyCoversSupport_cons (r : RecordData) (rs : RecordFamily) (S : Support) :
+    FamilyCoversSupport (r :: rs) S ↔
+      RecordCoversSupport r S ∨ FamilyCoversSupport rs S := by
+  constructor
+  · intro h
+    rcases h with ⟨r', hr', hcov⟩
+    simp at hr'
+    rcases hr' with rfl | hrs
+    · exact Or.inl hcov
+    · exact Or.inr ⟨r', hrs, hcov⟩
+  · intro h
+    rcases h with h | h
+    · exact ⟨r, by simp, h⟩
+    · rcases h with ⟨r', hr', hcov⟩
+      exact ⟨r', by simp [hr'], hcov⟩
 
-This is a stronger auxiliary notion that may be used later by global layers,
-but it is not part of the current local checker target.
--/
-def PairwiseIdDisjoint (children : List Record) : Prop :=
-  children.Pairwise IdDisjoint
+@[simp] theorem CertificateCoversSupport_empty (S : Support) :
+    ¬ CertificateCoversSupport (GlobalCertificate.mk []) S := by
+  intro h
+  rcases h with ⟨r, hr, _⟩
+  simp [certificateHasRecord, certificateRecords] at hr
 
-@[simp] theorem PairwiseIdDisjoint_nil :
-    PairwiseIdDisjoint [] := by
-  simp [PairwiseIdDisjoint]
+theorem CertificateCoversSupport_cons (r : RecordData) (rs : RecordFamily) (S : Support) :
+    CertificateCoversSupport (GlobalCertificate.mk (r :: rs)) S ↔
+      RecordCoversSupport r S ∨ CertificateCoversSupport (GlobalCertificate.mk rs) S := by
+  constructor
+  · intro h
+    rcases h with ⟨r', hr', hcov⟩
+    simp [certificateHasRecord, certificateRecords] at hr'
+    rcases hr' with rfl | hrs
+    · exact Or.inl hcov
+    · exact Or.inr ⟨r', hrs, hcov⟩
+  · intro h
+    rcases h with h | h
+    · exact ⟨r, by simp [certificateHasRecord, certificateRecords], h⟩
+    · rcases h with ⟨r', hr', hcov⟩
+      have hrs : r' ∈ rs := by
+        simpa [certificateHasRecord, certificateRecords] using hr'
+      exact ⟨r', by simp [certificateHasRecord, certificateRecords, hrs], hcov⟩
 
-@[simp] theorem PairwiseIdDisjoint_singleton (R : Record) :
-    PairwiseIdDisjoint [R] := by
-  simp [PairwiseIdDisjoint]
+theorem CertificateCoversSupport_of_hasRecord (C : GlobalCertificate) (r : RecordData) (S : Support) :
+    certificateHasRecord C r → RecordCoversSupport r S → CertificateCoversSupport C S := by
+  intro hr hcov
+  exact ⟨r, hr, hcov⟩
 
-/--
-A stronger local coverage predicate adding id-disjointness of the supplied
-children.
+theorem CertificateCoversState_of_hasRecord (P : Params) (C : GlobalCertificate)
+    (r : RecordData) (U : State P) :
+    certificateHasRecord C r → RecordCoversState P r U → CertificateCoversState P C U := by
+  intro hr hcov
+  exact ⟨r, hr, hcov⟩
 
-This notion is intentionally kept auxiliary: it is stronger than what the
-current local checker directly tests.
--/
-def WellCovered (parent : Record) (children : List Record) : Prop :=
-  LocallyCovered parent children ∧ PairwiseIdDisjoint children
+theorem certificateHasRecord_cons_head (r : RecordData) (rs : RecordFamily) :
+    certificateHasRecord (GlobalCertificate.mk (r :: rs)) r := by
+  simp [certificateHasRecord, certificateRecords]
 
-@[simp] theorem WellCovered_def (parent : Record) (children : List Record) :
-    WellCovered parent children =
-      (LocallyCovered parent children ∧ PairwiseIdDisjoint children) := rfl
+theorem certificateHasRecord_cons_tail (r s : RecordData) (rs : RecordFamily) :
+    certificateHasRecord (GlobalCertificate.mk rs) s →
+    certificateHasRecord (GlobalCertificate.mk (r :: rs)) s := by
+  intro hs
+  have hs' : s ∈ rs := by
+    simpa [certificateHasRecord, certificateRecords] using hs
+  simp [certificateHasRecord, certificateRecords, hs']
 
-/--
-The empty child list is pairwise id-disjoint.
--/
-theorem pairwiseIdDisjoint_nil :
-    PairwiseIdDisjoint ([] : List Record) := by
-  simp [PairwiseIdDisjoint]
+theorem RecordCoversState_mk (P : Params) (r : RecordData) (S : Support) :
+    RecordCoversState P r (State.mk S) ↔ RecordCoversSupport r S := Iff.rfl
 
-/--
-A terminal record with no children is well-covered by the empty child list.
--/
-theorem wellCovered_terminal_nil
-    (R : Record) (hterm : IsTerminalRecord R) (hchildren : recordChildren R = []) :
-    WellCovered R [] := by
-  refine ⟨locallyCovered_terminal_nil R hterm hchildren, ?_⟩
-  exact pairwiseIdDisjoint_nil
+theorem CertificateCoversState_mk (P : Params) (C : GlobalCertificate) (S : Support) :
+    CertificateCoversState P C (State.mk S) ↔ CertificateCoversSupport C S := Iff.rfl
 
-/--
-If the child ids match, the child list is priority-sorted, and the child ids
-are pairwise disjoint, then the stronger local coverage condition holds.
--/
-theorem wellCovered_of_ids_priority_disjoint
-    (parent : Record) (children : List Record)
-    (hIds : children.map recordId = recordChildren parent)
-    (hPrio : PrioritySorted children)
-    (hDisjoint : PairwiseIdDisjoint children) :
-    WellCovered parent children := by
-  refine ⟨?_, hDisjoint⟩
-  exact locallyCovered_of_match_and_priority parent children hIds
-    (childrenRespectPriority_of_ids_and_sorted parent children hIds hPrio)
+theorem RecordChildrenCoverState_mk (P : Params) (r : RecordData) (S : Support) :
+    RecordChildrenCoverState P r (State.mk S) ↔ RecordChildrenCoverSupport r S := Iff.rfl
 
 end Certificate
 end CaseC

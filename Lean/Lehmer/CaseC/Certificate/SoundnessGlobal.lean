@@ -2,106 +2,192 @@
 /-
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
-- Lehmer.CaseC.Certificate.CheckerGlobal : def thm
+- Lehmer.Basic.Defs : def
+- Lehmer.CaseC.Spec : def
+- Lehmer.CaseC.Certificate.Format : def
+- Lehmer.CaseC.Certificate.Record : def thm
+- Lehmer.CaseC.Certificate.Priority : def thm
+- Lehmer.CaseC.Certificate.Coverage : def thm
 - Lehmer.CaseC.Certificate.SoundnessLocal : def thm
 -/
 
 import Lehmer.Prelude
-import Lehmer.CaseC.Certificate.CheckerGlobal
+import Lehmer.Basic.Defs
+import Lehmer.CaseC.Spec
+import Lehmer.CaseC.Certificate.Format
+import Lehmer.CaseC.Certificate.Record
+import Lehmer.CaseC.Certificate.Priority
+import Lehmer.CaseC.Certificate.Coverage
 import Lehmer.CaseC.Certificate.SoundnessLocal
 
 namespace Lehmer
 namespace CaseC
 namespace Certificate
 
-/--
-A semantic global-validity predicate for a certificate list.
+open Lehmer.Basic
 
-At the current stage, global validity is stated recursively:
-- each head record resolves to a child list;
-- that local instance is semantically valid;
-- and the tail is globally valid.
--/
-def ValidCertificate : List Record → Prop
-  | [] => True
-  | R :: Rs =>
-      (∃ children,
-        localChildren? (R :: Rs) R = some children ∧
-        ValidLocalRecord R children) ∧
-      ValidCertificate Rs
+def GloballySoundRecordFamily (R : RecordFamily) : Prop :=
+  ∀ r : RecordData, r ∈ R → LocallySoundRecord r
 
-@[simp] theorem ValidCertificate_nil :
-    ValidCertificate [] := by
-  trivial
+@[simp] theorem GloballySoundRecordFamily_def (R : RecordFamily) :
+    GloballySoundRecordFamily R = (∀ r : RecordData, r ∈ R → LocallySoundRecord r) := rfl
 
-@[simp] theorem ValidCertificate_cons (R : Record) (Rs : List Record) :
-    ValidCertificate (R :: Rs) ↔
-      (∃ children,
-        localChildren? (R :: Rs) R = some children ∧
-        ValidLocalRecord R children) ∧
-      ValidCertificate Rs := by
+def GloballySoundCertificate (C : GlobalCertificate) : Prop :=
+  GloballySoundRecordFamily (certificateRecords C)
+
+@[simp] theorem GloballySoundCertificate_def (C : GlobalCertificate) :
+    GloballySoundCertificate C = GloballySoundRecordFamily (certificateRecords C) := rfl
+
+theorem globallySoundFamily_nil :
+    GloballySoundRecordFamily [] := by
+  intro r hr
+  simp at hr
+
+theorem globallySoundFamily_cons (r : RecordData) (rs : RecordFamily) :
+    GloballySoundRecordFamily (r :: rs) ↔
+      LocallySoundRecord r ∧ GloballySoundRecordFamily rs := by
+  constructor
+  · intro h
+    constructor
+    · exact h r (by simp)
+    · intro s hs
+      exact h s (by simp [hs])
+  · intro h
+    rcases h with ⟨hr, hrs⟩
+    intro s hs
+    simp at hs
+    rcases hs with rfl | hs'
+    · exact hr
+    · exact hrs s hs'
+
+theorem globallySoundCertificate_iff_family (C : GlobalCertificate) :
+    GloballySoundCertificate C ↔ GloballySoundRecordFamily (certificateRecords C) := by
   rfl
 
-/--
-If the global checker succeeds on a head record because its children resolve
-to `children`, and the local checker is sound, then the head record is
-semantically valid.
--/
-theorem checkRecordGlobal_sound_of_resolved
-    (cert : List Record) (R : Record) (children : List Record)
-    (hres : localChildren? cert R = some children)
-    (hchk : checkRecordGlobal cert R = true) :
-    ValidLocalRecord R children := by
-  have hlocal : checkRecordLocal R children = true := by
-    rw [checkRecordGlobal_some cert R children hres] at hchk
-    exact hchk
-  exact checkRecordLocal_sound R children hlocal
+theorem globallySoundCertificate_nil :
+    GloballySoundCertificate (GlobalCertificate.mk []) := by
+  exact globallySoundFamily_nil
 
-/--
-If the global checker accepts a nonempty certificate, then the head record's
-children resolve successfully.
--/
-theorem checkCertificate_head_resolves_of_true
-    (R : Record) (Rs : List Record)
-    (h : checkCertificate (R :: Rs) = true) :
-    ∃ children, localChildren? (R :: Rs) R = some children := by
-  have hpair : checkRecordGlobal (R :: Rs) R = true ∧ checkCertificate Rs = true := by
-    simpa [checkCertificate] using h
-  have hhead : checkRecordGlobal (R :: Rs) R = true := hpair.1
-  cases hloc : localChildren? (R :: Rs) R with
-  | none =>
-      rw [checkRecordGlobal_none (R :: Rs) R hloc] at hhead
-      cases hhead
-  | some children =>
-      exact ⟨children, rfl⟩
+theorem globallySoundCertificate_cons (r : RecordData) (rs : RecordFamily) :
+    GloballySoundCertificate (GlobalCertificate.mk (r :: rs)) ↔
+      LocallySoundRecord r ∧ GloballySoundCertificate (GlobalCertificate.mk rs) := by
+  constructor
+  · intro h
+    constructor
+    · exact h r (by simp [certificateRecords])
+    · intro s hs
+      exact h s (by
+        simp [certificateRecords] at hs ⊢
+        exact Or.inr hs)
+  · intro h
+    rcases h with ⟨hr, hrs⟩
+    intro s hs
+    simp [certificateRecords] at hs
+    rcases hs with rfl | hs'
+    · exact hr
+    · exact hrs s hs'
 
-/--
-Main global soundness theorem:
-if the global checker returns `true`, then the certificate is semantically valid.
--/
-theorem checkCertificate_sound : ∀ cert : List Record,
-    checkCertificate cert = true → ValidCertificate cert
-  | [], _ => by
-      simp [ValidCertificate]
-  | R :: Rs, h => by
-      have hpair : checkRecordGlobal (R :: Rs) R = true ∧ checkCertificate Rs = true := by
-        simpa [checkCertificate] using h
-      rcases checkCertificate_head_resolves_of_true R Rs h with ⟨children, hres⟩
-      refine ⟨?_, ?_⟩
-      · refine ⟨children, hres, ?_⟩
-        exact checkRecordGlobal_sound_of_resolved (R :: Rs) R children hres hpair.1
-      · exact checkCertificate_sound Rs hpair.2
+theorem globallySoundFamily_mem (R : RecordFamily) :
+    GloballySoundRecordFamily R → ∀ r, r ∈ R → LocallySoundRecord r := by
+  intro h r hr
+  exact h r hr
 
-/--
-A checker-facing globally coherent certificate is semantically valid once the
-global checker is known to accept it.
--/
-theorem globallyCoherent_implies_valid_of_checker
-    (cert : List Record)
-    (_hcoh : GloballyCoherent cert)
-    (hchk : checkCertificate cert = true) :
-    ValidCertificate cert := by
-  exact checkCertificate_sound cert hchk
+theorem globallySoundCertificate_mem (C : GlobalCertificate) :
+    GloballySoundCertificate C → ∀ r, certificateHasRecord C r → LocallySoundRecord r := by
+  intro hC r hr
+  exact hC r hr
+
+theorem globallySoundFamily_of_pointwise (R : RecordFamily) :
+    (∀ r, r ∈ R → LocallySoundRecord r) → GloballySoundRecordFamily R := by
+  intro h
+  exact h
+
+theorem globallySoundCertificate_of_pointwise (C : GlobalCertificate) :
+    (∀ r, certificateHasRecord C r → LocallySoundRecord r) → GloballySoundCertificate C := by
+  intro h r hr
+  exact h r hr
+
+theorem globallySoundFamily_tail (r : RecordData) (rs : RecordFamily) :
+    GloballySoundRecordFamily (r :: rs) → GloballySoundRecordFamily rs := by
+  intro h
+  exact (globallySoundFamily_cons r rs).mp h |>.2
+
+theorem globallySoundFamily_head (r : RecordData) (rs : RecordFamily) :
+    GloballySoundRecordFamily (r :: rs) → LocallySoundRecord r := by
+  intro h
+  exact (globallySoundFamily_cons r rs).mp h |>.1
+
+theorem globallySoundCertificate_head (r : RecordData) (rs : RecordFamily) :
+    GloballySoundCertificate (GlobalCertificate.mk (r :: rs)) → LocallySoundRecord r := by
+  intro h
+  exact (globallySoundCertificate_cons r rs).mp h |>.1
+
+theorem globallySoundCertificate_tail (r : RecordData) (rs : RecordFamily) :
+    GloballySoundCertificate (GlobalCertificate.mk (r :: rs)) →
+      GloballySoundCertificate (GlobalCertificate.mk rs) := by
+  intro h
+  exact (globallySoundCertificate_cons r rs).mp h |>.2
+
+structure SoundnessGlobalPackage where
+  certificate : GlobalCertificate
+  sound : GloballySoundCertificate certificate
+
+@[simp] theorem SoundnessGlobalPackage.certificate_mk
+    (C : GlobalCertificate) (h : GloballySoundCertificate C) :
+    (SoundnessGlobalPackage.mk C h).certificate = C := rfl
+
+@[simp] theorem SoundnessGlobalPackage.sound_mk
+    (C : GlobalCertificate) (h : GloballySoundCertificate C) :
+    (SoundnessGlobalPackage.mk C h).sound = h := rfl
+
+def soundCertificateRecords (X : SoundnessGlobalPackage) : RecordFamily :=
+  certificateRecords X.certificate
+
+@[simp] theorem soundCertificateRecords_def (X : SoundnessGlobalPackage) :
+    soundCertificateRecords X = certificateRecords X.certificate := rfl
+
+theorem soundPackage_mem (X : SoundnessGlobalPackage) :
+    ∀ r, r ∈ soundCertificateRecords X → LocallySoundRecord r := by
+  intro r hr
+  rw [soundCertificateRecords_def] at hr
+  exact globallySoundCertificate_mem X.certificate X.sound r hr
+
+theorem globallySoundFamily_exhaustive (R : RecordFamily) :
+    GloballySoundRecordFamily R ∨ ¬ GloballySoundRecordFamily R := by
+  exact Classical.em _
+
+theorem globallySoundCertificate_exhaustive (C : GlobalCertificate) :
+    GloballySoundCertificate C ∨ ¬ GloballySoundCertificate C := by
+  exact Classical.em _
+
+theorem globallySoundFamily_cons_intro (r : RecordData) (rs : RecordFamily) :
+    LocallySoundRecord r →
+    GloballySoundRecordFamily rs →
+    GloballySoundRecordFamily (r :: rs) := by
+  intro hr hrs
+  exact (globallySoundFamily_cons r rs).mpr ⟨hr, hrs⟩
+
+theorem globallySoundCertificate_cons_intro (r : RecordData) (rs : RecordFamily) :
+    LocallySoundRecord r →
+    GloballySoundCertificate (GlobalCertificate.mk rs) →
+    GloballySoundCertificate (GlobalCertificate.mk (r :: rs)) := by
+  intro hr h
+  exact (globallySoundCertificate_cons r rs).mpr ⟨hr, h⟩
+
+theorem globallySoundCertificate_hasRecord_head (r : RecordData) (rs : RecordFamily) :
+    GloballySoundCertificate (GlobalCertificate.mk (r :: rs)) →
+    LocallySoundRecord r := by
+  intro h
+  exact globallySoundCertificate_mem (GlobalCertificate.mk (r :: rs)) h r
+    (by simp [certificateRecords])
+
+theorem globallySoundCertificate_hasRecord_tail (r s : RecordData) (rs : RecordFamily) :
+    GloballySoundCertificate (GlobalCertificate.mk (r :: rs)) →
+    s ∈ rs →
+    LocallySoundRecord s := by
+  intro h hs
+  exact globallySoundCertificate_mem (GlobalCertificate.mk (r :: rs)) h s
+    (by simp [certificateRecords, hs])
 
 end Certificate
 end CaseC

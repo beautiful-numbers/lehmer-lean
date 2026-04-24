@@ -2,149 +2,127 @@
 /-
 IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
+- Lehmer.Basic.Defs : def
+- Lehmer.CaseC.Spec : def
 -/
 
 import Lehmer.Prelude
+import Lehmer.Basic.Defs
+import Lehmer.CaseC.Spec
 
 namespace Lehmer
 namespace CaseC
 namespace Certificate
 
-/--
-The syntactic kind of a certificate node in the Case C witness layer.
--/
-inductive NodeKind where
-  | terminal
-  | gatepass
-  | split
-  | excluded
-  | residual
-  deriving DecidableEq, Repr
+open Lehmer.Basic
 
-/--
-A minimal guard / prefix descriptor attached to a certificate node.
--/
-abbrev Guard := List ℕ
+inductive LocalClosureKind where
+  | emptiness
+  | exclusion
+  | finiteReduction
+deriving DecidableEq
 
-/--
-A minimal local justification payload.
--/
-abbrev Justification := String
+@[simp] theorem localClosureKind_emptiness_ne_exclusion :
+    LocalClosureKind.emptiness ≠ LocalClosureKind.exclusion := by
+  decide
 
-/--
-A local descent measure attached to a certificate node.
--/
-abbrev Measure := ℕ
+@[simp] theorem localClosureKind_emptiness_ne_finiteReduction :
+    LocalClosureKind.emptiness ≠ LocalClosureKind.finiteReduction := by
+  decide
 
-/--
-A priority label used to order child records.
--/
-abbrev Priority := ℕ
+@[simp] theorem localClosureKind_exclusion_ne_emptiness :
+    LocalClosureKind.exclusion ≠ LocalClosureKind.emptiness := by
+  decide
 
-/--
-The minimal raw format of a certificate node.
--/
-structure NodeFormat where
-  kind : NodeKind
-  guard : Guard
-  priority : Priority
-  children : List ℕ
-  justification : Justification
-  measure : Measure
-  deriving Repr
+@[simp] theorem localClosureKind_exclusion_ne_finiteReduction :
+    LocalClosureKind.exclusion ≠ LocalClosureKind.finiteReduction := by
+  decide
 
-/-- Accessor-style alias for the node kind. -/
-abbrev nodeKind (N : NodeFormat) : NodeKind := N.kind
+@[simp] theorem localClosureKind_finiteReduction_ne_emptiness :
+    LocalClosureKind.finiteReduction ≠ LocalClosureKind.emptiness := by
+  decide
 
-/-- Accessor-style alias for the node guard. -/
-abbrev nodeGuard (N : NodeFormat) : Guard := N.guard
+@[simp] theorem localClosureKind_finiteReduction_ne_exclusion :
+    LocalClosureKind.finiteReduction ≠ LocalClosureKind.exclusion := by
+  decide
 
-/-- Accessor-style alias for the node priority. -/
-abbrev nodePriority (N : NodeFormat) : Priority := N.priority
+abbrev ChildPrefixes := List Prefix
 
-/-- Accessor-style alias for the node children. -/
-abbrev nodeChildren (N : NodeFormat) : List ℕ := N.children
+structure LocalClosure where
+  kind : LocalClosureKind
+  children : ChildPrefixes
 
-/-- Accessor-style alias for the node justification. -/
-abbrev nodeJustification (N : NodeFormat) : Justification := N.justification
+@[simp] theorem localClosure_kind_mk (k : LocalClosureKind) (cs : ChildPrefixes) :
+    (LocalClosure.mk k cs).kind = k := rfl
 
-/-- Accessor-style alias for the node measure. -/
-abbrev nodeMeasure (N : NodeFormat) : Measure := N.measure
+@[simp] theorem localClosure_children_mk (k : LocalClosureKind) (cs : ChildPrefixes) :
+    (LocalClosure.mk k cs).children = cs := rfl
 
-@[simp] theorem nodeKind_def (N : NodeFormat) :
-    nodeKind N = N.kind := rfl
+def isEmptinessClosure (c : LocalClosure) : Prop :=
+  c.kind = LocalClosureKind.emptiness
 
-@[simp] theorem nodeGuard_def (N : NodeFormat) :
-    nodeGuard N = N.guard := rfl
+def isExclusionClosure (c : LocalClosure) : Prop :=
+  c.kind = LocalClosureKind.exclusion
 
-@[simp] theorem nodePriority_def (N : NodeFormat) :
-    nodePriority N = N.priority := rfl
+def isFiniteReductionClosure (c : LocalClosure) : Prop :=
+  c.kind = LocalClosureKind.finiteReduction
 
-@[simp] theorem nodeChildren_def (N : NodeFormat) :
-    nodeChildren N = N.children := rfl
+@[simp] theorem isEmptinessClosure_def (c : LocalClosure) :
+    isEmptinessClosure c = (c.kind = LocalClosureKind.emptiness) := rfl
 
-@[simp] theorem nodeJustification_def (N : NodeFormat) :
-    nodeJustification N = N.justification := rfl
+@[simp] theorem isExclusionClosure_def (c : LocalClosure) :
+    isExclusionClosure c = (c.kind = LocalClosureKind.exclusion) := rfl
 
-@[simp] theorem nodeMeasure_def (N : NodeFormat) :
-    nodeMeasure N = N.measure := rfl
+@[simp] theorem isFiniteReductionClosure_def (c : LocalClosure) :
+    isFiniteReductionClosure c = (c.kind = LocalClosureKind.finiteReduction) := rfl
 
-/--
-Terminal nodes have no children in the intended certificate format.
--/
-def IsTerminalShape (N : NodeFormat) : Prop :=
-  N.kind = NodeKind.terminal → N.children = []
+structure RecordData where
+  pref : Prefix
+  closure : LocalClosure
 
-/--
-Split nodes are intended to branch.
--/
-def IsSplitShape (N : NodeFormat) : Prop :=
-  N.kind = NodeKind.split → N.children ≠ []
+@[simp] theorem recordData_mk_pref (p : Prefix) (c : LocalClosure) :
+    (RecordData.mk p c).pref = p := rfl
 
-/--
-A raw-format node is locally well-formed if its coarse syntactic shape agrees
-with its kind.
--/
-def WellFormedFormat (N : NodeFormat) : Prop :=
-  IsTerminalShape N ∧ IsSplitShape N
+@[simp] theorem recordData_mk_closure (p : Prefix) (c : LocalClosure) :
+    (RecordData.mk p c).closure = c := rfl
 
-@[simp] theorem IsTerminalShape_def (N : NodeFormat) :
-    IsTerminalShape N = (N.kind = NodeKind.terminal → N.children = []) := rfl
+def recordChildren (r : RecordData) : ChildPrefixes :=
+  r.closure.children
 
-@[simp] theorem IsSplitShape_def (N : NodeFormat) :
-    IsSplitShape N = (N.kind = NodeKind.split → N.children ≠ []) := rfl
+@[simp] theorem recordChildren_def (r : RecordData) :
+    recordChildren r = r.closure.children := rfl
 
-@[simp] theorem WellFormedFormat_def (N : NodeFormat) :
-    WellFormedFormat N = (IsTerminalShape N ∧ IsSplitShape N) := rfl
+def recordKind (r : RecordData) : LocalClosureKind :=
+  r.closure.kind
 
-/--
-A terminal node with empty children is well-formed at the format level.
--/
-theorem wellFormed_terminal
-    (g : Guard) (p : Priority) (j : Justification) (m : Measure) :
-    WellFormedFormat
-      { kind := NodeKind.terminal
-        guard := g
-        priority := p
-        children := []
-        justification := j
-        measure := m } := by
-  constructor
-  · intro _
-    rfl
-  · intro h
-    cases h
+@[simp] theorem recordKind_def (r : RecordData) :
+    recordKind r = r.closure.kind := rfl
 
-/--
-A split node with at least one child satisfies the split-shape condition.
--/
-theorem splitShape_of_children_nonempty
-    (N : NodeFormat)
-    (_hkind : N.kind = NodeKind.split)
-    (hchildren : N.children ≠ []) :
-    IsSplitShape N := by
-  intro _
-  exact hchildren
+def recordCylinder (r : RecordData) : Set Support :=
+  Cylinder r.pref
+
+@[simp] theorem recordCylinder_def (r : RecordData) :
+    recordCylinder r = Cylinder r.pref := rfl
+
+abbrev RecordFamily := List RecordData
+
+structure GlobalCertificate where
+  records : RecordFamily
+
+@[simp] theorem globalCertificate_mk_records (rs : RecordFamily) :
+    (GlobalCertificate.mk rs).records = rs := rfl
+
+def certificateRecords (C : GlobalCertificate) : RecordFamily :=
+  C.records
+
+@[simp] theorem certificateRecords_def (C : GlobalCertificate) :
+    certificateRecords C = C.records := rfl
+
+def certificatePrefixes (C : GlobalCertificate) : List Prefix :=
+  C.records.map (fun r => r.pref)
+
+@[simp] theorem certificatePrefixes_def (C : GlobalCertificate) :
+    certificatePrefixes C = C.records.map (fun r => r.pref) := rfl
 
 end Certificate
 end CaseC
