@@ -7,6 +7,8 @@ IMPORT CLASSIFICATION
 - Lehmer.CaseC.GapClosure.SupportProfiles : def thm
 - Lehmer.CaseC.GapClosure.Rigidity : def thm
 - Lehmer.CaseC.GapClosure.NonIntegrality : def thm
+- Lehmer.CaseC.GapClosure.DeltaStar : def thm
+- Lehmer.CaseC.GapClosure.Omegahat : def thm
 -/
 
 import Lehmer.Prelude
@@ -15,6 +17,8 @@ import Lehmer.CaseC.Spec
 import Lehmer.CaseC.GapClosure.SupportProfiles
 import Lehmer.CaseC.GapClosure.Rigidity
 import Lehmer.CaseC.GapClosure.NonIntegrality
+import Lehmer.CaseC.GapClosure.DeltaStar
+import Lehmer.CaseC.GapClosure.Omegahat
 
 namespace Lehmer
 namespace CaseC
@@ -22,262 +26,496 @@ namespace GapClosure
 
 open Lehmer.Basic
 
-structure KmaxData (P : Params) (D : ClosureData P) where
-  value : ℕ
-  positive : 0 < value
-
-@[simp] theorem KmaxData.value_mk
-    (P : Params) (D : ClosureData P) (v : ℕ) (hv : 0 < v) :
-    (KmaxData.mk v hv : KmaxData P D).value = v := rfl
-
-@[simp] theorem KmaxData.positive_mk
-    (P : Params) (D : ClosureData P) (v : ℕ) (hv : 0 < v) :
-    (KmaxData.mk v hv : KmaxData P D).positive = hv := rfl
-
-def kmaxValue (P : Params) (D : ClosureData P) (K : KmaxData P D) : ℕ :=
-  K.value
-
-@[simp] theorem kmaxValue_def
-    (P : Params) (D : ClosureData P) (K : KmaxData P D) :
-    kmaxValue P D K = K.value := rfl
-
-theorem kmaxValue_pos
-    (P : Params) (D : ClosureData P) (K : KmaxData P D) :
-    0 < kmaxValue P D K := by
-  exact K.positive
-
-structure PositiveGapData (P : Params) (D : ClosureData P) where
-  familyPackage : NonIntegralityFamilyPackage P D
-  gapValue : ℕ
-  positive : 0 < gapValue
-
-@[simp] theorem PositiveGapData.familyPackage_mk
+structure PositiveGapData
     (P : Params) (D : ClosureData P)
-    (F : NonIntegralityFamilyPackage P D) (g : ℕ) (hg : 0 < g) :
-    (PositiveGapData.mk F g hg).familyPackage = F := rfl
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F) where
+  delta : DeltaStarData P D F hF
 
-@[simp] theorem PositiveGapData.gapValue_mk
+def positiveGapValue
     (P : Params) (D : ClosureData P)
-    (F : NonIntegralityFamilyPackage P D) (g : ℕ) (hg : 0 < g) :
-    (PositiveGapData.mk F g hg).gapValue = g := rfl
-
-@[simp] theorem PositiveGapData.positive_mk
-    (P : Params) (D : ClosureData P)
-    (F : NonIntegralityFamilyPackage P D) (g : ℕ) (hg : 0 < g) :
-    (PositiveGapData.mk F g hg).positive = hg := rfl
-
-def positiveGapValue (P : Params) (D : ClosureData P)
-    (G : PositiveGapData P D) : ℕ :=
-  G.gapValue
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF) : ℚ :=
+  deltaStarValue P D F hF G.delta
 
 @[simp] theorem positiveGapValue_def
-    (P : Params) (D : ClosureData P) (G : PositiveGapData P D) :
-    positiveGapValue P D G = G.gapValue := rfl
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF) :
+    positiveGapValue P D F hF G =
+      deltaStarValue P D F hF G.delta := rfl
 
 theorem positiveGapValue_pos
-    (P : Params) (D : ClosureData P) (G : PositiveGapData P D) :
-    0 < positiveGapValue P D G := by
-  exact G.positive
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF) :
+    0 < positiveGapValue P D F hF G := by
+  exact deltaStar_positive P D F hF G.delta
 
-def positiveGapFamily (P : Params) (D : ClosureData P)
-    (G : PositiveGapData P D) : SupportProfileFamily :=
-  G.familyPackage.family
+theorem positiveGap_le_member_gap
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (R : SupportProfile)
+    (hR : R ∈ F) :
+    positiveGapValue P D F hF G ≤
+      profileRigidityGapValue P D R (hF R hR) := by
+  exact deltaStar_le_profile_gap P D F hF G.delta R hR
 
-@[simp] theorem positiveGapFamily_def
-    (P : Params) (D : ClosureData P) (G : PositiveGapData P D) :
-    positiveGapFamily P D G = G.familyPackage.family := rfl
-
-theorem positiveGapFamily_mem_hasWitness
-    (P : Params) (D : ClosureData P) (G : PositiveGapData P D) :
-    ∀ R, R ∈ positiveGapFamily P D G → hasNonIntegralityWitness P D R := by
-  intro R hR
-  exact NonIntegralityFamilyPackage.mem_hasWitness (P := P) (D := D) G.familyPackage R hR
-
-theorem positiveGapFamily_mem_rigid
-    (P : Params) (D : ClosureData P) (G : PositiveGapData P D) :
-    ∀ R, R ∈ positiveGapFamily P D G → RigidProfile P D R := by
-  intro R hR
-  exact NonIntegralityFamilyPackage.mem_rigid (P := P) (D := D) G.familyPackage R hR
-
-theorem positiveGapFamily_mem_measure_pos
-    (P : Params) (D : ClosureData P) (G : PositiveGapData P D) :
-    ∀ R, R ∈ positiveGapFamily P D G → ∃ m : ℕ, 0 < m := by
-  intro R hR
-  exact NonIntegralityFamilyPackage.mem_measure_pos (P := P) (D := D) G.familyPackage R hR
-
-structure ClosureCapCandidate (P : Params) (D : ClosureData P) where
+structure ClosureCapCandidate
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF) where
   value : ℕ
   positive : 0 < value
+  atLeastClosureCap : cap P D ≤ value
+  atLeastClosureN : D.N ≤ value
+  kmaxControlled :
+    kmaxValue P D F hF K ≤
+      (value : ℚ) * positiveGapValue P D F hF G
 
-@[simp] theorem ClosureCapCandidate.value_mk
-    (P : Params) (D : ClosureData P) (v : ℕ) (hv : 0 < v) :
-    (ClosureCapCandidate.mk v hv : ClosureCapCandidate P D).value = v := rfl
-
-@[simp] theorem ClosureCapCandidate.positive_mk
-    (P : Params) (D : ClosureData P) (v : ℕ) (hv : 0 < v) :
-    (ClosureCapCandidate.mk v hv : ClosureCapCandidate P D).positive = hv := rfl
-
-def closureCapCandidateValue (P : Params) (D : ClosureData P)
-    (C : ClosureCapCandidate P D) : ℕ :=
+def closureCapCandidateValue
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) : ℕ :=
   C.value
 
 @[simp] theorem closureCapCandidateValue_def
-    (P : Params) (D : ClosureData P) (C : ClosureCapCandidate P D) :
-    closureCapCandidateValue P D C = C.value := rfl
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) :
+    closureCapCandidateValue P D F hF G K C = C.value := rfl
 
-theorem closureCapCandidateValue_pos
-    (P : Params) (D : ClosureData P) (C : ClosureCapCandidate P D) :
-    0 < closureCapCandidateValue P D C := by
+theorem closureCapCandidate_pos
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) :
+    0 < closureCapCandidateValue P D F hF G K C := by
   exact C.positive
 
-structure KmaxGapPackage (P : Params) (D : ClosureData P) where
-  gap : PositiveGapData P D
-  kmax : KmaxData P D
-  closureCap : ClosureCapCandidate P D
-
-@[simp] theorem KmaxGapPackage.gap_mk
+theorem closureCapCandidate_atLeastCap
     (P : Params) (D : ClosureData P)
-    (G : PositiveGapData P D) (K : KmaxData P D) (C : ClosureCapCandidate P D) :
-    (KmaxGapPackage.mk G K C).gap = G := rfl
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) :
+    cap P D ≤ closureCapCandidateValue P D F hF G K C := by
+  exact C.atLeastClosureCap
 
-@[simp] theorem KmaxGapPackage.kmax_mk
+theorem closureCapCandidate_atLeastClosureN
     (P : Params) (D : ClosureData P)
-    (G : PositiveGapData P D) (K : KmaxData P D) (C : ClosureCapCandidate P D) :
-    (KmaxGapPackage.mk G K C).kmax = K := rfl
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) :
+    D.N ≤ closureCapCandidateValue P D F hF G K C := by
+  exact C.atLeastClosureN
 
-@[simp] theorem KmaxGapPackage.closureCap_mk
+theorem closureCapCandidate_kmaxControlled
     (P : Params) (D : ClosureData P)
-    (G : PositiveGapData P D) (K : KmaxData P D) (C : ClosureCapCandidate P D) :
-    (KmaxGapPackage.mk G K C).closureCap = C := rfl
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) :
+    kmaxValue P D F hF K ≤
+      (closureCapCandidateValue P D F hF G K C : ℚ) *
+        positiveGapValue P D F hF G := by
+  exact C.kmaxControlled
 
-def kmaxGapFamily (P : Params) (D : ClosureData P)
+structure KmaxGapPackage
+    (P : Params) (D : ClosureData P) where
+  family : SupportProfileFamily
+  rigid : RigidProfileFamily P D family
+  nonIntegrality : NonIntegralityWitnessFamily P D family
+  gap : PositiveGapData P D family rigid
+  kmax : KmaxData P D family rigid
+  closureCap : ClosureCapCandidate P D family rigid gap kmax
+
+def KmaxGapPackage.nonIntegralityFamilyPackage
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    NonIntegralityFamilyPackage P D :=
+  { family := X.family
+    witnesses := X.nonIntegrality }
+
+def kmaxGapFamily
+    (P : Params) (D : ClosureData P)
     (X : KmaxGapPackage P D) : SupportProfileFamily :=
-  positiveGapFamily P D X.gap
+  X.family
 
 @[simp] theorem kmaxGapFamily_def
-    (P : Params) (D : ClosureData P) (X : KmaxGapPackage P D) :
-    kmaxGapFamily P D X = positiveGapFamily P D X.gap := rfl
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    kmaxGapFamily P D X = X.family := rfl
 
-def kmaxGapValue (P : Params) (D : ClosureData P)
-    (X : KmaxGapPackage P D) : ℕ :=
-  positiveGapValue P D X.gap
+def kmaxGapRigid
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    RigidProfileFamily P D (kmaxGapFamily P D X) :=
+  X.rigid
 
-@[simp] theorem kmaxGapValue_def
-    (P : Params) (D : ClosureData P) (X : KmaxGapPackage P D) :
-    kmaxGapValue P D X = positiveGapValue P D X.gap := rfl
+@[simp] theorem kmaxGapRigid_def
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    kmaxGapRigid P D X = X.rigid := rfl
 
-def kmaxGapKmaxValue (P : Params) (D : ClosureData P)
-    (X : KmaxGapPackage P D) : ℕ :=
-  kmaxValue P D X.kmax
+def kmaxGapPositiveValue
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) : ℚ :=
+  positiveGapValue P D X.family X.rigid X.gap
+
+@[simp] theorem kmaxGapPositiveValue_def
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    kmaxGapPositiveValue P D X =
+      positiveGapValue P D X.family X.rigid X.gap := rfl
+
+def kmaxGapKmaxValue
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) : ℚ :=
+  kmaxValue P D X.family X.rigid X.kmax
 
 @[simp] theorem kmaxGapKmaxValue_def
-    (P : Params) (D : ClosureData P) (X : KmaxGapPackage P D) :
-    kmaxGapKmaxValue P D X = kmaxValue P D X.kmax := rfl
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    kmaxGapKmaxValue P D X =
+      kmaxValue P D X.family X.rigid X.kmax := rfl
 
-def kmaxGapClosureCapValue (P : Params) (D : ClosureData P)
+def kmaxGapClosureCapValue
+    (P : Params) (D : ClosureData P)
     (X : KmaxGapPackage P D) : ℕ :=
-  closureCapCandidateValue P D X.closureCap
+  closureCapCandidateValue P D X.family X.rigid X.gap X.kmax X.closureCap
 
 @[simp] theorem kmaxGapClosureCapValue_def
-    (P : Params) (D : ClosureData P) (X : KmaxGapPackage P D) :
-    kmaxGapClosureCapValue P D X = closureCapCandidateValue P D X.closureCap := rfl
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    kmaxGapClosureCapValue P D X =
+      closureCapCandidateValue P D X.family X.rigid X.gap X.kmax X.closureCap := rfl
 
-theorem kmaxGapValue_pos
-    (P : Params) (D : ClosureData P) (X : KmaxGapPackage P D) :
-    0 < kmaxGapValue P D X := by
-  exact X.gap.positive
+theorem kmaxGap_delta_positive
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    0 < kmaxGapPositiveValue P D X := by
+  exact positiveGapValue_pos P D X.family X.rigid X.gap
 
-theorem kmaxGapKmaxValue_pos
-    (P : Params) (D : ClosureData P) (X : KmaxGapPackage P D) :
+theorem kmaxGap_kmax_positive
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
     0 < kmaxGapKmaxValue P D X := by
-  exact X.kmax.positive
+  exact kmax_positive P D X.family X.rigid X.kmax
 
-theorem kmaxGapClosureCapValue_pos
-    (P : Params) (D : ClosureData P) (X : KmaxGapPackage P D) :
+theorem kmaxGap_closureCap_positive
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
     0 < kmaxGapClosureCapValue P D X := by
-  exact X.closureCap.positive
+  exact closureCapCandidate_pos P D X.family X.rigid X.gap X.kmax X.closureCap
 
-theorem kmaxGapFamily_mem_hasWitness
-    (P : Params) (D : ClosureData P) (X : KmaxGapPackage P D) :
-    ∀ R, R ∈ kmaxGapFamily P D X → hasNonIntegralityWitness P D R := by
-  intro R hR
-  exact positiveGapFamily_mem_hasWitness P D X.gap R hR
+theorem kmaxGap_closureCap_atLeastCap
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    cap P D ≤ kmaxGapClosureCapValue P D X := by
+  exact closureCapCandidate_atLeastCap P D X.family X.rigid X.gap X.kmax X.closureCap
 
-theorem kmaxGapFamily_mem_rigid
-    (P : Params) (D : ClosureData P) (X : KmaxGapPackage P D) :
+theorem kmaxGap_closureCap_atLeastClosureN
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    D.N ≤ kmaxGapClosureCapValue P D X := by
+  exact closureCapCandidate_atLeastClosureN P D X.family X.rigid X.gap X.kmax X.closureCap
+
+theorem kmaxGap_kmaxControlled
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    kmaxGapKmaxValue P D X ≤
+      (kmaxGapClosureCapValue P D X : ℚ) *
+        kmaxGapPositiveValue P D X := by
+  exact closureCapCandidate_kmaxControlled P D X.family X.rigid X.gap X.kmax X.closureCap
+
+def kmaxGapFamily_mem_rigid
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
     ∀ R, R ∈ kmaxGapFamily P D X → RigidProfile P D R := by
   intro R hR
-  exact positiveGapFamily_mem_rigid P D X.gap R hR
+  exact X.rigid R hR
 
-theorem kmaxGapFamily_mem_measure_pos
-    (P : Params) (D : ClosureData P) (X : KmaxGapPackage P D) :
-    ∀ R, R ∈ kmaxGapFamily P D X → ∃ m : ℕ, 0 < m := by
+theorem kmaxGapFamily_mem_preAdmissible
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    ∀ R, R ∈ kmaxGapFamily P D X →
+      Certificate.PreCaseCAdmissibleSupport P D (profileSupport R) := by
   intro R hR
-  exact positiveGapFamily_mem_measure_pos P D X.gap R hR
+  exact RigidProfile.preAdmissible P D R (X.rigid R hR)
 
-def KmaxGapReady (P : Params) (D : ClosureData P)
+theorem kmaxGapFamily_mem_admissibleAtLevel
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    ∀ R, R ∈ kmaxGapFamily P D X →
+      Certificate.AdmissibleSupportAtLevel (level P) (profileSupport R) := by
+  intro R hR
+  exact RigidProfile.admissibleAtLevel P D R (X.rigid R hR)
+
+theorem kmaxGapFamily_mem_locksB
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    ∀ R, R ∈ kmaxGapFamily P D X →
+      Certificate.LocksB (level P) (profileSupport R) := by
+  intro R hR
+  exact RigidProfile.locksB P D R (X.rigid R hR)
+
+theorem kmaxGapFamily_mem_hasWitness
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    ∀ R, R ∈ kmaxGapFamily P D X →
+      hasNonIntegralityWitness P D R := by
+  intro R hR
+  exact ⟨X.nonIntegrality R hR⟩
+
+theorem kmaxGapFamily_mem_nonIntegral
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    ∀ R, R ∈ kmaxGapFamily P D X →
+      Certificate.supportNonIntegral (profileSupport R) := by
+  intro R hR
+  exact (X.nonIntegrality R hR).nonIntegral
+
+theorem kmaxGapFamily_mem_index_le_kmax
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    ∀ R, R ∈ kmaxGapFamily P D X →
+      profileSupportIndex R ≤ kmaxGapKmaxValue P D X := by
+  intro R hR
+  exact profileIndex_le_kmax P D X.family X.rigid X.kmax R hR
+
+theorem kmaxGapFamily_mem_delta_le_gap
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    ∀ R, ∀ hR : R ∈ kmaxGapFamily P D X,
+      kmaxGapPositiveValue P D X ≤
+        profileRigidityGapValue P D R
+          ((kmaxGapFamily_mem_rigid P D X) R hR) := by
+  intro R hR
+  exact positiveGap_le_member_gap P D X.family X.rigid X.gap R hR
+
+def KmaxGapReady
+    (P : Params) (D : ClosureData P)
     (X : KmaxGapPackage P D) : Prop :=
-  0 < kmaxGapValue P D X ∧
+  0 < kmaxGapPositiveValue P D X ∧
   0 < kmaxGapKmaxValue P D X ∧
-  0 < kmaxGapClosureCapValue P D X
+  0 < kmaxGapClosureCapValue P D X ∧
+  cap P D ≤ kmaxGapClosureCapValue P D X ∧
+  D.N ≤ kmaxGapClosureCapValue P D X ∧
+  kmaxGapKmaxValue P D X ≤
+    (kmaxGapClosureCapValue P D X : ℚ) *
+      kmaxGapPositiveValue P D X
 
 @[simp] theorem KmaxGapReady_def
-    (P : Params) (D : ClosureData P) (X : KmaxGapPackage P D) :
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
     KmaxGapReady P D X =
-      (0 < kmaxGapValue P D X ∧
-       0 < kmaxGapKmaxValue P D X ∧
-       0 < kmaxGapClosureCapValue P D X) := rfl
+      (0 < kmaxGapPositiveValue P D X ∧
+      0 < kmaxGapKmaxValue P D X ∧
+      0 < kmaxGapClosureCapValue P D X ∧
+      cap P D ≤ kmaxGapClosureCapValue P D X ∧
+      D.N ≤ kmaxGapClosureCapValue P D X ∧
+      kmaxGapKmaxValue P D X ≤
+        (kmaxGapClosureCapValue P D X : ℚ) *
+          kmaxGapPositiveValue P D X) := rfl
 
 theorem kmaxGapReady
-    (P : Params) (D : ClosureData P) (X : KmaxGapPackage P D) :
-    KmaxGapReady P D X := by
-  exact ⟨kmaxGapValue_pos P D X, kmaxGapKmaxValue_pos P D X, kmaxGapClosureCapValue_pos P D X⟩
-
-def mkKmaxData (P : Params) (D : ClosureData P)
-    (v : ℕ) (hv : 0 < v) : KmaxData P D :=
-  KmaxData.mk v hv
-
-@[simp] theorem mkKmaxData_value
-    (P : Params) (D : ClosureData P) (v : ℕ) (hv : 0 < v) :
-    (mkKmaxData P D v hv).value = v := rfl
-
-def mkPositiveGapData (P : Params) (D : ClosureData P)
-    (F : NonIntegralityFamilyPackage P D) (g : ℕ) (hg : 0 < g) :
-    PositiveGapData P D :=
-  PositiveGapData.mk F g hg
-
-@[simp] theorem mkPositiveGapData_gapValue
     (P : Params) (D : ClosureData P)
-    (F : NonIntegralityFamilyPackage P D) (g : ℕ) (hg : 0 < g) :
-    (mkPositiveGapData P D F g hg).gapValue = g := rfl
+    (X : KmaxGapPackage P D) :
+    KmaxGapReady P D X := by
+  exact ⟨
+    kmaxGap_delta_positive P D X,
+    kmaxGap_kmax_positive P D X,
+    kmaxGap_closureCap_positive P D X,
+    kmaxGap_closureCap_atLeastCap P D X,
+    kmaxGap_closureCap_atLeastClosureN P D X,
+    kmaxGap_kmaxControlled P D X
+  ⟩
 
-def mkClosureCapCandidate (P : Params) (D : ClosureData P)
-    (v : ℕ) (hv : 0 < v) : ClosureCapCandidate P D :=
-  ClosureCapCandidate.mk v hv
+def kmaxGap_member_rigid_readable
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    ∀ R, R ∈ kmaxGapFamily P D X →
+      RigidProfile P D R := by
+  intro R hR
+  exact kmaxGapFamily_mem_rigid P D X R hR
+
+theorem kmaxGap_member_preAdmissible_readable
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    ∀ R, R ∈ kmaxGapFamily P D X →
+      Certificate.PreCaseCAdmissibleSupport P D (profileSupport R) := by
+  intro R hR
+  exact kmaxGapFamily_mem_preAdmissible P D X R hR
+
+theorem kmaxGap_member_admissibleAtLevel_readable
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    ∀ R, R ∈ kmaxGapFamily P D X →
+      Certificate.AdmissibleSupportAtLevel (level P) (profileSupport R) := by
+  intro R hR
+  exact kmaxGapFamily_mem_admissibleAtLevel P D X R hR
+
+theorem kmaxGap_member_locksB_readable
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    ∀ R, R ∈ kmaxGapFamily P D X →
+      Certificate.LocksB (level P) (profileSupport R) := by
+  intro R hR
+  exact kmaxGapFamily_mem_locksB P D X R hR
+
+theorem kmaxGap_member_nonIntegral_readable
+    (P : Params) (D : ClosureData P)
+    (X : KmaxGapPackage P D) :
+    ∀ R, R ∈ kmaxGapFamily P D X →
+      Certificate.supportNonIntegral (profileSupport R) := by
+  intro R hR
+  exact kmaxGapFamily_mem_nonIntegral P D X R hR
+
+def mkPositiveGapData
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (δ : DeltaStarData P D F hF) :
+    PositiveGapData P D F hF :=
+  { delta := δ }
+
+@[simp] theorem mkPositiveGapData_delta
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (δ : DeltaStarData P D F hF) :
+    (mkPositiveGapData P D F hF δ).delta = δ := rfl
+
+def mkClosureCapCandidate
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (v : ℕ)
+    (hv : 0 < v)
+    (hCap : cap P D ≤ v)
+    (hN : D.N ≤ v)
+    (hControl :
+      kmaxValue P D F hF K ≤
+        (v : ℚ) * positiveGapValue P D F hF G) :
+    ClosureCapCandidate P D F hF G K :=
+  { value := v
+    positive := hv
+    atLeastClosureCap := hCap
+    atLeastClosureN := hN
+    kmaxControlled := hControl }
 
 @[simp] theorem mkClosureCapCandidate_value
-    (P : Params) (D : ClosureData P) (v : ℕ) (hv : 0 < v) :
-    (mkClosureCapCandidate P D v hv).value = v := rfl
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (v : ℕ)
+    (hv : 0 < v)
+    (hCap : cap P D ≤ v)
+    (hN : D.N ≤ v)
+    (hControl :
+      kmaxValue P D F hF K ≤
+        (v : ℚ) * positiveGapValue P D F hF G) :
+    (mkClosureCapCandidate P D F hF G K v hv hCap hN hControl).value = v := rfl
 
-def mkKmaxGapPackage (P : Params) (D : ClosureData P)
-    (G : PositiveGapData P D) (K : KmaxData P D) (C : ClosureCapCandidate P D) :
+def mkKmaxGapPackage
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (hNI : NonIntegralityWitnessFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) :
     KmaxGapPackage P D :=
-  KmaxGapPackage.mk G K C
+  { family := F
+    rigid := hF
+    nonIntegrality := hNI
+    gap := G
+    kmax := K
+    closureCap := C }
+
+@[simp] theorem mkKmaxGapPackage_family
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (hNI : NonIntegralityWitnessFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) :
+    (mkKmaxGapPackage P D F hF hNI G K C).family = F := rfl
+
+@[simp] theorem mkKmaxGapPackage_rigid
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (hNI : NonIntegralityWitnessFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) :
+    (mkKmaxGapPackage P D F hF hNI G K C).rigid = hF := rfl
+
+@[simp] theorem mkKmaxGapPackage_nonIntegrality
+    (P : Params) (D : ClosureData P)
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (hNI : NonIntegralityWitnessFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) :
+    (mkKmaxGapPackage P D F hF hNI G K C).nonIntegrality = hNI := rfl
 
 @[simp] theorem mkKmaxGapPackage_gap
     (P : Params) (D : ClosureData P)
-    (G : PositiveGapData P D) (K : KmaxData P D) (C : ClosureCapCandidate P D) :
-    (mkKmaxGapPackage P D G K C).gap = G := rfl
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (hNI : NonIntegralityWitnessFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) :
+    (mkKmaxGapPackage P D F hF hNI G K C).gap = G := rfl
 
 @[simp] theorem mkKmaxGapPackage_kmax
     (P : Params) (D : ClosureData P)
-    (G : PositiveGapData P D) (K : KmaxData P D) (C : ClosureCapCandidate P D) :
-    (mkKmaxGapPackage P D G K C).kmax = K := rfl
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (hNI : NonIntegralityWitnessFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) :
+    (mkKmaxGapPackage P D F hF hNI G K C).kmax = K := rfl
 
 @[simp] theorem mkKmaxGapPackage_closureCap
     (P : Params) (D : ClosureData P)
-    (G : PositiveGapData P D) (K : KmaxData P D) (C : ClosureCapCandidate P D) :
-    (mkKmaxGapPackage P D G K C).closureCap = C := rfl
+    (F : SupportProfileFamily)
+    (hF : RigidProfileFamily P D F)
+    (hNI : NonIntegralityWitnessFamily P D F)
+    (G : PositiveGapData P D F hF)
+    (K : KmaxData P D F hF)
+    (C : ClosureCapCandidate P D F hF G K) :
+    (mkKmaxGapPackage P D F hF hNI G K C).closureCap = C := rfl
 
 end GapClosure
 end CaseC

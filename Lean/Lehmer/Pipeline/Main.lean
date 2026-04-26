@@ -29,21 +29,35 @@ Pipeline-level handledness predicate for the global taxonomy.
 A Lehmer candidate is pipeline-handled if it is taken in charge by one of the
 mathematical branch bridges currently exposed by the pipeline.
 -/
-def PipelineHandled (n : ℕ) : Prop :=
-  CaseAHandled n ∨ CaseBHandled n ∨ IntermediateHandled n ∨ CaseCHandled n
+def PipelineHandled
+    (_BI : IntermediateBridgeData)
+    (_BC : CaseCBridgeData)
+    (n : ℕ) : Prop :=
+  CaseAHandled n ∨
+    CaseBHandled n ∨
+      IntermediateHandled _BI n ∨
+        CaseCHandled n
 
-@[simp] theorem PipelineHandled_def (n : ℕ) :
-    PipelineHandled n =
-      (CaseAHandled n ∨ CaseBHandled n ∨ IntermediateHandled n ∨ CaseCHandled n) := rfl
+@[simp] theorem PipelineHandled_def
+    (BI : IntermediateBridgeData)
+    (BC : CaseCBridgeData)
+    (n : ℕ) :
+    PipelineHandled BI BC n =
+      (CaseAHandled n ∨
+        CaseBHandled n ∨
+          IntermediateHandled BI n ∨
+            CaseCHandled n) := rfl
 
 /--
 If a Lehmer candidate falls in the global Case A branch, then it is handled by
 the pipeline.
 -/
 theorem pipelineHandled_of_caseA
+    (BI : IntermediateBridgeData)
+    (BC : CaseCBridgeData)
     {n : ℕ} (hL : LehmerComposite n)
     (hA : FallsInGlobalBranch n GlobalBranch.caseA) :
-    PipelineHandled n := by
+    PipelineHandled BI BC n := by
   exact Or.inl (caseA_bridge_of_falls hL hA)
 
 /--
@@ -51,9 +65,11 @@ If a Lehmer candidate falls in the global Case B branch, then it is handled by
 the pipeline.
 -/
 theorem pipelineHandled_of_caseB
+    (BI : IntermediateBridgeData)
+    (BC : CaseCBridgeData)
     {n : ℕ} (hL : LehmerComposite n)
     (hB : FallsInGlobalBranch n GlobalBranch.caseB) :
-    PipelineHandled n := by
+    PipelineHandled BI BC n := by
   exact Or.inr (Or.inl (caseB_bridge_of_falls hL hB))
 
 /--
@@ -61,20 +77,24 @@ If a Lehmer candidate falls in the global intermediate branch, then it is
 handled by the pipeline.
 -/
 theorem pipelineHandled_of_intermediate
+    (BI : IntermediateBridgeData)
+    (BC : CaseCBridgeData)
     {n : ℕ} (hL : LehmerComposite n)
     (hI : FallsInGlobalBranch n GlobalBranch.intermediate) :
-    PipelineHandled n := by
-  exact Or.inr (Or.inr (Or.inl (intermediate_bridge_of_falls hL hI)))
+    PipelineHandled BI BC n := by
+  exact Or.inr (Or.inr (Or.inl (intermediate_bridge_of_falls BI hL hI)))
 
 /--
 If a Lehmer candidate falls in the global Case C branch, then it is handled by
-the pipeline.
+the pipeline, provided the Case C reconstruction bridge data is available.
 -/
 theorem pipelineHandled_of_caseC
+    (BI : IntermediateBridgeData)
+    (BC : CaseCBridgeData)
     {n : ℕ} (hL : LehmerComposite n)
     (hC : FallsInGlobalBranch n GlobalBranch.caseC) :
-    PipelineHandled n := by
-  exact Or.inr (Or.inr (Or.inr (caseC_bridge_of_falls hL hC)))
+    PipelineHandled BI BC n := by
+  exact Or.inr (Or.inr (Or.inr (caseC_bridge_of_falls BC hL hC)))
 
 /--
 Local pipeline closure of the mathematical Case A branch.
@@ -93,6 +113,48 @@ theorem pipeline_closes_caseA_of_falls
     (hA : FallsInGlobalBranch n GlobalBranch.caseA) :
     False := by
   exact caseA_bridge_terminal_of_falls hL hA
+
+/--
+Local pipeline closure of the mathematical intermediate branch from bridge data.
+-/
+theorem pipeline_closes_intermediate
+    (BI : IntermediateBridgeData)
+    {n : ℕ} (hL : LehmerComposite n)
+    (hI : InIntermediate n) :
+    False := by
+  exact intermediate_bridge_terminal BI hL hI
+
+/--
+Equivalent local intermediate closure statement using the abstract branch
+relation.
+-/
+theorem pipeline_closes_intermediate_of_falls
+    (BI : IntermediateBridgeData)
+    {n : ℕ} (hL : LehmerComposite n)
+    (hI : FallsInGlobalBranch n GlobalBranch.intermediate) :
+    False := by
+  exact intermediate_bridge_terminal_of_falls BI hL hI
+
+/--
+Local pipeline closure of the mathematical Case C branch from reconstruction
+bridge data.
+-/
+theorem pipeline_closes_caseC
+    (BC : CaseCBridgeData)
+    {n : ℕ} (hL : LehmerComposite n)
+    (hC : InCaseC n) :
+    False := by
+  exact caseC_bridge_terminal BC hL hC
+
+/--
+Equivalent local Case C closure statement using the abstract branch relation.
+-/
+theorem pipeline_closes_caseC_of_falls
+    (BC : CaseCBridgeData)
+    {n : ℕ} (hL : LehmerComposite n)
+    (hC : FallsInGlobalBranch n GlobalBranch.caseC) :
+    False := by
+  exact caseC_bridge_terminal_of_falls BC hL hC
 
 /--
 Assumption-based local closure of the global Case B branch.
@@ -156,37 +218,75 @@ stage.
 To rule out every Lehmer candidate, it is enough to know:
 - the legacy small-pivot range closes;
 - the Case B branch closes under an explicit assumption;
-- the still range-routed intermediate / Case C branches close.
+- the intermediate branch closes through structured bridge data;
+- Case C reconstruction bridge data is available.
 
-Case A itself is already closed locally by `pipeline_closes_caseA`.
+Case A itself is already closed locally by `pipeline_closes_caseA`, the
+intermediate branch is closed locally by `pipeline_closes_intermediate`, and
+Case C is closed locally by `pipeline_closes_caseC`.
 -/
 theorem pipeline_closes_all_cases_by_range_assumptions
+    (BI : IntermediateBridgeData)
+    (BC : CaseCBridgeData)
     (hcloseSmallA : ∀ {n : ℕ}, LehmerComposite n → InSmallPivotRange n → False)
     (hcloseB : ∀ {n : ℕ}, LehmerComposite n → InCaseB n → False)
-    (hcloseI : ∀ {n : ℕ}, LehmerComposite n → InIntermediate n → False)
-    (hcloseC : ∀ {n : ℕ}, LehmerComposite n → InCaseC n → False)
     {n : ℕ} (hL : LehmerComposite n) :
     False := by
   rcases global_range_split_exhaustive hL with hA | hC | hI | hB
   · exact hcloseSmallA hL hA
-  · exact hcloseC hL hC
-  · exact hcloseI hL hI
+  · exact caseC_bridge_terminal BC hL hC
+  · exact intermediate_bridge_terminal BI hL hI
   · exact hcloseB hL hB
 
 /--
 A convenience variant isolating the already-completed mathematical Case A
-closure and the still-assumption-based Case B closure from the remaining
+closure and the bridge-driven intermediate / Case C closures from the remaining
 range-based closure obligations.
 -/
 theorem pipeline_closes_completed_caseA_and_remaining_ranges
+    (BI : IntermediateBridgeData)
+    (BC : CaseCBridgeData)
     (hcloseSmallA : ∀ {n : ℕ}, LehmerComposite n → InSmallPivotRange n → False)
     (hcloseB : ∀ {n : ℕ}, LehmerComposite n → InCaseB n → False)
-    (hcloseI : ∀ {n : ℕ}, LehmerComposite n → InIntermediate n → False)
-    (hcloseC : ∀ {n : ℕ}, LehmerComposite n → InCaseC n → False)
     {n : ℕ} (hL : LehmerComposite n) :
     False := by
   exact pipeline_closes_all_cases_by_range_assumptions
-    hcloseSmallA hcloseB hcloseI hcloseC hL
+    BI BC hcloseSmallA hcloseB hL
+
+/--
+Structured bridge data for the terminal pipeline closure.
+-/
+structure PipelineBridgeData where
+  intermediate : IntermediateBridgeData
+  caseC : CaseCBridgeData
+  closeSmallA :
+    ∀ {n : ℕ}, LehmerComposite n → InSmallPivotRange n → False
+  closeB :
+    ∀ {n : ℕ}, LehmerComposite n → InCaseB n → False
+
+/--
+The pipeline closes all range-taxonomy branches from structured bridge data.
+-/
+theorem pipeline_closes_all_cases_from_bridge_data
+    (BI : IntermediateBridgeData)
+    (BC : CaseCBridgeData)
+    (hcloseSmallA : ∀ {n : ℕ}, LehmerComposite n → InSmallPivotRange n → False)
+    (hcloseB : ∀ {n : ℕ}, LehmerComposite n → InCaseB n → False)
+    {n : ℕ} (hL : LehmerComposite n) :
+    False := by
+  exact pipeline_closes_all_cases_by_range_assumptions
+    BI BC hcloseSmallA hcloseB hL
+
+/--
+Bundled terminal closure of the whole pipeline from `PipelineBridgeData`.
+-/
+theorem pipeline_closes_all_cases
+    (B : PipelineBridgeData)
+    {n : ℕ}
+    (hL : LehmerComposite n) :
+    False := by
+  exact pipeline_closes_all_cases_by_range_assumptions
+    B.intermediate B.caseC B.closeSmallA B.closeB hL
 
 end Pipeline
 end Lehmer

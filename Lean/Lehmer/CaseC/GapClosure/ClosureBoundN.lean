@@ -28,226 +28,539 @@ namespace GapClosure
 
 open Lehmer.Basic
 
-structure ClosureBoundData (P : Params) (D : ClosureData P) where
+structure ClosureBoundData
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapPackage P D) where
   value : ℕ
+  positive : 0 < value
+  atLeastCap : cap P D ≤ value
+  closureDataBelow : D.N ≤ value
 
-@[simp] theorem ClosureBoundData.value_mk (P : Params) (D : ClosureData P) (n : ℕ) :
-    (ClosureBoundData.mk n : ClosureBoundData P D).value = n := rfl
+@[simp] theorem ClosureBoundData.value_mk
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapPackage P D)
+    (value : ℕ)
+    (positive : 0 < value)
+    (atLeastCap : cap P D ≤ value)
+    (closureDataBelow : D.N ≤ value) :
+    (ClosureBoundData.mk value positive atLeastCap closureDataBelow :
+      ClosureBoundData P D X).value = value := rfl
 
-def closureBoundValue (P : Params) (D : ClosureData P) (X : ClosureBoundData P D) : ℕ :=
-  X.value
+def closureBoundValue
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapPackage P D)
+    (N : ClosureBoundData P D X) : ℕ :=
+  N.value
 
-@[simp] theorem closureBoundValue_def (P : Params) (D : ClosureData P) (X : ClosureBoundData P D) :
-    closureBoundValue P D X = X.value := rfl
+@[simp] theorem closureBoundValue_def
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapPackage P D)
+    (N : ClosureBoundData P D X) :
+    closureBoundValue P D X N = N.value := rfl
 
-@[simp] theorem closureBoundValue_mk (P : Params) (D : ClosureData P) (n : ℕ) :
-    closureBoundValue P D (ClosureBoundData.mk n) = n := rfl
+def ClosureBoundAtLeastCap
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapPackage P D)
+    (N : ClosureBoundData P D X) : Prop :=
+  cap P D ≤ closureBoundValue P D X N
 
-def ClosureBoundAtLeastCap (P : Params) (D : ClosureData P) (X : ClosureBoundData P D) : Prop :=
-  cap P D ≤ closureBoundValue P D X
+@[simp] theorem ClosureBoundAtLeastCap_def
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapPackage P D)
+    (N : ClosureBoundData P D X) :
+    ClosureBoundAtLeastCap P D X N =
+      (cap P D ≤ closureBoundValue P D X N) := rfl
 
-@[simp] theorem ClosureBoundAtLeastCap_def (P : Params) (D : ClosureData P) (X : ClosureBoundData P D) :
-    ClosureBoundAtLeastCap P D X = (cap P D ≤ closureBoundValue P D X) := rfl
+theorem closureBound_positive
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapPackage P D)
+    (N : ClosureBoundData P D X) :
+    0 < closureBoundValue P D X N := by
+  exact N.positive
 
-@[simp] theorem ClosureBoundAtLeastCap_mk (P : Params) (D : ClosureData P) (n : ℕ) :
-    ClosureBoundAtLeastCap P D (ClosureBoundData.mk n) = (cap P D ≤ n) := rfl
+theorem closureBound_atLeastCap
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapPackage P D)
+    (N : ClosureBoundData P D X) :
+    ClosureBoundAtLeastCap P D X N := by
+  exact N.atLeastCap
 
-theorem closureBound_eq_of_value_eq (P : Params) (D : ClosureData P)
-    {X Y : ClosureBoundData P D} :
-    closureBoundValue P D X = closureBoundValue P D Y → X = Y := by
-  intro h
-  cases X
-  cases Y
-  simp [closureBoundValue] at h
-  cases h
-  rfl
+theorem closureBound_closureDataBelow
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapPackage P D)
+    (N : ClosureBoundData P D X) :
+    D.N ≤ closureBoundValue P D X N := by
+  exact N.closureDataBelow
 
-@[ext] theorem ClosureBoundData.ext (P : Params) (D : ClosureData P)
-    {X Y : ClosureBoundData P D}
-    (h : closureBoundValue P D X = closureBoundValue P D Y) : X = Y :=
-  closureBound_eq_of_value_eq P D h
-
-theorem closureBoundAtLeastCap_or_not (P : Params) (D : ClosureData P) (X : ClosureBoundData P D) :
-    ClosureBoundAtLeastCap P D X ∨ ¬ ClosureBoundAtLeastCap P D X := by
-  exact Classical.em _
-
-structure BootstrapClosureBoundPackage (P : Params) (D : ClosureData P) where
+structure BootstrapClosureBoundPackage
+    (P : Params) (D : ClosureData P) where
   data : BootstrapPackage P D
-  bound : ClosureBoundData P D
+  bound : ClosureBoundData P D data
 
-@[simp] theorem BootstrapClosureBoundPackage.data_mk (P : Params) (D : ClosureData P)
-    (X : BootstrapPackage P D) (N : ClosureBoundData P D) :
+@[simp] theorem BootstrapClosureBoundPackage.data_mk
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapPackage P D)
+    (N : ClosureBoundData P D X) :
     (BootstrapClosureBoundPackage.mk X N).data = X := rfl
 
-@[simp] theorem BootstrapClosureBoundPackage.bound_mk (P : Params) (D : ClosureData P)
-    (X : BootstrapPackage P D) (N : ClosureBoundData P D) :
+@[simp] theorem BootstrapClosureBoundPackage.bound_mk
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapPackage P D)
+    (N : ClosureBoundData P D X) :
     (BootstrapClosureBoundPackage.mk X N).bound = N := rfl
 
-def bootstrapClosureBoundFamily (P : Params) (D : ClosureData P)
+def bootstrapClosureBoundFamily
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) : SupportProfileFamily :=
   bootstrapFamily P D X.data
 
-@[simp] theorem bootstrapClosureBoundFamily_def (P : Params) (D : ClosureData P)
+@[simp] theorem bootstrapClosureBoundFamily_def
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
-    bootstrapClosureBoundFamily P D X = bootstrapFamily P D X.data := rfl
+    bootstrapClosureBoundFamily P D X =
+      bootstrapFamily P D X.data := rfl
 
-def bootstrapClosureBoundValue (P : Params) (D : ClosureData P)
+def bootstrapClosureBoundValue
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) : ℕ :=
-  closureBoundValue P D X.bound
+  closureBoundValue P D X.data X.bound
 
-@[simp] theorem bootstrapClosureBoundValue_def (P : Params) (D : ClosureData P)
+@[simp] theorem bootstrapClosureBoundValue_def
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
-    bootstrapClosureBoundValue P D X = closureBoundValue P D X.bound := rfl
+    bootstrapClosureBoundValue P D X =
+      closureBoundValue P D X.data X.bound := rfl
 
-def bootstrapClosureBoundDeltaValue (P : Params) (D : ClosureData P)
-    (X : BootstrapClosureBoundPackage P D) : ℕ :=
+def bootstrapClosureBoundDeltaValue
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) : ℚ :=
   bootstrapDeltaValue P D X.data
 
-@[simp] theorem bootstrapClosureBoundDeltaValue_def (P : Params) (D : ClosureData P)
+@[simp] theorem bootstrapClosureBoundDeltaValue_def
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
-    bootstrapClosureBoundDeltaValue P D X = bootstrapDeltaValue P D X.data := rfl
+    bootstrapClosureBoundDeltaValue P D X =
+      bootstrapDeltaValue P D X.data := rfl
 
-def bootstrapClosureBoundOmegahatValue (P : Params) (D : ClosureData P)
+def bootstrapClosureBoundKmaxValue
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) : ℚ :=
+  bootstrapKmaxValue P D X.data
+
+@[simp] theorem bootstrapClosureBoundKmaxValue_def
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    bootstrapClosureBoundKmaxValue P D X =
+      bootstrapKmaxValue P D X.data := rfl
+
+def bootstrapClosureBoundOmegahatValue
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) : ℕ :=
   bootstrapOmegahatValue P D X.data
 
-@[simp] theorem bootstrapClosureBoundOmegahatValue_def (P : Params) (D : ClosureData P)
+@[simp] theorem bootstrapClosureBoundOmegahatValue_def
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
-    bootstrapClosureBoundOmegahatValue P D X = bootstrapOmegahatValue P D X.data := rfl
+    bootstrapClosureBoundOmegahatValue P D X =
+      bootstrapOmegahatValue P D X.data := rfl
 
-def bootstrapClosureBoundHead? (P : Params) (D : ClosureData P)
+def bootstrapClosureBoundHead?
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) : Option SupportProfile :=
   bootstrapHead? P D X.data
 
-@[simp] theorem bootstrapClosureBoundHead?_def (P : Params) (D : ClosureData P)
+@[simp] theorem bootstrapClosureBoundHead?_def
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
-    bootstrapClosureBoundHead? P D X = bootstrapHead? P D X.data := rfl
+    bootstrapClosureBoundHead? P D X =
+      bootstrapHead? P D X.data := rfl
 
-def bootstrapClosureBoundAtLeastCap (P : Params) (D : ClosureData P)
+def bootstrapClosureBoundAtLeastCap
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) : Prop :=
-  ClosureBoundAtLeastCap P D X.bound
+  ClosureBoundAtLeastCap P D X.data X.bound
 
-@[simp] theorem bootstrapClosureBoundAtLeastCap_def (P : Params) (D : ClosureData P)
+@[simp] theorem bootstrapClosureBoundAtLeastCap_def
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
-    bootstrapClosureBoundAtLeastCap P D X = ClosureBoundAtLeastCap P D X.bound := rfl
+    bootstrapClosureBoundAtLeastCap P D X =
+      ClosureBoundAtLeastCap P D X.data X.bound := rfl
 
-theorem BootstrapClosureBoundPackage.bootstrap_holds (P : Params) (D : ClosureData P)
+theorem BootstrapClosureBoundPackage.bootstrap_holds
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
     BootstrapCondition P D X.data.data := by
   exact X.data.bootstrap
 
-theorem BootstrapClosureBoundPackage.member_truncated (P : Params) (D : ClosureData P)
+theorem BootstrapClosureBoundPackage.member_preAdmissible
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
-    ∀ R, R ∈ X.data.data.family → ProfileInTruncatedFamily P D R := by
+    ∀ R, R ∈ X.data.data.family →
+      Certificate.PreCaseCAdmissibleSupport P D (profileSupport R) := by
+  intro R hR
+  exact BootstrapPackage.member_preAdmissible P D X.data R hR
+
+theorem BootstrapClosureBoundPackage.member_admissibleAtLevel
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    ∀ R, R ∈ X.data.data.family →
+      Certificate.AdmissibleSupportAtLevel (level P) (profileSupport R) := by
+  intro R hR
+  exact BootstrapPackage.member_admissibleAtLevel P D X.data R hR
+
+theorem BootstrapClosureBoundPackage.member_locksB
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    ∀ R, R ∈ X.data.data.family →
+      Certificate.LocksB (level P) (profileSupport R) := by
+  intro R hR
+  exact BootstrapPackage.member_locksB P D X.data R hR
+
+theorem BootstrapClosureBoundPackage.member_truncated
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    ∀ R, R ∈ X.data.data.family →
+      ProfileInTruncatedFamily P D R := by
   intro R hR
   exact BootstrapPackage.member_truncated P D X.data R hR
 
-theorem BootstrapClosureBoundPackage.member_rigid (P : Params) (D : ClosureData P)
+def BootstrapClosureBoundPackage.member_rigid
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
-    ∀ R, R ∈ X.data.data.family → RigidProfile P D R := by
+    ∀ R, R ∈ X.data.data.family →
+      RigidProfile P D R := by
   intro R hR
   exact BootstrapPackage.member_rigid P D X.data R hR
 
-theorem BootstrapClosureBoundPackage.omegahat_below_width (P : Params) (D : ClosureData P)
+theorem BootstrapClosureBoundPackage.covers_preAdmissible_support
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D)
+    (S : Support)
+    (hPre : Certificate.PreCaseCAdmissibleSupport P D S) :
+    SupportProfile.mk S ∈ X.data.data.family := by
+  exact BootstrapPackage.covers_preAdmissible_support P D X.data S hPre
+
+theorem BootstrapClosureBoundPackage.covers_candidateProfile_of_preAdmissible
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D)
+    {n : ℕ}
+    (hPre : Certificate.PreCaseCAdmissibleSupport P D (candidateSupport n)) :
+    candidateProfile n ∈ X.data.data.family := by
+  exact BootstrapPackage.covers_candidateProfile_of_preAdmissible P D X.data hPre
+
+theorem BootstrapClosureBoundPackage.delta_positive
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
-    OmegahatBelowWidth P D X.data.data.omegaHat := by
+    0 < bootstrapClosureBoundDeltaValue P D X := by
+  exact BootstrapPackage.delta_positive P D X.data
+
+theorem BootstrapClosureBoundPackage.delta_le_member_gap
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D)
+    (R : SupportProfile)
+    (hR : R ∈ X.data.data.family) :
+    bootstrapClosureBoundDeltaValue P D X ≤
+      profileRigidityGapValue P D R (X.data.data.rigid R hR) := by
+  exact BootstrapPackage.delta_le_member_gap P D X.data R hR
+
+theorem BootstrapClosureBoundPackage.kmax_positive
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    0 < bootstrapClosureBoundKmaxValue P D X := by
+  exact BootstrapPackage.kmax_positive P D X.data
+
+theorem BootstrapClosureBoundPackage.member_index_le_kmax
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D)
+    (R : SupportProfile)
+    (hR : R ∈ X.data.data.family) :
+    profileSupportIndex R ≤ bootstrapClosureBoundKmaxValue P D X := by
+  exact BootstrapPackage.member_index_le_kmax P D X.data R hR
+
+theorem BootstrapClosureBoundPackage.omegahat_below_width
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    bootstrapClosureBoundOmegahatValue P D X < width P := by
   exact BootstrapPackage.omegahat_below_width P D X.data
 
-theorem bootstrapClosureBoundFamily_nil_or_cons (P : Params) (D : ClosureData P)
+theorem BootstrapClosureBoundPackage.omegahat_le_width
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    bootstrapClosureBoundOmegahatValue P D X ≤ width P := by
+  exact BootstrapPackage.omegahat_le_width P D X.data
+
+theorem BootstrapClosureBoundPackage.omegahat_matches_closureData
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D)
+    (hMatch : truncatedGapOmegahatMatchesClosureData P D X.data.data) :
+    D.omegaHat = bootstrapClosureBoundOmegahatValue P D X := by
+  exact BootstrapPackage.omegahat_matches_closureData P D X.data hMatch
+
+theorem BootstrapClosureBoundPackage.member_within_closure_omega
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D)
+    (R : SupportProfile)
+    (hR : R ∈ X.data.data.family)
+    (hMatch : truncatedGapOmegahatMatchesClosureData P D X.data.data) :
+    SupportWithinOmega D.omegaHat (profileSupport R) := by
+  exact BootstrapPackage.member_within_closure_omega P D X.data R hR hMatch
+
+theorem BootstrapClosureBoundPackage.member_card_lt_width
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D)
+    (R : SupportProfile)
+    (hR : R ∈ X.data.data.family) :
+    profileCard R < width P := by
+  exact BootstrapPackage.member_card_lt_width P D X.data R hR
+
+theorem BootstrapClosureBoundPackage.bound_positive
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    0 < bootstrapClosureBoundValue P D X := by
+  exact X.bound.positive
+
+theorem BootstrapClosureBoundPackage.bound_atLeastCap
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    cap P D ≤ bootstrapClosureBoundValue P D X := by
+  exact X.bound.atLeastCap
+
+theorem BootstrapClosureBoundPackage.bound_closureDataBelow
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    D.N ≤ bootstrapClosureBoundValue P D X := by
+  exact X.bound.closureDataBelow
+
+def BootstrapClosureBoundReady
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) : Prop :=
+  0 < bootstrapClosureBoundDeltaValue P D X ∧
+  0 < bootstrapClosureBoundKmaxValue P D X ∧
+  bootstrapClosureBoundOmegahatValue P D X < width P ∧
+  0 < bootstrapClosureBoundValue P D X ∧
+  cap P D ≤ bootstrapClosureBoundValue P D X ∧
+  D.N ≤ bootstrapClosureBoundValue P D X
+
+@[simp] theorem BootstrapClosureBoundReady_def
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    BootstrapClosureBoundReady P D X =
+      (0 < bootstrapClosureBoundDeltaValue P D X ∧
+      0 < bootstrapClosureBoundKmaxValue P D X ∧
+      bootstrapClosureBoundOmegahatValue P D X < width P ∧
+      0 < bootstrapClosureBoundValue P D X ∧
+      cap P D ≤ bootstrapClosureBoundValue P D X ∧
+      D.N ≤ bootstrapClosureBoundValue P D X) := rfl
+
+theorem bootstrapClosureBoundReady
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    BootstrapClosureBoundReady P D X := by
+  exact ⟨
+    BootstrapClosureBoundPackage.delta_positive P D X,
+    BootstrapClosureBoundPackage.kmax_positive P D X,
+    BootstrapClosureBoundPackage.omegahat_below_width P D X,
+    BootstrapClosureBoundPackage.bound_positive P D X,
+    BootstrapClosureBoundPackage.bound_atLeastCap P D X,
+    BootstrapClosureBoundPackage.bound_closureDataBelow P D X
+  ⟩
+
+theorem bootstrapClosureBoundFamily_nil_or_cons
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
     X.data.data.family = [] ∨ ∃ R F, X.data.data.family = R :: F := by
   exact BootstrapPackage.family_nil_or_cons P D X.data
 
-@[simp] theorem bootstrapClosureBoundHead?_nil (P : Params) (D : ClosureData P)
-    (hT : IsTruncatedFamily P D []) (hR : RigidProfileFamily P D [])
-    (δ : DeltaStarData P D) (ω : OmegahatData P D)
-    (hB : BootstrapCondition P D (TruncatedGapPackage.mk [] hT hR δ ω))
-    (_N : ClosureBoundData P D) :
+@[simp] theorem bootstrapClosureBoundHead?_nil
+    (P : Params) (D : ClosureData P)
+    (hEmpty :
+      ∀ S : Support,
+        Certificate.PreCaseCAdmissibleSupport P D S → False)
+    (hR : RigidProfileFamily P D [])
+    (δ : DeltaStarData P D [] hR)
+    (K : KmaxData P D [] hR)
+    (ω : OmegahatData P D [] hR δ K)
+    (hB : BootstrapCondition P D
+      (TruncatedGapPackage.mk []
+        (isTruncatedFamily_nil_of_no_admissible P D hEmpty)
+        hR δ K ω))
+    (N : ClosureBoundData P D
+      (BootstrapPackage.mk
+        (TruncatedGapPackage.mk []
+          (isTruncatedFamily_nil_of_no_admissible P D hEmpty)
+          hR δ K ω)
+        hB)) :
     bootstrapClosureBoundHead? P D
-      (BootstrapClosureBoundPackage.mk (BootstrapPackage.mk (TruncatedGapPackage.mk [] hT hR δ ω) hB) _N) = none := rfl
+      (BootstrapClosureBoundPackage.mk
+        (BootstrapPackage.mk
+          (TruncatedGapPackage.mk []
+            (isTruncatedFamily_nil_of_no_admissible P D hEmpty)
+            hR δ K ω)
+          hB)
+        N) = none := rfl
 
-@[simp] theorem bootstrapClosureBoundHead?_cons (P : Params) (D : ClosureData P)
+@[simp] theorem bootstrapClosureBoundHead?_cons
+    (P : Params) (D : ClosureData P)
     (R : SupportProfile) (F : SupportProfileFamily)
     (hT : IsTruncatedFamily P D (R :: F))
     (hR : RigidProfileFamily P D (R :: F))
-    (δ : DeltaStarData P D) (ω : OmegahatData P D)
-    (hB : BootstrapCondition P D (TruncatedGapPackage.mk (R :: F) hT hR δ ω))
-    (_N : ClosureBoundData P D) :
+    (δ : DeltaStarData P D (R :: F) hR)
+    (K : KmaxData P D (R :: F) hR)
+    (ω : OmegahatData P D (R :: F) hR δ K)
+    (hB : BootstrapCondition P D
+      (TruncatedGapPackage.mk (R :: F) hT hR δ K ω))
+    (N : ClosureBoundData P D
+      (BootstrapPackage.mk
+        (TruncatedGapPackage.mk (R :: F) hT hR δ K ω)
+        hB)) :
     bootstrapClosureBoundHead? P D
-      (BootstrapClosureBoundPackage.mk (BootstrapPackage.mk (TruncatedGapPackage.mk (R :: F) hT hR δ ω) hB) _N) = some R := rfl
+      (BootstrapClosureBoundPackage.mk
+        (BootstrapPackage.mk
+          (TruncatedGapPackage.mk (R :: F) hT hR δ K ω)
+          hB)
+        N) = some R := rfl
 
-theorem BootstrapClosureBoundPackage.head_truncated (P : Params) (D : ClosureData P)
+theorem BootstrapClosureBoundPackage.head_preAdmissible
+    (P : Params) (D : ClosureData P)
     (R : SupportProfile) (F : SupportProfileFamily)
     (hT : IsTruncatedFamily P D (R :: F))
     (hR : RigidProfileFamily P D (R :: F))
-    (δ : DeltaStarData P D) (ω : OmegahatData P D)
-    (hB : BootstrapCondition P D (TruncatedGapPackage.mk (R :: F) hT hR δ ω))
-    (_N : ClosureBoundData P D) :
+    (δ : DeltaStarData P D (R :: F) hR)
+    (K : KmaxData P D (R :: F) hR)
+    (ω : OmegahatData P D (R :: F) hR δ K)
+    (hB : BootstrapCondition P D
+      (TruncatedGapPackage.mk (R :: F) hT hR δ K ω))
+    (_N : ClosureBoundData P D
+      (BootstrapPackage.mk
+        (TruncatedGapPackage.mk (R :: F) hT hR δ K ω)
+        hB)) :
+    Certificate.PreCaseCAdmissibleSupport P D (profileSupport R) := by
+  exact BootstrapPackage.head_preAdmissible P D R F hT hR δ K ω hB
+
+theorem BootstrapClosureBoundPackage.head_truncated
+    (P : Params) (D : ClosureData P)
+    (R : SupportProfile) (F : SupportProfileFamily)
+    (hT : IsTruncatedFamily P D (R :: F))
+    (hR : RigidProfileFamily P D (R :: F))
+    (δ : DeltaStarData P D (R :: F) hR)
+    (K : KmaxData P D (R :: F) hR)
+    (ω : OmegahatData P D (R :: F) hR δ K)
+    (hB : BootstrapCondition P D
+      (TruncatedGapPackage.mk (R :: F) hT hR δ K ω))
+    (_N : ClosureBoundData P D
+      (BootstrapPackage.mk
+        (TruncatedGapPackage.mk (R :: F) hT hR δ K ω)
+        hB)) :
     ProfileInTruncatedFamily P D R := by
-  exact BootstrapPackage.head_truncated P D R F hT hR δ ω hB
+  exact BootstrapPackage.head_truncated P D R F hT hR δ K ω hB
 
-theorem BootstrapClosureBoundPackage.head_rigid (P : Params) (D : ClosureData P)
+def BootstrapClosureBoundPackage.head_rigid
+    (P : Params) (D : ClosureData P)
     (R : SupportProfile) (F : SupportProfileFamily)
     (hT : IsTruncatedFamily P D (R :: F))
     (hR : RigidProfileFamily P D (R :: F))
-    (δ : DeltaStarData P D) (ω : OmegahatData P D)
-    (hB : BootstrapCondition P D (TruncatedGapPackage.mk (R :: F) hT hR δ ω))
-    (_N : ClosureBoundData P D) :
+    (δ : DeltaStarData P D (R :: F) hR)
+    (K : KmaxData P D (R :: F) hR)
+    (ω : OmegahatData P D (R :: F) hR δ K)
+    (hB : BootstrapCondition P D
+      (TruncatedGapPackage.mk (R :: F) hT hR δ K ω))
+    (_N : ClosureBoundData P D
+      (BootstrapPackage.mk
+        (TruncatedGapPackage.mk (R :: F) hT hR δ K ω)
+        hB)) :
     RigidProfile P D R := by
-  exact BootstrapPackage.head_rigid P D R F hT hR δ ω hB
+  exact BootstrapPackage.head_rigid P D R F hT hR δ K ω hB
 
-theorem BootstrapClosureBoundPackage.tail_truncated (P : Params) (D : ClosureData P)
+theorem BootstrapClosureBoundPackage.tail_allInTruncatedFamily
+    (P : Params) (D : ClosureData P)
     (R : SupportProfile) (F : SupportProfileFamily)
     (hT : IsTruncatedFamily P D (R :: F))
     (hR : RigidProfileFamily P D (R :: F))
-    (δ : DeltaStarData P D) (ω : OmegahatData P D)
-    (hB : BootstrapCondition P D (TruncatedGapPackage.mk (R :: F) hT hR δ ω))
-    (_N : ClosureBoundData P D) :
-    IsTruncatedFamily P D F := by
-  exact BootstrapPackage.tail_truncated P D R F hT hR δ ω hB
+    (δ : DeltaStarData P D (R :: F) hR)
+    (K : KmaxData P D (R :: F) hR)
+    (ω : OmegahatData P D (R :: F) hR δ K)
+    (hB : BootstrapCondition P D
+      (TruncatedGapPackage.mk (R :: F) hT hR δ K ω))
+    (_N : ClosureBoundData P D
+      (BootstrapPackage.mk
+        (TruncatedGapPackage.mk (R :: F) hT hR δ K ω)
+        hB)) :
+    FamilyAllInTruncatedFamily P D F := by
+  exact BootstrapPackage.tail_allInTruncatedFamily P D R F hT hR δ K ω hB
 
-theorem BootstrapClosureBoundPackage.tail_rigid (P : Params) (D : ClosureData P)
+theorem BootstrapClosureBoundPackage.tail_soundForCaseC
+    (P : Params) (D : ClosureData P)
     (R : SupportProfile) (F : SupportProfileFamily)
     (hT : IsTruncatedFamily P D (R :: F))
     (hR : RigidProfileFamily P D (R :: F))
-    (δ : DeltaStarData P D) (ω : OmegahatData P D)
-    (hB : BootstrapCondition P D (TruncatedGapPackage.mk (R :: F) hT hR δ ω))
-    (_N : ClosureBoundData P D) :
+    (δ : DeltaStarData P D (R :: F) hR)
+    (K : KmaxData P D (R :: F) hR)
+    (ω : OmegahatData P D (R :: F) hR δ K)
+    (hB : BootstrapCondition P D
+      (TruncatedGapPackage.mk (R :: F) hT hR δ K ω))
+    (_N : ClosureBoundData P D
+      (BootstrapPackage.mk
+        (TruncatedGapPackage.mk (R :: F) hT hR δ K ω)
+        hB)) :
+    FamilySoundForCaseC P D F := by
+  exact BootstrapPackage.tail_soundForCaseC P D R F hT hR δ K ω hB
+
+def BootstrapClosureBoundPackage.tail_rigid
+    (P : Params) (D : ClosureData P)
+    (R : SupportProfile) (F : SupportProfileFamily)
+    (hT : IsTruncatedFamily P D (R :: F))
+    (hR : RigidProfileFamily P D (R :: F))
+    (δ : DeltaStarData P D (R :: F) hR)
+    (K : KmaxData P D (R :: F) hR)
+    (ω : OmegahatData P D (R :: F) hR δ K)
+    (hB : BootstrapCondition P D
+      (TruncatedGapPackage.mk (R :: F) hT hR δ K ω))
+    (_N : ClosureBoundData P D
+      (BootstrapPackage.mk
+        (TruncatedGapPackage.mk (R :: F) hT hR δ K ω)
+        hB)) :
     RigidProfileFamily P D F := by
-  exact BootstrapPackage.tail_rigid P D R F hT hR δ ω hB
+  exact BootstrapPackage.tail_rigid P D R F hT hR δ K ω hB
 
-def closureBoundZero (P : Params) (D : ClosureData P) : ClosureBoundData P D :=
-  ClosureBoundData.mk 0
-
-@[simp] theorem closureBoundZero_value (P : Params) (D : ClosureData P) :
-    closureBoundValue P D (closureBoundZero P D) = 0 := rfl
-
-def closureBoundSucc (P : Params) (D : ClosureData P) (X : ClosureBoundData P D) :
-    ClosureBoundData P D :=
-  ClosureBoundData.mk (Nat.succ (closureBoundValue P D X))
-
-@[simp] theorem closureBoundSucc_value (P : Params) (D : ClosureData P)
-    (X : ClosureBoundData P D) :
-    closureBoundValue P D (closureBoundSucc P D X) = Nat.succ (closureBoundValue P D X) := rfl
-
-theorem bootstrapClosureBoundAtLeastCap_or_not (P : Params) (D : ClosureData P)
+theorem bootstrapClosureBound_member_truncated_readable
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
-    bootstrapClosureBoundAtLeastCap P D X ∨ ¬ bootstrapClosureBoundAtLeastCap P D X := by
-  exact Classical.em _
-
-theorem bootstrapClosureBound_member_truncated_readable (P : Params) (D : ClosureData P)
-    (X : BootstrapClosureBoundPackage P D) :
-    ∀ R, R ∈ bootstrapClosureBoundFamily P D X → ProfileInTruncatedFamily P D R := by
+    ∀ R, R ∈ bootstrapClosureBoundFamily P D X →
+      ProfileInTruncatedFamily P D R := by
   intro R hR
-  rw [bootstrapClosureBoundFamily_def] at hR
-  exact BootstrapPackage.member_truncated P D X.data R hR
+  exact BootstrapClosureBoundPackage.member_truncated P D X R hR
 
-theorem bootstrapClosureBound_member_rigid_readable (P : Params) (D : ClosureData P)
+def bootstrapClosureBound_member_rigid_readable
+    (P : Params) (D : ClosureData P)
     (X : BootstrapClosureBoundPackage P D) :
-    ∀ R, R ∈ bootstrapClosureBoundFamily P D X → RigidProfile P D R := by
+    ∀ R, R ∈ bootstrapClosureBoundFamily P D X →
+      RigidProfile P D R := by
   intro R hR
-  rw [bootstrapClosureBoundFamily_def] at hR
-  exact BootstrapPackage.member_rigid P D X.data R hR
+  exact BootstrapClosureBoundPackage.member_rigid P D X R hR
+
+theorem bootstrapClosureBound_member_preAdmissible_readable
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    ∀ R, R ∈ bootstrapClosureBoundFamily P D X →
+      Certificate.PreCaseCAdmissibleSupport P D (profileSupport R) := by
+  intro R hR
+  exact BootstrapClosureBoundPackage.member_preAdmissible P D X R hR
+
+theorem bootstrapClosureBound_member_admissibleAtLevel_readable
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    ∀ R, R ∈ bootstrapClosureBoundFamily P D X →
+      Certificate.AdmissibleSupportAtLevel (level P) (profileSupport R) := by
+  intro R hR
+  exact BootstrapClosureBoundPackage.member_admissibleAtLevel P D X R hR
+
+theorem bootstrapClosureBound_member_locksB_readable
+    (P : Params) (D : ClosureData P)
+    (X : BootstrapClosureBoundPackage P D) :
+    ∀ R, R ∈ bootstrapClosureBoundFamily P D X →
+      Certificate.LocksB (level P) (profileSupport R) := by
+  intro R hR
+  exact BootstrapClosureBoundPackage.member_locksB P D X R hR
 
 end GapClosure
 end CaseC

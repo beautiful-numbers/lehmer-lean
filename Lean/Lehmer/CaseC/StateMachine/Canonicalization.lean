@@ -179,10 +179,12 @@ def CanonicalResidualView.family (P : Params) (D : ClosureData P) :
     CanonicalResidualView.family P D (.rem U) = ResidualFamily.rem := rfl
 
 def canonicalResidualViewOfState (P : Params) (D : ClosureData P)
-    (U : ResidualState P D) : CanonicalResidualView P D := by
-  rcases residual_state_exhaustive P D U with hDis | hRem
-  · exact .dis (mkDisResidualState P D U hDis)
-  · exact .rem (mkRemResidualState P D U hRem)
+    (U : ResidualState P D) : CanonicalResidualView P D :=
+  match hFam : residualFamily P D U with
+  | ResidualFamily.dis =>
+      CanonicalResidualView.dis (mkDisResidualState P D U hFam)
+  | ResidualFamily.rem =>
+      CanonicalResidualView.rem (mkRemResidualState P D U hFam)
 
 theorem canonicalResidualViewOfState_spec
     (P : Params) (D : ClosureData P) (U : ResidualState P D) :
@@ -193,30 +195,28 @@ theorem canonicalResidualViewOfState_spec
         canonicalResidualViewOfState P D U =
           .rem (mkRemResidualState P D U h)) := by
   unfold canonicalResidualViewOfState
-  rcases residual_state_exhaustive P D U with hDis | hRem
+  split
   · left
-    exact ⟨hDis, rfl⟩
+    exact ⟨by assumption, rfl⟩
   · right
-    exact ⟨hRem, rfl⟩
+    exact ⟨by assumption, rfl⟩
 
 @[simp] theorem canonicalResidualViewOfState_state
     (P : Params) (D : ClosureData P) (U : ResidualState P D) :
     CanonicalResidualView.state P D (canonicalResidualViewOfState P D U) = U := by
-  rcases canonicalResidualViewOfState_spec P D U with hDis | hRem
-  · rcases hDis with ⟨h, rfl⟩
-    rfl
-  · rcases hRem with ⟨h, rfl⟩
-    rfl
+  unfold canonicalResidualViewOfState
+  split <;> rfl
 
 @[simp] theorem canonicalResidualViewOfState_family
     (P : Params) (D : ClosureData P) (U : ResidualState P D) :
     CanonicalResidualView.family P D (canonicalResidualViewOfState P D U) =
       residualFamily P D U := by
-  rcases canonicalResidualViewOfState_spec P D U with hDis | hRem
-  · rcases hDis with ⟨h, hh⟩
-    simp [hh, h]
-  · rcases hRem with ⟨h, hh⟩
-    simp [hh, h]
+  unfold canonicalResidualViewOfState
+  split
+  · rename_i hDis
+    exact hDis.symm
+  · rename_i hRem
+    exact hRem.symm
 
 theorem canonicalResidualView_closed
     (P : Params) (D : ClosureData P) (U : ResidualState P D) :

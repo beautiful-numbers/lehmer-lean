@@ -38,8 +38,12 @@ theorem main_theorem_of_pipeline_closure
     {n : ℕ} :
     LehmerComposite n → False := by
   intro hL
+  let I_bridge : IntermediateBridgeData :=
+    { terminal := fun hL_I hI => hcloseI hL_I hI }
+  let C_bridge : CaseCBridgeData :=
+    { handled := fun hL_C hC => False.elim (hcloseC hL_C hC) }
   exact pipeline_closes_all_cases_by_range_assumptions
-    hcloseSmallA hcloseB hcloseI hcloseC hL
+    I_bridge C_bridge hcloseSmallA hcloseB hL
 
 /--
 Equivalent negated formulation of the final theorem.

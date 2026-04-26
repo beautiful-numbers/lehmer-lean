@@ -4,18 +4,12 @@ IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
 - Lehmer.Basic.Defs : def
 - Lehmer.CaseC.Main : assemble
-- Lehmer.CaseC.GapClosure.Rigidity : def thm
-- Lehmer.CaseC.GapClosure.SupportProfiles : def thm
-- Lehmer.CaseC.GapClosure.NonIntegrality : def thm
 - Lehmer.Pipeline.GlobalSplit : def thm
 -/
 
 import Lehmer.Prelude
 import Lehmer.Basic.Defs
 import Lehmer.CaseC.Main
-import Lehmer.CaseC.GapClosure.Rigidity
-import Lehmer.CaseC.GapClosure.SupportProfiles
-import Lehmer.CaseC.GapClosure.NonIntegrality
 import Lehmer.Pipeline.GlobalSplit
 
 namespace Lehmer
@@ -26,83 +20,126 @@ open Lehmer.Basic
 /--
 Pipeline-level handledness predicate for the global Case C branch.
 
-At the current bridge stage, handledness records that the candidate is routed to
-the global Case C branch. Richer Case C-facing data can be added once the
-corresponding canonical API is exposed by the Case C layer.
+A Case C candidate is handled exactly when the Case C side supplies a complete
+assembled `CaseCMainPackage` for some parameters and closure data.
 -/
-def CaseCHandled (n : ℕ) : Prop :=
-  InCaseC n
+def CaseCHandled (_n : ℕ) : Prop :=
+  ∃ P : CaseC.Params,
+  ∃ D : CaseC.ClosureData P,
+    Nonempty (CaseC.CaseCMainPackage P D)
 
 @[simp] theorem CaseCHandled_def (n : ℕ) :
-    CaseCHandled n = InCaseC n := rfl
+    CaseCHandled n =
+      (∃ P : CaseC.Params,
+        ∃ D : CaseC.ClosureData P,
+          Nonempty (CaseC.CaseCMainPackage P D)) := rfl
 
 /--
-Case C handledness exposes the global Case C branch membership.
+Case C handledness exposes the reconstructed Case C main package.
 -/
-theorem CaseCHandled.in_caseC
+theorem CaseCHandled.exists_main
     {n : ℕ} (h : CaseCHandled n) :
-    InCaseC n := by
+    ∃ P : CaseC.Params,
+    ∃ D : CaseC.ClosureData P,
+      Nonempty (CaseC.CaseCMainPackage P D) := by
   exact h
 
 /--
-Bridge theorem: any candidate classified in the global Case C branch is handled
-by the Case C side of the pipeline.
+Eliminator for handled Case C data.
+-/
+theorem CaseCHandled.elim
+    {n : ℕ}
+    (h : CaseCHandled n)
+    {α : Prop}
+    (k :
+      ∀ P : CaseC.Params,
+      ∀ D : CaseC.ClosureData P,
+        CaseC.CaseCMainPackage P D → α) :
+    α := by
+  rcases h with ⟨P, D, ⟨X⟩⟩
+  exact k P D X
+
+/--
+Pipeline-to-Case-C reconstruction interface.
+
+This is the external paper/data input needed by the pipeline: every Lehmer
+composite routed to global Case C admits a complete Case C main package.
+-/
+structure CaseCBridgeData where
+  handled :
+    ∀ {n : ℕ},
+      LehmerComposite n →
+      InCaseC n →
+      CaseCHandled n
+
+/--
+Bridge theorem: any Lehmer composite classified in the global Case C branch is
+handled by the reconstructed Case C package.
 -/
 theorem caseC_bridge
-    {n : ℕ} (_hL : LehmerComposite n)
+    (B : CaseCBridgeData)
+    {n : ℕ}
+    (hL : LehmerComposite n)
     (hC : InCaseC n) :
     CaseCHandled n := by
-  exact hC
+  exact B.handled hL hC
 
 /--
 Equivalent bridge theorem written using the abstract branch relation from
 `GlobalSplit`.
 -/
 theorem caseC_bridge_of_falls
-    {n : ℕ} (_hL : LehmerComposite n)
+    (B : CaseCBridgeData)
+    {n : ℕ}
+    (hL : LehmerComposite n)
     (hC : FallsInGlobalBranch n GlobalBranch.caseC) :
     CaseCHandled n := by
-  exact hC
+  exact caseC_bridge B hL hC
 
 /--
-Case C handledness implies membership in the declared global Case C branch.
+Terminal Case C bridge: a reconstructed Case C main package closes the branch.
 -/
-theorem caseC_handled_implies_in_caseC
-    {n : ℕ} (h : CaseCHandled n) :
-    InCaseC n := by
-  exact h
-
-/--
-Case C handledness is exactly the current global Case C branch condition.
--/
-theorem caseC_handled_iff_in_caseC
-    {n : ℕ} :
-    CaseCHandled n ↔ InCaseC n := by
-  rfl
-
-/--
-Terminal interface for the Case C branch.
-
-This theorem is the correct shape for the next strengthening step:
-once a terminal closure proof for `CaseCHandled n` is available, it can be
-consumed here to close the global Case C branch.
--/
-theorem caseC_bridge_terminal_of_assumption
-    {n : ℕ} (_hL : LehmerComposite n)
-    (hC : InCaseC n)
-    (hclose : CaseCHandled n → False) :
+theorem caseC_bridge_terminal
+    (B : CaseCBridgeData)
+    {n : ℕ}
+    (hL : LehmerComposite n)
+    (hC : InCaseC n) :
     False := by
-  exact hclose (caseC_bridge _hL hC)
+  have h := caseC_bridge B hL hC
+  rcases h with ⟨P, D, ⟨X⟩⟩
+  exact CaseC.CaseCMainPackage.impossible_pointwise P D X hL hC
 
 /--
-Equivalent terminal interface using the abstract branch relation.
+Terminal Case C bridge using the abstract branch relation from `GlobalSplit`.
 -/
-theorem caseC_bridge_terminal_of_falls_assumption
-    {n : ℕ} (_hL : LehmerComposite n)
-    (hC : FallsInGlobalBranch n GlobalBranch.caseC)
-    (hclose : CaseCHandled n → False) :
+theorem caseC_bridge_terminal_of_falls
+    (B : CaseCBridgeData)
+    {n : ℕ}
+    (hL : LehmerComposite n)
+    (hC : FallsInGlobalBranch n GlobalBranch.caseC) :
     False := by
-  exact hclose (caseC_bridge_of_falls _hL hC)
+  exact caseC_bridge_terminal B hL hC
+
+/--
+Pointwise Case C impossibility obtained from bridge data.
+-/
+theorem caseC_impossible_of_bridge
+    (B : CaseCBridgeData) :
+    ∀ n : ℕ, LehmerComposite n → InCaseC n → False := by
+  intro n hL hC
+  exact caseC_bridge_terminal B hL hC
+
+/--
+A Lehmer composite cannot lie in Case C once bridge reconstruction data is
+available.
+-/
+theorem not_inCaseC_of_LehmerComposite_bridge
+    (B : CaseCBridgeData)
+    {n : ℕ}
+    (hL : LehmerComposite n) :
+    ¬ InCaseC n := by
+  intro hC
+  exact caseC_bridge_terminal B hL hC
 
 end Pipeline
 end Lehmer

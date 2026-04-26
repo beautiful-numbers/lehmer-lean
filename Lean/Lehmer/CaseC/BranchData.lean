@@ -123,85 +123,101 @@ theorem BranchData.ready
     CaseCMainReady X.params X.closure X.main := by
   exact caseCMainReady X.params X.closure X.main
 
-/--
-The bundled Case C main package yields the branch impossibility theorem.
--/
-theorem BranchData.impossible_pointwise
-    (R : CaseCReconstruction) {n m : ℕ} (X : BranchData R n)
-    (hL : LehmerComposite m) (hC : InCaseC m) :
-    False := by
-  exact CaseCMainPackage.impossible_pointwise X.params X.closure X.main hL hC
+def BranchData.gapToClosure
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    GapClosure.GapToClosurePackage X.params X.closure :=
+  caseCMainGapToClosure X.params X.closure X.main
 
-/--
-In particular, every Lehmer composite in Case C is excluded by the bundled main
-package.
--/
-theorem BranchData.not_inCaseC_of_LehmerComposite
-    (R : CaseCReconstruction) {n m : ℕ} (X : BranchData R n)
-    (hL : LehmerComposite m) :
-    ¬ InCaseC m := by
-  intro hC
-  exact X.impossible_pointwise hL hC
+@[simp] theorem BranchData.gapToClosure_def
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    X.gapToClosure = caseCMainGapToClosure X.params X.closure X.main := rfl
+
+def BranchData.gap
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    GapClosure.GapClosurePackage X.params X.closure :=
+  caseCMainGap X.params X.closure X.main
+
+@[simp] theorem BranchData.gap_def
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    X.gap = caseCMainGap X.params X.closure X.main := rfl
+
+def BranchData.residual
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    StateMachine.ResidualClosurePackage X.params X.closure :=
+  caseCMainResidualClosure X.params X.closure X.main
+
+@[simp] theorem BranchData.residual_def
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    X.residual = caseCMainResidualClosure X.params X.closure X.main := rfl
+
+def BranchData.residualTerminalContext
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    StateMachine.ResidualTerminalClosureContext X.params X.closure :=
+  caseCMainResidualTerminalContext X.params X.closure X.main
+
+@[simp] theorem BranchData.residualTerminalContext_def
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    X.residualTerminalContext =
+      caseCMainResidualTerminalContext X.params X.closure X.main := rfl
+
+def BranchData.terminalClosureContext
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    CaseCTerminalClosureContext X.params X.closure :=
+  caseCMainTerminalClosureContext X.params X.closure X.main
+
+@[simp] theorem BranchData.terminalClosureContext_def
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    X.terminalClosureContext =
+      caseCMainTerminalClosureContext X.params X.closure X.main := rfl
+
+def BranchData.candidateAdmissibility
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    CaseCCandidateAdmissibilityPackage X.params X.closure :=
+  caseCMainCandidateAdmissibility X.params X.closure X.main
+
+@[simp] theorem BranchData.candidateAdmissibility_def
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    X.candidateAdmissibility =
+      caseCMainCandidateAdmissibility X.params X.closure X.main := rfl
+
+def BranchData.certificateData
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    CaseCCertificateData X.params X.closure :=
+  caseCMainCertificateData X.params X.closure X.main
+
+@[simp] theorem BranchData.certificateData_def
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    X.certificateData =
+      caseCMainCertificateData X.params X.closure X.main := rfl
 
 /--
 Certificate projection carried by the bundled main package.
 -/
 def BranchData.certificate
     (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
-    Certificate.GlobalCertificate :=
+    Certificate.GlobalCertificate X.params X.closure :=
   caseCMainCertificate X.params X.closure X.main
 
 @[simp] theorem BranchData.certificate_def
     (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
     X.certificate = caseCMainCertificate X.params X.closure X.main := rfl
 
-theorem BranchData.certificate_checked
+def BranchData.verifiedRecords
     (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
-    Certificate.CertificateMainChecked X.certificate := by
-  exact caseCMainCertificate_checked X.params X.closure X.main
+    Certificate.VerifiedCertificateRecords X.params X.closure X.certificate :=
+  caseCMainVerifiedRecords X.params X.closure X.main
 
-theorem BranchData.certificate_sound
+@[simp] theorem BranchData.verifiedRecords_def
     (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
-    Certificate.GloballySoundCertificate X.certificate := by
-  exact caseCMainCertificate_sound X.params X.closure X.main
-
-theorem BranchData.certificate_complete
-    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
-    Certificate.GloballyCompleteCertificate X.certificate := by
-  exact caseCMainCertificate_complete X.params X.closure X.main
-
-theorem BranchData.certificate_coverageReady
-    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
-    Certificate.CoverageReadyCertificate X.certificate := by
-  exact caseCMainCertificate_coverageReady X.params X.closure X.main
-
-theorem BranchData.certificate_mem_sound
-    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
-    ∀ r, Certificate.certificateHasRecord X.certificate r →
-      Certificate.LocallySoundRecord r := by
-  intro r hr
-  exact caseCMainCertificate_mem_sound X.params X.closure X.main r hr
-
-theorem BranchData.certificate_mem_complete
-    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
-    ∀ r, Certificate.certificateHasRecord X.certificate r →
-      Certificate.LocallyCompleteRecord r := by
-  intro r hr
-  exact caseCMainCertificate_mem_complete X.params X.closure X.main r hr
-
-theorem BranchData.certificate_mem_checked
-    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
-    ∀ r, Certificate.certificateHasRecord X.certificate r →
-      Certificate.LocallyCheckedRecord r := by
-  intro r hr
-  exact caseCMainCertificate_mem_checked X.params X.closure X.main r hr
+    X.verifiedRecords =
+      caseCMainVerifiedRecords X.params X.closure X.main := rfl
 
 /--
 Head record projection for downstream audit consumers.
 -/
 def BranchData.certificateHead?
     (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
-    Option Certificate.RecordData :=
+    Option (Certificate.RecordData X.params X.closure) :=
   caseCMainCertificateHead? X.params X.closure X.main
 
 @[simp] theorem BranchData.certificateHead?_def
@@ -234,6 +250,33 @@ theorem BranchData.gapFamily_mem_rigid
   intro S hS
   exact caseCMainGapFamily_mem_rigid X.params X.closure X.main S hS
 
+theorem BranchData.gap_ready
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    GapClosure.GapToClosureReady X.params X.closure X.gapToClosure := by
+  simpa [BranchData.gapToClosure] using
+    caseCMain_gap_ready X.params X.closure X.main
+
+theorem BranchData.omega_lt_width
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    GapClosure.gapClosureOmegahatValue X.params X.closure X.gap <
+      width X.params := by
+  simpa [BranchData.gap] using
+    caseCMain_omega_lt_width X.params X.closure X.main
+
+theorem BranchData.bound_atLeastCap
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    cap X.params X.closure ≤
+      GapClosure.gapClosureBoundValue X.params X.closure X.gap := by
+  simpa [BranchData.gap] using
+    caseCMain_bound_atLeastCap X.params X.closure X.main
+
+theorem BranchData.bound_atLeastClosureN
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    X.closure.N ≤
+      GapClosure.gapClosureBoundValue X.params X.closure X.gap := by
+  simpa [BranchData.gap] using
+    caseCMain_bound_atLeastClosureN X.params X.closure X.main
+
 /--
 Readable projection of the residual closure package carried by the bundled main
 package.
@@ -241,12 +284,70 @@ package.
 def BranchData.residualClosedState
     (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
     StateMachine.ResidualState X.params X.closure :=
-  X.main.residual.state
+  X.residual.state
+
+@[simp] theorem BranchData.residualClosedState_def
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    X.residualClosedState = X.residual.state := rfl
 
 theorem BranchData.residualClosed
     (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
     StateMachine.ResidualClosed X.params X.closure X.residualClosedState := by
-  exact caseCMainResidualClosed X.params X.closure X.main
+  simpa [BranchData.residualClosedState, BranchData.residual] using
+    caseCMainResidualClosed X.params X.closure X.main
+
+def BranchData.terminalData
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    CaseCTerminalData X.params X.closure :=
+  caseCMainTerminalData X.params X.closure X.main
+
+@[simp] theorem BranchData.terminalData_def
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    X.terminalData = caseCMainTerminalData X.params X.closure X.main := rfl
+
+/--
+The bundled Case C main package yields the branch impossibility theorem.
+-/
+theorem BranchData.impossible_pointwise
+    (R : CaseCReconstruction) {n m : ℕ} (X : BranchData R n)
+    (hL : LehmerComposite m) (hC : InCaseC m) :
+    False := by
+  exact CaseCMainPackage.impossible_pointwise
+    X.params X.closure X.main hL hC
+
+/--
+In particular, every Lehmer composite in Case C is excluded by the bundled main
+package.
+-/
+theorem BranchData.not_inCaseC_of_LehmerComposite
+    (R : CaseCReconstruction) {n m : ℕ} (X : BranchData R n)
+    (hL : LehmerComposite m) :
+    ¬ InCaseC m := by
+  intro hC
+  exact X.impossible_pointwise hL hC
+
+def BranchData.caseCImpossible
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    CaseCImpossible :=
+  caseCMain_impossible X.params X.closure X.main
+
+@[simp] theorem BranchData.caseCImpossible_def
+    (R : CaseCReconstruction) {n : ℕ} (X : BranchData R n) :
+    X.caseCImpossible = caseCMain_impossible X.params X.closure X.main := rfl
+
+theorem caseCImpossible_of_reconstruction
+    (R : CaseCReconstruction) :
+    CaseCImpossible := by
+  intro n hL hC
+  let X : BranchData R n := branchDataOf R hC
+  exact BranchData.impossible_pointwise R X hL hC
+
+theorem not_inCaseC_of_LehmerComposite_reconstruction
+    (R : CaseCReconstruction) {n : ℕ}
+    (hL : LehmerComposite n) :
+    ¬ InCaseC n := by
+  intro hC
+  exact caseCImpossible_of_reconstruction R n hL hC
 
 end CaseC
 end Lehmer

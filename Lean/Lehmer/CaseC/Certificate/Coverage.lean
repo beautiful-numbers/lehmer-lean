@@ -4,9 +4,8 @@ IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
 - Lehmer.Basic.Defs : def
 - Lehmer.CaseC.Spec : def
-- Lehmer.CaseC.Certificate.Format : def
+- Lehmer.CaseC.Certificate.Format : def thm
 - Lehmer.CaseC.Certificate.Record : def thm
-- Lehmer.CaseC.Certificate.Priority : def thm
 -/
 
 import Lehmer.Prelude
@@ -14,7 +13,6 @@ import Lehmer.Basic.Defs
 import Lehmer.CaseC.Spec
 import Lehmer.CaseC.Certificate.Format
 import Lehmer.CaseC.Certificate.Record
-import Lehmer.CaseC.Certificate.Priority
 
 namespace Lehmer
 namespace CaseC
@@ -22,80 +20,126 @@ namespace Certificate
 
 open Lehmer.Basic
 
-def RecordCoversSupport (r : RecordData) (S : Support) : Prop :=
-  S ∈ recordCylinder r
+def RecordCoversSupport
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) (S : Support) : Prop :=
+  recordCoversSupport r S
 
-@[simp] theorem RecordCoversSupport_def (r : RecordData) (S : Support) :
-    RecordCoversSupport r S = (S ∈ recordCylinder r) := rfl
+@[simp] theorem RecordCoversSupport_def
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) (S : Support) :
+    RecordCoversSupport r S = recordCoversSupport r S := rfl
 
-theorem record_covers_iff_mem_cylinder (r : RecordData) (S : Support) :
-    RecordCoversSupport r S ↔ S ∈ recordCylinder r := Iff.rfl
+theorem record_covers_iff_mem_cylinder
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) (S : Support) :
+    RecordCoversSupport r S ↔ S ∈ recordCylinder r := by
+  rfl
 
-theorem recordCoversSupport_iff_prefix (r : RecordData) (S : Support) :
+theorem recordCoversSupport_iff_prefix
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) (S : Support) :
     RecordCoversSupport r S ↔ IsPrefixOf (recordPrefix r) S := by
   rfl
 
-def RecordCoversState (P : Params) (r : RecordData) (U : State P) : Prop :=
+def RecordCoversState
+    (P : Params) (D : ClosureData P)
+    (r : RecordData P D) (U : State P) : Prop :=
   RecordCoversSupport r U.support
 
-@[simp] theorem RecordCoversState_def (P : Params) (r : RecordData) (U : State P) :
-    RecordCoversState P r U = RecordCoversSupport r U.support := rfl
+@[simp] theorem RecordCoversState_def
+    (P : Params) (D : ClosureData P)
+    (r : RecordData P D) (U : State P) :
+    RecordCoversState P D r U =
+      RecordCoversSupport r U.support := rfl
 
-theorem recordCoversState_iff_support (P : Params) (r : RecordData) (U : State P) :
-    RecordCoversState P r U ↔ RecordCoversSupport r U.support := Iff.rfl
+theorem recordCoversState_iff_support
+    (P : Params) (D : ClosureData P)
+    (r : RecordData P D) (U : State P) :
+    RecordCoversState P D r U ↔
+      RecordCoversSupport r U.support := Iff.rfl
 
-def RecordChildrenCoverSupport (r : RecordData) (S : Support) : Prop :=
-  ∃ p ∈ recordChildren r, S ∈ Cylinder p
+theorem RecordCoversState_mk
+    (P : Params) (D : ClosureData P)
+    (r : RecordData P D) (S : Support) :
+    RecordCoversState P D r (State.mk S) ↔
+      RecordCoversSupport r S := Iff.rfl
 
-@[simp] theorem RecordChildrenCoverSupport_def (r : RecordData) (S : Support) :
-    RecordChildrenCoverSupport r S = (∃ p ∈ recordChildren r, S ∈ Cylinder p) := rfl
+def RecordChildrenCoverSupport
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) (S : Support) : Prop :=
+  ChildPrefixesCoverSupport (recordChildren r) S
 
-def RecordChildrenCoverState (P : Params) (r : RecordData) (U : State P) : Prop :=
+@[simp] theorem RecordChildrenCoverSupport_def
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) (S : Support) :
+    RecordChildrenCoverSupport r S =
+      ChildPrefixesCoverSupport (recordChildren r) S := rfl
+
+theorem recordChildrenCoverSupport_iff
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) (S : Support) :
+    RecordChildrenCoverSupport r S ↔
+      ∃ p : Prefix,
+        p ∈ recordChildren r ∧
+        PrefixCoversSupport p S := by
+  rfl
+
+theorem recordChildrenCoverSupport_iff_cylinder
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) (S : Support) :
+    RecordChildrenCoverSupport r S ↔
+      ∃ p : Prefix,
+        p ∈ recordChildren r ∧
+        S ∈ Cylinder p := by
+  rfl
+
+def RecordChildrenCoverState
+    (P : Params) (D : ClosureData P)
+    (r : RecordData P D) (U : State P) : Prop :=
   RecordChildrenCoverSupport r U.support
 
-@[simp] theorem RecordChildrenCoverState_def (P : Params) (r : RecordData) (U : State P) :
-    RecordChildrenCoverState P r U = RecordChildrenCoverSupport r U.support := rfl
+@[simp] theorem RecordChildrenCoverState_def
+    (P : Params) (D : ClosureData P)
+    (r : RecordData P D) (U : State P) :
+    RecordChildrenCoverState P D r U =
+      RecordChildrenCoverSupport r U.support := rfl
 
-def CertificateCoversSupport (C : GlobalCertificate) (S : Support) : Prop :=
-  ∃ r, certificateHasRecord C r ∧ RecordCoversSupport r S
+theorem RecordChildrenCoverState_mk
+    (P : Params) (D : ClosureData P)
+    (r : RecordData P D) (S : Support) :
+    RecordChildrenCoverState P D r (State.mk S) ↔
+      RecordChildrenCoverSupport r S := Iff.rfl
 
-@[simp] theorem CertificateCoversSupport_def (C : GlobalCertificate) (S : Support) :
-    CertificateCoversSupport C S = (∃ r, certificateHasRecord C r ∧ RecordCoversSupport r S) := rfl
+def FamilyCoversSupport
+    (P : Params) (D : ClosureData P)
+    (R : RecordFamily P D) (S : Support) : Prop :=
+  ∃ r : RecordData P D,
+    r ∈ R ∧ RecordCoversSupport r S
 
-def CertificateCoversState (P : Params) (C : GlobalCertificate) (U : State P) : Prop :=
-  CertificateCoversSupport C U.support
+@[simp] theorem FamilyCoversSupport_def
+    (P : Params) (D : ClosureData P)
+    (R : RecordFamily P D) (S : Support) :
+    FamilyCoversSupport P D R S =
+      (∃ r : RecordData P D,
+        r ∈ R ∧ RecordCoversSupport r S) := rfl
 
-@[simp] theorem CertificateCoversState_def (P : Params) (C : GlobalCertificate) (U : State P) :
-    CertificateCoversState P C U = CertificateCoversSupport C U.support := rfl
-
-theorem certificateCoversState_iff_support (P : Params) (C : GlobalCertificate) (U : State P) :
-    CertificateCoversState P C U ↔ CertificateCoversSupport C U.support := Iff.rfl
-
-def FamilyCoversSupport (R : RecordFamily) (S : Support) : Prop :=
-  ∃ r, r ∈ R ∧ RecordCoversSupport r S
-
-@[simp] theorem FamilyCoversSupport_def (R : RecordFamily) (S : Support) :
-    FamilyCoversSupport R S = (∃ r, r ∈ R ∧ RecordCoversSupport r S) := rfl
-
-theorem certificateCoversSupport_iff_family (C : GlobalCertificate) (S : Support) :
-    CertificateCoversSupport C S ↔ FamilyCoversSupport (certificateRecords C) S := by
-  constructor
-  · intro h
-    rcases h with ⟨r, hrC, hrS⟩
-    exact ⟨r, hrC, hrS⟩
-  · intro h
-    rcases h with ⟨r, hrC, hrS⟩
-    exact ⟨r, hrC, hrS⟩
-
-@[simp] theorem FamilyCoversSupport_nil (S : Support) :
-    ¬ FamilyCoversSupport [] S := by
+@[simp] theorem FamilyCoversSupport_nil
+    (P : Params) (D : ClosureData P)
+    (S : Support) :
+    ¬ FamilyCoversSupport P D [] S := by
   intro h
   rcases h with ⟨r, hr, _⟩
   simp at hr
 
-theorem FamilyCoversSupport_cons (r : RecordData) (rs : RecordFamily) (S : Support) :
-    FamilyCoversSupport (r :: rs) S ↔
-      RecordCoversSupport r S ∨ FamilyCoversSupport rs S := by
+theorem FamilyCoversSupport_cons
+    (P : Params) (D : ClosureData P)
+    (r : RecordData P D)
+    (rs : RecordFamily P D)
+    (S : Support) :
+    FamilyCoversSupport P D (r :: rs) S ↔
+      RecordCoversSupport r S ∨
+      FamilyCoversSupport P D rs S := by
   constructor
   · intro h
     rcases h with ⟨r', hr', hcov⟩
@@ -109,61 +153,187 @@ theorem FamilyCoversSupport_cons (r : RecordData) (rs : RecordFamily) (S : Suppo
     · rcases h with ⟨r', hr', hcov⟩
       exact ⟨r', by simp [hr'], hcov⟩
 
-@[simp] theorem CertificateCoversSupport_empty (S : Support) :
-    ¬ CertificateCoversSupport (GlobalCertificate.mk []) S := by
-  intro h
-  rcases h with ⟨r, hr, _⟩
-  simp [certificateHasRecord, certificateRecords] at hr
+def FamilyCoversState
+    (P : Params) (D : ClosureData P)
+    (R : RecordFamily P D) (U : State P) : Prop :=
+  FamilyCoversSupport P D R U.support
 
-theorem CertificateCoversSupport_cons (r : RecordData) (rs : RecordFamily) (S : Support) :
-    CertificateCoversSupport (GlobalCertificate.mk (r :: rs)) S ↔
-      RecordCoversSupport r S ∨ CertificateCoversSupport (GlobalCertificate.mk rs) S := by
+@[simp] theorem FamilyCoversState_def
+    (P : Params) (D : ClosureData P)
+    (R : RecordFamily P D) (U : State P) :
+    FamilyCoversState P D R U =
+      FamilyCoversSupport P D R U.support := rfl
+
+theorem FamilyCoversState_mk
+    (P : Params) (D : ClosureData P)
+    (R : RecordFamily P D) (S : Support) :
+    FamilyCoversState P D R (State.mk S) ↔
+      FamilyCoversSupport P D R S := Iff.rfl
+
+def GlobalCertificateCoversSupport
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (S : Support) : Prop :=
+  CertificateCoversSupport P D C.records S
+
+@[simp] theorem GlobalCertificateCoversSupport_def
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (S : Support) :
+    GlobalCertificateCoversSupport P D C S =
+      CertificateCoversSupport P D C.records S := rfl
+
+theorem globalCertificateCoversSupport_iff_family
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (S : Support) :
+    GlobalCertificateCoversSupport P D C S ↔
+      FamilyCoversSupport P D (certificateRecords C) S := by
   constructor
   · intro h
-    rcases h with ⟨r', hr', hcov⟩
-    simp [certificateHasRecord, certificateRecords] at hr'
-    rcases hr' with rfl | hrs
-    · exact Or.inl hcov
-    · exact Or.inr ⟨r', hrs, hcov⟩
+    rcases h with ⟨r, hr, hCov⟩
+    exact ⟨r, hr, hCov⟩
   · intro h
-    rcases h with h | h
-    · exact ⟨r, by simp [certificateHasRecord, certificateRecords], h⟩
-    · rcases h with ⟨r', hr', hcov⟩
-      have hrs : r' ∈ rs := by
-        simpa [certificateHasRecord, certificateRecords] using hr'
-      exact ⟨r', by simp [certificateHasRecord, certificateRecords, hrs], hcov⟩
+    rcases h with ⟨r, hr, hCov⟩
+    exact ⟨r, hr, hCov⟩
 
-theorem CertificateCoversSupport_of_hasRecord (C : GlobalCertificate) (r : RecordData) (S : Support) :
-    certificateHasRecord C r → RecordCoversSupport r S → CertificateCoversSupport C S := by
+theorem GlobalCertificateCoversSupport_of_hasRecord
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (r : RecordData P D)
+    (S : Support) :
+    certificateHasRecord C r →
+    RecordCoversSupport r S →
+    GlobalCertificateCoversSupport P D C S := by
   intro hr hcov
   exact ⟨r, hr, hcov⟩
 
-theorem CertificateCoversState_of_hasRecord (P : Params) (C : GlobalCertificate)
-    (r : RecordData) (U : State P) :
-    certificateHasRecord C r → RecordCoversState P r U → CertificateCoversState P C U := by
+def GlobalCertificateCoversState
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (U : State P) : Prop :=
+  GlobalCertificateCoversSupport P D C U.support
+
+@[simp] theorem GlobalCertificateCoversState_def
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (U : State P) :
+    GlobalCertificateCoversState P D C U =
+      GlobalCertificateCoversSupport P D C U.support := rfl
+
+theorem globalCertificateCoversState_iff_support
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (U : State P) :
+    GlobalCertificateCoversState P D C U ↔
+      GlobalCertificateCoversSupport P D C U.support := Iff.rfl
+
+theorem GlobalCertificateCoversState_of_hasRecord
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (r : RecordData P D)
+    (U : State P) :
+    certificateHasRecord C r →
+    RecordCoversState P D r U →
+    GlobalCertificateCoversState P D C U := by
   intro hr hcov
   exact ⟨r, hr, hcov⟩
 
-theorem certificateHasRecord_cons_head (r : RecordData) (rs : RecordFamily) :
-    certificateHasRecord (GlobalCertificate.mk (r :: rs)) r := by
-  simp [certificateHasRecord, certificateRecords]
+theorem GlobalCertificateCoversState_mk
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (S : Support) :
+    GlobalCertificateCoversState P D C (State.mk S) ↔
+      GlobalCertificateCoversSupport P D C S := Iff.rfl
 
-theorem certificateHasRecord_cons_tail (r s : RecordData) (rs : RecordFamily) :
-    certificateHasRecord (GlobalCertificate.mk rs) s →
-    certificateHasRecord (GlobalCertificate.mk (r :: rs)) s := by
-  intro hs
-  have hs' : s ∈ rs := by
-    simpa [certificateHasRecord, certificateRecords] using hs
-  simp [certificateHasRecord, certificateRecords, hs']
+theorem globalCertificate_covers_admissible_support
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S) :
+    GlobalCertificateCoversSupport P D C S := by
+  exact C.coversDomain S hAdm
 
-theorem RecordCoversState_mk (P : Params) (r : RecordData) (S : Support) :
-    RecordCoversState P r (State.mk S) ↔ RecordCoversSupport r S := Iff.rfl
+theorem globalCertificate_has_record_covering_admissible_support
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S) :
+    ∃ r : RecordData P D,
+      certificateHasRecord C r ∧
+      RecordCoversSupport r S := by
+  exact globalCertificate_covers_record C S hAdm
 
-theorem CertificateCoversState_mk (P : Params) (C : GlobalCertificate) (S : Support) :
-    CertificateCoversState P C (State.mk S) ↔ CertificateCoversSupport C S := Iff.rfl
+theorem globalCertificate_covers_admissible_state
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (U : State P)
+    (hAdm : CaseCAdmissibleSupport P D U.support) :
+    GlobalCertificateCoversState P D C U := by
+  exact C.coversDomain U.support hAdm
 
-theorem RecordChildrenCoverState_mk (P : Params) (r : RecordData) (S : Support) :
-    RecordChildrenCoverState P r (State.mk S) ↔ RecordChildrenCoverSupport r S := Iff.rfl
+theorem globalCertificate_has_record_covering_admissible_state
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (U : State P)
+    (hAdm : CaseCAdmissibleSupport P D U.support) :
+    ∃ r : RecordData P D,
+      certificateHasRecord C r ∧
+      RecordCoversState P D r U := by
+  rcases C.coversDomain U.support hAdm with ⟨r, hr, hCov⟩
+  exact ⟨r, hr, hCov⟩
+
+theorem rootPrefix_covers_admissible_support
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S) :
+    PrefixCoversSupport (RootPrefix P) S := by
+  exact C.rootCovers S hAdm
+
+theorem rootPrefix_covers_admissible_state
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (U : State P)
+    (hAdm : CaseCAdmissibleSupport P D U.support) :
+    PrefixCoversSupport (RootPrefix P) U.support := by
+  exact C.rootCovers U.support hAdm
+
+theorem finiteReductionRecord_children_cover_support
+    {P : Params} {D : ClosureData P}
+    {r : RecordData P D}
+    {d : FiniteReductionData P D r.pref}
+    (hRoute : recordRouting r = RecordRouting.finiteReduction r d)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S)
+    (hCov : RecordCoversSupport r S) :
+    RecordChildrenCoverSupport r S := by
+  have hChild :
+      ChildPrefixesCoverSupport d.children S :=
+    recordRouting_finiteReduction_routes_support hRoute S hAdm hCov
+  cases r with
+  | mk pref closure =>
+      cases closure with
+      | emptiness e =>
+          simp [recordRouting] at hRoute
+      | exclusion e =>
+          simp [recordRouting] at hRoute
+      | finiteReduction fd =>
+          simp [recordRouting] at hRoute
+          cases hRoute
+          simpa [RecordChildrenCoverSupport, recordChildren] using hChild
+
+theorem finiteReductionRecord_children_cover_state
+    {P : Params} {D : ClosureData P}
+    {r : RecordData P D}
+    {d : FiniteReductionData P D r.pref}
+    (hRoute : recordRouting r = RecordRouting.finiteReduction r d)
+    (U : State P)
+    (hAdm : CaseCAdmissibleSupport P D U.support)
+    (hCov : RecordCoversState P D r U) :
+    RecordChildrenCoverState P D r U := by
+  exact finiteReductionRecord_children_cover_support
+    hRoute U.support hAdm hCov
 
 end Certificate
 end CaseC

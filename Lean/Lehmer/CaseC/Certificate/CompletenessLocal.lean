@@ -6,7 +6,6 @@ IMPORT CLASSIFICATION
 - Lehmer.CaseC.Spec : def
 - Lehmer.CaseC.Certificate.Format : def
 - Lehmer.CaseC.Certificate.Record : def thm
-- Lehmer.CaseC.Certificate.Priority : def thm
 - Lehmer.CaseC.Certificate.Coverage : def thm
 - Lehmer.CaseC.Certificate.SoundnessLocal : def thm
 -/
@@ -16,7 +15,6 @@ import Lehmer.Basic.Defs
 import Lehmer.CaseC.Spec
 import Lehmer.CaseC.Certificate.Format
 import Lehmer.CaseC.Certificate.Record
-import Lehmer.CaseC.Certificate.Priority
 import Lehmer.CaseC.Certificate.Coverage
 import Lehmer.CaseC.Certificate.SoundnessLocal
 
@@ -26,102 +24,202 @@ namespace Certificate
 
 open Lehmer.Basic
 
-def LocallyCompleteEmptinessRecord (r : RecordData) : Prop :=
+def LocallyCompleteEmptinessRecord
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) : Prop :=
   IsEmptinessRecord r
 
-def LocallyCompleteExclusionRecord (r : RecordData) : Prop :=
+def LocallyCompleteExclusionRecord
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) : Prop :=
   IsExclusionRecord r
 
-def LocallyCompleteFiniteReductionRecord (r : RecordData) : Prop :=
-  IsFiniteReductionRecord r ∧
-    ∀ S, RecordChildrenCoverSupport r S → RecordChildrenCoverSupport r S
+def LocallyCompleteFiniteReductionRecord
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) : Prop :=
+  ∃ d : FiniteReductionData P D r.pref,
+    r.closure = LocalClosureData.finiteReduction d ∧
+      ∀ S : Support,
+        CaseCAdmissibleSupport P D S →
+        recordCoversSupport r S →
+        ChildPrefixesCoverSupport d.children S
 
-@[simp] theorem LocallyCompleteEmptinessRecord_def (r : RecordData) :
+@[simp] theorem LocallyCompleteEmptinessRecord_def
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteEmptinessRecord r = IsEmptinessRecord r := rfl
 
-@[simp] theorem LocallyCompleteExclusionRecord_def (r : RecordData) :
+@[simp] theorem LocallyCompleteExclusionRecord_def
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteExclusionRecord r = IsExclusionRecord r := rfl
 
-@[simp] theorem LocallyCompleteFiniteReductionRecord_def (r : RecordData) :
+@[simp] theorem LocallyCompleteFiniteReductionRecord_def
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteFiniteReductionRecord r =
-      (IsFiniteReductionRecord r ∧
-        ∀ S, RecordChildrenCoverSupport r S → RecordChildrenCoverSupport r S) := rfl
+      (∃ d : FiniteReductionData P D r.pref,
+        r.closure = LocalClosureData.finiteReduction d ∧
+          ∀ S : Support,
+            CaseCAdmissibleSupport P D S →
+            recordCoversSupport r S →
+            ChildPrefixesCoverSupport d.children S) := rfl
 
-def LocallyCompleteRecord (r : RecordData) : Prop :=
+def LocallyCompleteRecord
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) : Prop :=
   LocallyCompleteEmptinessRecord r ∨
     LocallyCompleteExclusionRecord r ∨
     LocallyCompleteFiniteReductionRecord r
 
-@[simp] theorem LocallyCompleteRecord_def (r : RecordData) :
+@[simp] theorem LocallyCompleteRecord_def
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteRecord r =
       (LocallyCompleteEmptinessRecord r ∨
         LocallyCompleteExclusionRecord r ∨
         LocallyCompleteFiniteReductionRecord r) := rfl
 
-theorem LocallyCompleteEmptinessRecord.not_exclusion (r : RecordData) :
+theorem LocallyCompleteEmptinessRecord.not_exclusion
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteEmptinessRecord r → ¬ LocallyCompleteExclusionRecord r := by
   intro h
   exact IsEmptinessRecord.not_exclusion r h
 
-theorem LocallyCompleteEmptinessRecord.not_finiteReduction (r : RecordData) :
+theorem LocallyCompleteEmptinessRecord.not_finiteReduction
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteEmptinessRecord r → ¬ LocallyCompleteFiniteReductionRecord r := by
   intro hE hF
-  exact (IsEmptinessRecord.not_finiteReduction r hE) hF.1
+  rcases hF with ⟨d, hd, _⟩
+  have hFR : IsFiniteReductionRecord r := by
+    cases r with
+    | mk pref closure =>
+        cases closure with
+        | emptiness e =>
+            cases hd
+        | exclusion e =>
+            cases hd
+        | finiteReduction e =>
+            rfl
+  exact (IsEmptinessRecord.not_finiteReduction r hE) hFR
 
-theorem LocallyCompleteExclusionRecord.not_emptiness (r : RecordData) :
+theorem LocallyCompleteExclusionRecord.not_emptiness
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteExclusionRecord r → ¬ LocallyCompleteEmptinessRecord r := by
   intro h
   exact IsExclusionRecord.not_emptiness r h
 
-theorem LocallyCompleteExclusionRecord.not_finiteReduction (r : RecordData) :
+theorem LocallyCompleteExclusionRecord.not_finiteReduction
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteExclusionRecord r → ¬ LocallyCompleteFiniteReductionRecord r := by
   intro hX hF
-  exact (IsExclusionRecord.not_finiteReduction r hX) hF.1
+  rcases hF with ⟨d, hd, _⟩
+  have hFR : IsFiniteReductionRecord r := by
+    cases r with
+    | mk pref closure =>
+        cases closure with
+        | emptiness e =>
+            cases hd
+        | exclusion e =>
+            cases hd
+        | finiteReduction e =>
+            rfl
+  exact (IsExclusionRecord.not_finiteReduction r hX) hFR
 
-theorem LocallyCompleteFiniteReductionRecord.not_emptiness (r : RecordData) :
+theorem LocallyCompleteFiniteReductionRecord.not_emptiness
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteFiniteReductionRecord r → ¬ LocallyCompleteEmptinessRecord r := by
   intro hF hE
-  exact (IsFiniteReductionRecord.not_emptiness r hF.1) hE
+  exact (LocallyCompleteEmptinessRecord.not_finiteReduction r hE) hF
 
-theorem LocallyCompleteFiniteReductionRecord.not_exclusion (r : RecordData) :
+theorem LocallyCompleteFiniteReductionRecord.not_exclusion
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteFiniteReductionRecord r → ¬ LocallyCompleteExclusionRecord r := by
   intro hF hX
-  exact (IsFiniteReductionRecord.not_exclusion r hF.1) hX
+  exact (LocallyCompleteExclusionRecord.not_finiteReduction r hX) hF
 
-theorem locallyCompleteFiniteReduction_children_readable (r : RecordData) :
+theorem locallyCompleteFiniteReduction_routes_support
+    {P : Params} {D : ClosureData P}
+    {r : RecordData P D}
+    (h : LocallyCompleteFiniteReductionRecord r)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S)
+    (hCov : recordCoversSupport r S) :
+    ∃ d : FiniteReductionData P D r.pref,
+      r.closure = LocalClosureData.finiteReduction d ∧
+        ChildPrefixesCoverSupport d.children S := by
+  rcases h with ⟨d, hd, hCover⟩
+  exact ⟨d, hd, hCover S hAdm hCov⟩
+
+theorem locallyCompleteFiniteReduction_children_readable
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteFiniteReductionRecord r →
-      ∀ S, RecordChildrenCoverSupport r S → RecordChildrenCoverSupport r S := by
-  intro h
-  exact h.2
+      ∀ S,
+        CaseCAdmissibleSupport P D S →
+        recordCoversSupport r S →
+        ∃ d : FiniteReductionData P D r.pref,
+          r.closure = LocalClosureData.finiteReduction d ∧
+            ChildPrefixesCoverSupport d.children S := by
+  intro h S hAdm hCov
+  exact locallyCompleteFiniteReduction_routes_support h S hAdm hCov
 
-theorem localCompleteness_exhaustive (r : RecordData) :
+theorem localCompleteness_exhaustive
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteEmptinessRecord r ∨
       LocallyCompleteExclusionRecord r ∨
       LocallyCompleteFiniteReductionRecord r := by
-  rcases record_exhaustive r with hE | hX | hF
-  · left
-    exact hE
-  · right
-    left
-    exact hX
-  · right
-    right
-    constructor
-    · exact hF
-    · intro S hS
-      exact hS
+  cases r with
+  | mk pref closure =>
+      cases closure with
+      | emptiness d =>
+          left
+          rfl
+      | exclusion d =>
+          right
+          left
+          rfl
+      | finiteReduction d =>
+          right
+          right
+          exact ⟨d, rfl, by
+            intro S hAdm hCov
+            exact finiteReductionData_routes_support_to_child
+              P D pref d S hAdm hCov⟩
 
-theorem locallyCompleteRecord_exhaustive (r : RecordData) :
+theorem locallyCompleteRecord_exhaustive
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteRecord r := by
   exact localCompleteness_exhaustive r
 
-theorem locallyComplete_implies_locallySound (r : RecordData) :
+theorem locallyComplete_implies_locallySound
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteRecord r → LocallySoundRecord r := by
   intro h
   rcases h with hE | hX | hF
   · exact Or.inl hE
   · exact Or.inr <| Or.inl hX
-  · exact Or.inr <| Or.inr hF.1
+  · right
+    right
+    rcases hF with ⟨d, hd, _⟩
+    cases r with
+    | mk pref closure =>
+        cases closure with
+        | emptiness e =>
+            cases hd
+        | exclusion e =>
+            cases hd
+        | finiteReduction e =>
+            rfl
 
 /--
 Local routing of completeness through the three paper-level closure modes:
@@ -130,143 +228,219 @@ emptiness / exclusion / finite splitting.
 This is only a local classification layer. The routing is canonical only when built
 from `localCompletenessRouting r`.
 -/
-inductive LocalCompletenessRouting where
-  | emptiness (r : RecordData)
-  | exclusion (r : RecordData)
-  | finiteReduction (r : RecordData)
+inductive LocalCompletenessRouting
+    (P : Params) (D : ClosureData P) where
+  | emptiness (r : RecordData P D)
+  | exclusion (r : RecordData P D)
+  | finiteReduction (r : RecordData P D)
 
-def localCompletenessRouting (r : RecordData) : LocalCompletenessRouting :=
-  match recordKind r with
-  | LocalClosureKind.emptiness => LocalCompletenessRouting.emptiness r
-  | LocalClosureKind.exclusion => LocalCompletenessRouting.exclusion r
-  | LocalClosureKind.finiteReduction => LocalCompletenessRouting.finiteReduction r
+def localCompletenessRouting
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) : LocalCompletenessRouting P D :=
+  match r with
+  | ⟨pref, LocalClosureData.emptiness d⟩ =>
+      LocalCompletenessRouting.emptiness
+        ({ pref := pref, closure := LocalClosureData.emptiness d } :
+          RecordData P D)
+  | ⟨pref, LocalClosureData.exclusion d⟩ =>
+      LocalCompletenessRouting.exclusion
+        ({ pref := pref, closure := LocalClosureData.exclusion d } :
+          RecordData P D)
+  | ⟨pref, LocalClosureData.finiteReduction d⟩ =>
+      LocalCompletenessRouting.finiteReduction
+        ({ pref := pref, closure := LocalClosureData.finiteReduction d } :
+          RecordData P D)
 
-def LocalCompletenessRouting.record : LocalCompletenessRouting → RecordData
+def LocalCompletenessRouting.record
+    {P : Params} {D : ClosureData P} :
+    LocalCompletenessRouting P D → RecordData P D
   | .emptiness r => r
   | .exclusion r => r
   | .finiteReduction r => r
 
 @[simp] theorem LocalCompletenessRouting.record_emptiness
-    (r : RecordData) :
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     (LocalCompletenessRouting.emptiness r).record = r := rfl
 
 @[simp] theorem LocalCompletenessRouting.record_exclusion
-    (r : RecordData) :
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     (LocalCompletenessRouting.exclusion r).record = r := rfl
 
 @[simp] theorem LocalCompletenessRouting.record_finiteReduction
-    (r : RecordData) :
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     (LocalCompletenessRouting.finiteReduction r).record = r := rfl
 
-def LocalCompletenessRouting.kind : LocalCompletenessRouting → LocalClosureKind
+def LocalCompletenessRouting.kind
+    {P : Params} {D : ClosureData P} :
+    LocalCompletenessRouting P D → LocalClosureKind
   | .emptiness _ => LocalClosureKind.emptiness
   | .exclusion _ => LocalClosureKind.exclusion
   | .finiteReduction _ => LocalClosureKind.finiteReduction
 
 @[simp] theorem LocalCompletenessRouting.kind_emptiness
-    (r : RecordData) :
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     (LocalCompletenessRouting.emptiness r).kind = LocalClosureKind.emptiness := rfl
 
 @[simp] theorem LocalCompletenessRouting.kind_exclusion
-    (r : RecordData) :
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     (LocalCompletenessRouting.exclusion r).kind = LocalClosureKind.exclusion := rfl
 
 @[simp] theorem LocalCompletenessRouting.kind_finiteReduction
-    (r : RecordData) :
-    (LocalCompletenessRouting.finiteReduction r).kind = LocalClosureKind.finiteReduction := rfl
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
+    (LocalCompletenessRouting.finiteReduction r).kind =
+      LocalClosureKind.finiteReduction := rfl
 
-@[simp] theorem localCompletenessRouting_record (r : RecordData) :
+@[simp] theorem localCompletenessRouting_record
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     (localCompletenessRouting r).record = r := by
   cases r with
   | mk pref closure =>
       cases closure with
-      | mk kind children =>
-          cases kind <;> rfl
+      | emptiness d => rfl
+      | exclusion d => rfl
+      | finiteReduction d => rfl
 
-@[simp] theorem localCompletenessRouting_kind (r : RecordData) :
+@[simp] theorem localCompletenessRouting_kind
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     (localCompletenessRouting r).kind = recordKind r := by
   cases r with
   | mk pref closure =>
       cases closure with
-      | mk kind children =>
-          cases kind <;> rfl
+      | emptiness d => rfl
+      | exclusion d => rfl
+      | finiteReduction d => rfl
 
-theorem LocalCompletenessRouting.complete (r : RecordData) :
+theorem LocalCompletenessRouting.complete
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteRecord (localCompletenessRouting r).record := by
   rw [localCompletenessRouting_record]
   exact locallyCompleteRecord_exhaustive r
 
 theorem LocalCompletenessRouting.is_emptiness
-    (r : RecordData) :
-    (localCompletenessRouting r = LocalCompletenessRouting.emptiness r) ↔
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
+    (localCompletenessRouting r =
+        LocalCompletenessRouting.emptiness r) ↔
       LocallyCompleteEmptinessRecord r := by
   constructor
   · intro h
-    have hk : (localCompletenessRouting r).kind = LocalClosureKind.emptiness := by
+    have hk :
+        (localCompletenessRouting r).kind =
+          LocalClosureKind.emptiness := by
       simp [h]
     rw [localCompletenessRouting_kind] at hk
-    simpa using hk
+    simpa [LocallyCompleteEmptinessRecord] using hk
   · intro hE
     cases r with
     | mk pref closure =>
         cases closure with
-        | mk kind children =>
-            cases kind
-            · rfl
-            · exact False.elim ((LocallyCompleteEmptinessRecord.not_exclusion
-                ⟨pref, ⟨LocalClosureKind.exclusion, children⟩⟩ hE) rfl)
-            · exact False.elim ((LocallyCompleteEmptinessRecord.not_finiteReduction
-                ⟨pref, ⟨LocalClosureKind.finiteReduction, children⟩⟩ hE)
-                ⟨rfl, by intro S hS; exact hS⟩)
+        | emptiness d =>
+            rfl
+        | exclusion d =>
+            exact False.elim
+              ((LocallyCompleteEmptinessRecord.not_exclusion
+                ({ pref := pref, closure := LocalClosureData.exclusion d } :
+                  RecordData P D) hE) rfl)
+        | finiteReduction d =>
+            have hF : LocallyCompleteFiniteReductionRecord
+                ({ pref := pref, closure := LocalClosureData.finiteReduction d } :
+                  RecordData P D) := by
+              exact ⟨d, rfl, by
+                intro S hAdm hCov
+                exact finiteReductionData_routes_support_to_child
+                  P D pref d S hAdm hCov⟩
+            exact False.elim
+              ((LocallyCompleteEmptinessRecord.not_finiteReduction
+                ({ pref := pref, closure := LocalClosureData.finiteReduction d } :
+                  RecordData P D) hE) hF)
 
 theorem LocalCompletenessRouting.is_exclusion
-    (r : RecordData) :
-    (localCompletenessRouting r = LocalCompletenessRouting.exclusion r) ↔
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
+    (localCompletenessRouting r =
+        LocalCompletenessRouting.exclusion r) ↔
       LocallyCompleteExclusionRecord r := by
   constructor
   · intro h
-    have hk : (localCompletenessRouting r).kind = LocalClosureKind.exclusion := by
+    have hk :
+        (localCompletenessRouting r).kind =
+          LocalClosureKind.exclusion := by
       simp [h]
     rw [localCompletenessRouting_kind] at hk
-    simpa using hk
+    simpa [LocallyCompleteExclusionRecord] using hk
   · intro hX
     cases r with
     | mk pref closure =>
         cases closure with
-        | mk kind children =>
-            cases kind
-            · exact False.elim ((LocallyCompleteExclusionRecord.not_emptiness
-                ⟨pref, ⟨LocalClosureKind.emptiness, children⟩⟩ hX) rfl)
-            · rfl
-            · exact False.elim ((LocallyCompleteExclusionRecord.not_finiteReduction
-                ⟨pref, ⟨LocalClosureKind.finiteReduction, children⟩⟩ hX)
-                ⟨rfl, by intro S hS; exact hS⟩)
+        | emptiness d =>
+            exact False.elim
+              ((LocallyCompleteExclusionRecord.not_emptiness
+                ({ pref := pref, closure := LocalClosureData.emptiness d } :
+                  RecordData P D) hX) rfl)
+        | exclusion d =>
+            rfl
+        | finiteReduction d =>
+            have hF : LocallyCompleteFiniteReductionRecord
+                ({ pref := pref, closure := LocalClosureData.finiteReduction d } :
+                  RecordData P D) := by
+              exact ⟨d, rfl, by
+                intro S hAdm hCov
+                exact finiteReductionData_routes_support_to_child
+                  P D pref d S hAdm hCov⟩
+            exact False.elim
+              ((LocallyCompleteExclusionRecord.not_finiteReduction
+                ({ pref := pref, closure := LocalClosureData.finiteReduction d } :
+                  RecordData P D) hX) hF)
 
 theorem LocalCompletenessRouting.is_finiteReduction
-    (r : RecordData) :
-    (localCompletenessRouting r = LocalCompletenessRouting.finiteReduction r) ↔
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
+    (localCompletenessRouting r =
+        LocalCompletenessRouting.finiteReduction r) ↔
       LocallyCompleteFiniteReductionRecord r := by
   constructor
   · intro h
-    have hk : (localCompletenessRouting r).kind = LocalClosureKind.finiteReduction := by
-      simp [h]
-    rw [localCompletenessRouting_kind] at hk
-    refine ⟨hk, ?_⟩
-    intro S hS
-    exact hS
+    cases r with
+    | mk pref closure =>
+        cases closure with
+        | emptiness d =>
+            cases h
+        | exclusion d =>
+            cases h
+        | finiteReduction d =>
+            exact ⟨d, rfl, by
+              intro S hAdm hCov
+              exact finiteReductionData_routes_support_to_child
+                P D pref d S hAdm hCov⟩
   · intro hF
     cases r with
     | mk pref closure =>
         cases closure with
-        | mk kind children =>
-            cases kind
-            · exact False.elim ((LocallyCompleteFiniteReductionRecord.not_emptiness
-                ⟨pref, ⟨LocalClosureKind.emptiness, children⟩⟩ hF) rfl)
-            · exact False.elim ((LocallyCompleteFiniteReductionRecord.not_exclusion
-                ⟨pref, ⟨LocalClosureKind.exclusion, children⟩⟩ hF) rfl)
-            · rfl
+        | emptiness d =>
+            exact False.elim
+              ((LocallyCompleteFiniteReductionRecord.not_emptiness
+                ({ pref := pref, closure := LocalClosureData.emptiness d } :
+                  RecordData P D) hF) rfl)
+        | exclusion d =>
+            exact False.elim
+              ((LocallyCompleteFiniteReductionRecord.not_exclusion
+                ({ pref := pref, closure := LocalClosureData.exclusion d } :
+                  RecordData P D) hF) rfl)
+        | finiteReduction d =>
+            rfl
 
-theorem localCompletenessRouting_spec (r : RecordData) :
+theorem localCompletenessRouting_spec
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     (localCompletenessRouting r = LocalCompletenessRouting.emptiness r ∧
       LocallyCompleteEmptinessRecord r) ∨
     (localCompletenessRouting r = LocalCompletenessRouting.exclusion r ∧
@@ -276,20 +450,27 @@ theorem localCompletenessRouting_spec (r : RecordData) :
   cases r with
   | mk pref closure =>
       cases closure with
-      | mk kind children =>
-          cases kind
-          · left
-            exact ⟨rfl, rfl⟩
-          · right
-            left
-            exact ⟨rfl, rfl⟩
-          · right
-            right
-            exact ⟨rfl, ⟨rfl, by intro S hS; exact hS⟩⟩
+      | emptiness d =>
+          left
+          exact ⟨rfl, rfl⟩
+      | exclusion d =>
+          right
+          left
+          exact ⟨rfl, rfl⟩
+      | finiteReduction d =>
+          right
+          right
+          exact ⟨rfl, ⟨d, rfl, by
+            intro S hAdm hCov
+            exact finiteReductionData_routes_support_to_child
+              P D pref d S hAdm hCov⟩⟩
 
-theorem localCompletenessRouting_isEmptiness_iff (r : RecordData) :
+theorem localCompletenessRouting_isEmptiness_iff
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     (∃ _ : LocallyCompleteEmptinessRecord r,
-        localCompletenessRouting r = LocalCompletenessRouting.emptiness r) ↔
+        localCompletenessRouting r =
+          LocalCompletenessRouting.emptiness r) ↔
       LocallyCompleteEmptinessRecord r := by
   constructor
   · intro h
@@ -298,9 +479,12 @@ theorem localCompletenessRouting_isEmptiness_iff (r : RecordData) :
   · intro hE
     exact ⟨hE, (LocalCompletenessRouting.is_emptiness r).2 hE⟩
 
-theorem localCompletenessRouting_isExclusion_iff (r : RecordData) :
+theorem localCompletenessRouting_isExclusion_iff
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     (∃ _ : LocallyCompleteExclusionRecord r,
-        localCompletenessRouting r = LocalCompletenessRouting.exclusion r) ↔
+        localCompletenessRouting r =
+          LocalCompletenessRouting.exclusion r) ↔
       LocallyCompleteExclusionRecord r := by
   constructor
   · intro h
@@ -309,9 +493,12 @@ theorem localCompletenessRouting_isExclusion_iff (r : RecordData) :
   · intro hX
     exact ⟨hX, (LocalCompletenessRouting.is_exclusion r).2 hX⟩
 
-theorem localCompletenessRouting_isFiniteReduction_iff (r : RecordData) :
+theorem localCompletenessRouting_isFiniteReduction_iff
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     (∃ _ : LocallyCompleteFiniteReductionRecord r,
-        localCompletenessRouting r = LocalCompletenessRouting.finiteReduction r) ↔
+        localCompletenessRouting r =
+          LocalCompletenessRouting.finiteReduction r) ↔
       LocallyCompleteFiniteReductionRecord r := by
   constructor
   · intro h
@@ -320,7 +507,9 @@ theorem localCompletenessRouting_isFiniteReduction_iff (r : RecordData) :
   · intro hF
     exact ⟨hF, (LocalCompletenessRouting.is_finiteReduction r).2 hF⟩
 
-theorem locallyCompleteRecord_kind_readable (r : RecordData) :
+theorem locallyCompleteRecord_kind_readable
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteRecord r →
       (recordKind r = LocalClosureKind.emptiness ∨
         recordKind r = LocalClosureKind.exclusion ∨
@@ -334,15 +523,33 @@ theorem locallyCompleteRecord_kind_readable (r : RecordData) :
     exact h
   · right
     right
-    exact h.1
+    rcases h with ⟨d, hd, _⟩
+    cases r with
+    | mk pref closure =>
+        cases closure with
+        | emptiness e =>
+            cases hd
+        | exclusion e =>
+            cases hd
+        | finiteReduction e =>
+            rfl
 
-theorem locallyCompleteRecord_children_readable (r : RecordData) :
+theorem locallyCompleteRecord_children_readable
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteFiniteReductionRecord r →
-      ∀ S, RecordChildrenCoverSupport r S → RecordChildrenCoverSupport r S := by
-  intro h
-  exact h.2
+      ∀ S,
+        CaseCAdmissibleSupport P D S →
+        recordCoversSupport r S →
+        ∃ d : FiniteReductionData P D r.pref,
+          r.closure = LocalClosureData.finiteReduction d ∧
+            ChildPrefixesCoverSupport d.children S := by
+  intro h S hAdm hCov
+  exact locallyCompleteFiniteReduction_routes_support h S hAdm hCov
 
-theorem locallyComplete_and_locallySound_iff_kind (r : RecordData) :
+theorem locallyComplete_and_locallySound_iff_kind
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCompleteRecord r ∧ LocallySoundRecord r := by
   constructor
   · exact locallyCompleteRecord_exhaustive r

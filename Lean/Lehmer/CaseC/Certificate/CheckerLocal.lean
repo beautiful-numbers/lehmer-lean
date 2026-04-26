@@ -6,7 +6,6 @@ IMPORT CLASSIFICATION
 - Lehmer.CaseC.Spec : def
 - Lehmer.CaseC.Certificate.Format : def
 - Lehmer.CaseC.Certificate.Record : def thm
-- Lehmer.CaseC.Certificate.Priority : def thm
 - Lehmer.CaseC.Certificate.Coverage : def thm
 - Lehmer.CaseC.Certificate.SoundnessLocal : def thm
 - Lehmer.CaseC.Certificate.CompletenessLocal : def thm
@@ -17,7 +16,6 @@ import Lehmer.Basic.Defs
 import Lehmer.CaseC.Spec
 import Lehmer.CaseC.Certificate.Format
 import Lehmer.CaseC.Certificate.Record
-import Lehmer.CaseC.Certificate.Priority
 import Lehmer.CaseC.Certificate.Coverage
 import Lehmer.CaseC.Certificate.SoundnessLocal
 import Lehmer.CaseC.Certificate.CompletenessLocal
@@ -28,42 +26,68 @@ namespace Certificate
 
 open Lehmer.Basic
 
-def LocallyCheckedRecord (r : RecordData) : Prop :=
+def LocallyCheckedRecord
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) : Prop :=
   LocallySoundRecord r ∧ LocallyCompleteRecord r
 
-@[simp] theorem LocallyCheckedRecord_def (r : RecordData) :
+@[simp] theorem LocallyCheckedRecord_def
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCheckedRecord r =
       (LocallySoundRecord r ∧ LocallyCompleteRecord r) := rfl
 
-theorem locallyCheckedRecord_sound (r : RecordData) :
+theorem locallyCheckedRecord_sound
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCheckedRecord r → LocallySoundRecord r := by
   intro h
   exact h.1
 
-theorem locallyCheckedRecord_complete (r : RecordData) :
+theorem locallyCheckedRecord_complete
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCheckedRecord r → LocallyCompleteRecord r := by
   intro h
   exact h.2
 
-theorem locallyCheckedRecord_of_sound_complete (r : RecordData) :
+theorem locallyCheckedRecord_of_sound_complete
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallySoundRecord r →
     LocallyCompleteRecord r →
     LocallyCheckedRecord r := by
   intro hs hc
   exact ⟨hs, hc⟩
 
-theorem locallyCheckedRecord_exhaustive (r : RecordData) :
+theorem locallyCheckedRecord_exhaustive
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCheckedRecord r ∨ ¬ LocallyCheckedRecord r := by
   exact Classical.em _
 
-theorem locallyCheckedRecord_kind_readable (r : RecordData) :
-    LocallyCheckedRecord r →
-      IsEmptinessRecord r ∨ IsExclusionRecord r ∨ IsFiniteReductionRecord r := by
-  intro _
+theorem locallyCheckedRecord_routing_cases
+    {P : Params} {D : ClosureData P}
+    {r : RecordData P D}
+    (_hChk : LocallyCheckedRecord r) :
+    IsEmptinessRecord r ∨
+      IsExclusionRecord r ∨
+      IsFiniteReductionRecord r := by
   exact record_exhaustive r
 
+theorem locallyCheckedRecord_kind_readable
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
+    LocallyCheckedRecord r →
+      IsEmptinessRecord r ∨
+        IsExclusionRecord r ∨
+        IsFiniteReductionRecord r := by
+  intro hChk
+  exact locallyCheckedRecord_routing_cases hChk
+
 theorem locallyCheckedRecord_not_exclusion_of_emptiness
-    (r : RecordData) :
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCheckedRecord r →
     IsEmptinessRecord r →
     ¬ IsExclusionRecord r := by
@@ -71,116 +95,294 @@ theorem locallyCheckedRecord_not_exclusion_of_emptiness
   exact IsEmptinessRecord.not_exclusion r hE
 
 theorem locallyCheckedRecord_not_finiteReduction_of_emptiness
-    (r : RecordData) :
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCheckedRecord r →
     IsEmptinessRecord r →
     ¬ IsFiniteReductionRecord r := by
   intro _ hE
   exact IsEmptinessRecord.not_finiteReduction r hE
 
+theorem locallyCheckedRecord_not_emptiness_of_exclusion
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
+    LocallyCheckedRecord r →
+    IsExclusionRecord r →
+    ¬ IsEmptinessRecord r := by
+  intro _ hX
+  exact IsExclusionRecord.not_emptiness r hX
+
 theorem locallyCheckedRecord_not_finiteReduction_of_exclusion
-    (r : RecordData) :
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCheckedRecord r →
     IsExclusionRecord r →
     ¬ IsFiniteReductionRecord r := by
-  intro _ hE
-  exact IsExclusionRecord.not_finiteReduction r hE
+  intro _ hX
+  exact IsExclusionRecord.not_finiteReduction r hX
 
-theorem locallyCheckedRecord_routing_readable (r : RecordData) :
+theorem locallyCheckedRecord_not_emptiness_of_finiteReduction
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
     LocallyCheckedRecord r →
-      (recordRouting r = RecordRouting.emptiness r ∧ IsEmptinessRecord r) ∨
-      (recordRouting r = RecordRouting.exclusion r ∧ IsExclusionRecord r) ∨
-      (recordRouting r = RecordRouting.finiteReduction r ∧ IsFiniteReductionRecord r) := by
-  intro _
-  exact recordRouting_spec r
+    IsFiniteReductionRecord r →
+    ¬ IsEmptinessRecord r := by
+  intro _ hF
+  exact IsFiniteReductionRecord.not_emptiness r hF
 
-structure CheckerLocalPackage where
-  record : RecordData
-  checked : LocallyCheckedRecord record
+theorem locallyCheckedRecord_not_exclusion_of_finiteReduction
+    {P : Params} {D : ClosureData P}
+    (r : RecordData P D) :
+    LocallyCheckedRecord r →
+    IsFiniteReductionRecord r →
+    ¬ IsExclusionRecord r := by
+  intro _ hF
+  exact IsFiniteReductionRecord.not_exclusion r hF
 
-@[simp] theorem CheckerLocalPackage.record_mk
-    (r : RecordData) (h : LocallyCheckedRecord r) :
-    (CheckerLocalPackage.mk r h).record = r := rfl
+theorem locallyCheckedRecord_emptiness_closes_support
+    {P : Params} {D : ClosureData P}
+    {r : RecordData P D}
+    (_hChk : LocallyCheckedRecord r)
+    (hE : IsEmptinessRecord r)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S)
+    (hCov : RecordCoversSupport r S) :
+    False := by
+  rcases (RecordRouting.is_emptiness r).2 hE with ⟨d, hRoute⟩
+  exact recordRouting_emptiness_closes_support hRoute S hAdm hCov
+
+theorem locallyCheckedRecord_exclusion_closes_support
+    {P : Params} {D : ClosureData P}
+    {r : RecordData P D}
+    (_hChk : LocallyCheckedRecord r)
+    (hX : IsExclusionRecord r)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S)
+    (hCov : RecordCoversSupport r S)
+    (hCandClosed :
+      ∀ d : ExclusionData P D r.pref,
+        d.kind = ExclusionKind.candNFailure →
+          CandNEmpty P D S →
+          False)
+    (hNonInt :
+      ∀ d : ExclusionData P D r.pref,
+        d.kind = ExclusionKind.nonIntegrality →
+          supportNonIntegral S →
+          False) :
+    False := by
+  rcases (RecordRouting.is_exclusion r).2 hX with ⟨d, hRoute⟩
+  exact recordRouting_exclusion_closes_support hRoute S hAdm hCov
+    (hCandClosed d) (hNonInt d)
+
+theorem locallyCheckedRecord_finiteReduction_routes_support
+    {P : Params} {D : ClosureData P}
+    {r : RecordData P D}
+    (_hChk : LocallyCheckedRecord r)
+    (hF : IsFiniteReductionRecord r)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S)
+    (hCov : RecordCoversSupport r S) :
+    ∃ d : FiniteReductionData P D r.pref,
+      ChildPrefixesCoverSupport d.children S := by
+  rcases (RecordRouting.is_finiteReduction r).2 hF with ⟨d, hRoute⟩
+  exact ⟨d, recordRouting_finiteReduction_routes_support hRoute S hAdm hCov⟩
+
+theorem locallyCheckedRecord_finiteReduction_child_descends
+    {P : Params} {D : ClosureData P}
+    {r : RecordData P D}
+    (_hChk : LocallyCheckedRecord r)
+    (_hF : IsFiniteReductionRecord r)
+    (child : Prefix) :
+    ∀ d : FiniteReductionData P D r.pref,
+      child ∈ d.children →
+        d.descentMeasure child < d.descentMeasure r.pref := by
+  intro d hChild
+  exact d.childDescends child hChild
+
+theorem locallyCheckedRecord_closes_or_routes_support
+    {P : Params} {D : ClosureData P}
+    {r : RecordData P D}
+    (hChk : LocallyCheckedRecord r)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S)
+    (hCov : RecordCoversSupport r S)
+    (hCandClosed :
+      ∀ d : ExclusionData P D r.pref,
+        d.kind = ExclusionKind.candNFailure →
+          CandNEmpty P D S →
+          False)
+    (hNonInt :
+      ∀ d : ExclusionData P D r.pref,
+        d.kind = ExclusionKind.nonIntegrality →
+          supportNonIntegral S →
+          False)
+    (hChildClosed :
+      ∀ child : Prefix,
+        PrefixCoversSupport child S →
+          False) :
+    False := by
+  rcases locallyCheckedRecord_routing_cases hChk with hE | hX | hF
+  · exact locallyCheckedRecord_emptiness_closes_support hChk hE S hAdm hCov
+  · exact locallyCheckedRecord_exclusion_closes_support
+      hChk hX S hAdm hCov hCandClosed hNonInt
+  · rcases locallyCheckedRecord_finiteReduction_routes_support
+      hChk hF S hAdm hCov with ⟨d, hChildren⟩
+    rcases hChildren with ⟨child, _hMem, hChildCov⟩
+    exact hChildClosed child hChildCov
+
+structure CheckerLocalPackage
+    (P : Params) (D : ClosureData P)
+    (r : RecordData P D) where
+  checked : LocallyCheckedRecord r
 
 @[simp] theorem CheckerLocalPackage.checked_mk
-    (r : RecordData) (h : LocallyCheckedRecord r) :
-    (CheckerLocalPackage.mk r h).checked = h := rfl
+    (P : Params) (D : ClosureData P)
+    (r : RecordData P D)
+    (h : LocallyCheckedRecord r) :
+    (CheckerLocalPackage.mk h : CheckerLocalPackage P D r).checked = h := rfl
 
-theorem CheckerLocalPackage.sound (X : CheckerLocalPackage) :
-    LocallySoundRecord X.record := by
-  exact locallyCheckedRecord_sound X.record X.checked
+theorem CheckerLocalPackage.sound
+    (P : Params) (D : ClosureData P)
+    {r : RecordData P D}
+    (X : CheckerLocalPackage P D r) :
+    LocallySoundRecord r := by
+  exact locallyCheckedRecord_sound r X.checked
 
-theorem CheckerLocalPackage.complete (X : CheckerLocalPackage) :
-    LocallyCompleteRecord X.record := by
-  exact locallyCheckedRecord_complete X.record X.checked
+theorem CheckerLocalPackage.complete
+    (P : Params) (D : ClosureData P)
+    {r : RecordData P D}
+    (X : CheckerLocalPackage P D r) :
+    LocallyCompleteRecord r := by
+  exact locallyCheckedRecord_complete r X.checked
 
-theorem CheckerLocalPackage.kind_readable (X : CheckerLocalPackage) :
-    IsEmptinessRecord X.record ∨
-      IsExclusionRecord X.record ∨
-      IsFiniteReductionRecord X.record := by
-  exact locallyCheckedRecord_kind_readable X.record X.checked
+theorem CheckerLocalPackage.routing_cases
+    (P : Params) (D : ClosureData P)
+    {r : RecordData P D}
+    (X : CheckerLocalPackage P D r) :
+    IsEmptinessRecord r ∨
+      IsExclusionRecord r ∨
+      IsFiniteReductionRecord r := by
+  exact locallyCheckedRecord_routing_cases X.checked
 
-def checkedRecordKind (X : CheckerLocalPackage) : LocalClosureKind :=
-  recordKind X.record
+theorem CheckerLocalPackage.closes_or_routes_support
+    (P : Params) (D : ClosureData P)
+    {r : RecordData P D}
+    (X : CheckerLocalPackage P D r)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S)
+    (hCov : RecordCoversSupport r S)
+    (hCandClosed :
+      ∀ d : ExclusionData P D r.pref,
+        d.kind = ExclusionKind.candNFailure →
+          CandNEmpty P D S →
+          False)
+    (hNonInt :
+      ∀ d : ExclusionData P D r.pref,
+        d.kind = ExclusionKind.nonIntegrality →
+          supportNonIntegral S →
+          False)
+    (hChildClosed :
+      ∀ child : Prefix,
+        PrefixCoversSupport child S →
+          False) :
+    False := by
+  exact locallyCheckedRecord_closes_or_routes_support
+    X.checked S hAdm hCov hCandClosed hNonInt hChildClosed
 
-@[simp] theorem checkedRecordKind_def (X : CheckerLocalPackage) :
-    checkedRecordKind X = recordKind X.record := rfl
+theorem CheckerLocalPackage.emptiness_closes_support
+    (P : Params) (D : ClosureData P)
+    {r : RecordData P D}
+    (X : CheckerLocalPackage P D r)
+    (hE : IsEmptinessRecord r)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S)
+    (hCov : RecordCoversSupport r S) :
+    False := by
+  exact locallyCheckedRecord_emptiness_closes_support
+    X.checked hE S hAdm hCov
 
-def checkedRecordChildren (X : CheckerLocalPackage) :=
-  recordChildren X.record
+theorem CheckerLocalPackage.exclusion_closes_support
+    (P : Params) (D : ClosureData P)
+    {r : RecordData P D}
+    (X : CheckerLocalPackage P D r)
+    (hX : IsExclusionRecord r)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S)
+    (hCov : RecordCoversSupport r S)
+    (hCandClosed :
+      ∀ d : ExclusionData P D r.pref,
+        d.kind = ExclusionKind.candNFailure →
+          CandNEmpty P D S →
+          False)
+    (hNonInt :
+      ∀ d : ExclusionData P D r.pref,
+        d.kind = ExclusionKind.nonIntegrality →
+          supportNonIntegral S →
+          False) :
+    False := by
+  exact locallyCheckedRecord_exclusion_closes_support
+    X.checked hX S hAdm hCov hCandClosed hNonInt
 
-@[simp] theorem checkedRecordChildren_def (X : CheckerLocalPackage) :
-    checkedRecordChildren X = recordChildren X.record := rfl
+theorem CheckerLocalPackage.finiteReduction_routes_support
+    (P : Params) (D : ClosureData P)
+    {r : RecordData P D}
+    (X : CheckerLocalPackage P D r)
+    (hF : IsFiniteReductionRecord r)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S)
+    (hCov : RecordCoversSupport r S) :
+    ∃ d : FiniteReductionData P D r.pref,
+      ChildPrefixesCoverSupport d.children S := by
+  exact locallyCheckedRecord_finiteReduction_routes_support
+    X.checked hF S hAdm hCov
 
-def checkedRecordCylinder (X : CheckerLocalPackage) :=
-  recordCylinder X.record
+theorem CheckerLocalPackage.finiteReduction_child_descends
+    (P : Params) (D : ClosureData P)
+    {r : RecordData P D}
+    (X : CheckerLocalPackage P D r)
+    (hF : IsFiniteReductionRecord r)
+    (child : Prefix) :
+    ∀ d : FiniteReductionData P D r.pref,
+      child ∈ d.children →
+        d.descentMeasure child < d.descentMeasure r.pref := by
+  exact locallyCheckedRecord_finiteReduction_child_descends
+    X.checked hF child
 
-@[simp] theorem checkedRecordCylinder_def (X : CheckerLocalPackage) :
-    checkedRecordCylinder X = recordCylinder X.record := rfl
+def mkLocallyCheckedRecord
+    (P : Params) (D : ClosureData P)
+    (r : RecordData P D)
+    (hs : LocallySoundRecord r)
+    (hc : LocallyCompleteRecord r) :
+    CheckerLocalPackage P D r :=
+  { checked := ⟨hs, hc⟩ }
 
-theorem CheckerLocalPackage.isEmptiness_or_isExclusion_or_isFiniteReduction
-    (X : CheckerLocalPackage) :
-    IsEmptinessRecord X.record ∨
-      IsExclusionRecord X.record ∨
-      IsFiniteReductionRecord X.record := by
-  exact X.kind_readable
+@[simp] theorem mkLocallyCheckedRecord_checked
+    (P : Params) (D : ClosureData P)
+    (r : RecordData P D)
+    (hs : LocallySoundRecord r)
+    (hc : LocallyCompleteRecord r) :
+    (mkLocallyCheckedRecord P D r hs hc).checked = ⟨hs, hc⟩ := rfl
 
-theorem CheckerLocalPackage.not_exclusion_of_emptiness
-    (X : CheckerLocalPackage) :
-    IsEmptinessRecord X.record → ¬ IsExclusionRecord X.record := by
-  intro h
-  exact locallyCheckedRecord_not_exclusion_of_emptiness X.record X.checked h
+theorem checkerLocal_sound
+    (P : Params) (D : ClosureData P)
+    {r : RecordData P D}
+    (X : CheckerLocalPackage P D r) :
+    LocallySoundRecord r := by
+  exact X.sound P D
 
-theorem CheckerLocalPackage.not_finiteReduction_of_emptiness
-    (X : CheckerLocalPackage) :
-    IsEmptinessRecord X.record → ¬ IsFiniteReductionRecord X.record := by
-  intro h
-  exact locallyCheckedRecord_not_finiteReduction_of_emptiness X.record X.checked h
+theorem checkerLocal_complete
+    (P : Params) (D : ClosureData P)
+    {r : RecordData P D}
+    (X : CheckerLocalPackage P D r) :
+    LocallyCompleteRecord r := by
+  exact X.complete P D
 
-theorem CheckerLocalPackage.not_finiteReduction_of_exclusion
-    (X : CheckerLocalPackage) :
-    IsExclusionRecord X.record → ¬ IsFiniteReductionRecord X.record := by
-  intro h
-  exact locallyCheckedRecord_not_finiteReduction_of_exclusion X.record X.checked h
-
-theorem CheckerLocalPackage.routing_readable (X : CheckerLocalPackage) :
-    (recordRouting X.record = RecordRouting.emptiness X.record ∧ IsEmptinessRecord X.record) ∨
-      (recordRouting X.record = RecordRouting.exclusion X.record ∧ IsExclusionRecord X.record) ∨
-      (recordRouting X.record = RecordRouting.finiteReduction X.record ∧ IsFiniteReductionRecord X.record) := by
-  exact locallyCheckedRecord_routing_readable X.record X.checked
-
-def mkLocallyCheckedRecord (r : RecordData)
-    (hs : LocallySoundRecord r) (hc : LocallyCompleteRecord r) :
-    CheckerLocalPackage :=
-  CheckerLocalPackage.mk r ⟨hs, hc⟩
-
-@[simp] theorem mkLocallyCheckedRecord_record (r : RecordData)
-    (hs : LocallySoundRecord r) (hc : LocallyCompleteRecord r) :
-    (mkLocallyCheckedRecord r hs hc).record = r := rfl
-
-@[simp] theorem mkLocallyCheckedRecord_checked (r : RecordData)
-    (hs : LocallySoundRecord r) (hc : LocallyCompleteRecord r) :
-    (mkLocallyCheckedRecord r hs hc).checked = ⟨hs, hc⟩ := rfl
+theorem checkerLocal_checked
+    (P : Params) (D : ClosureData P)
+    {r : RecordData P D}
+    (X : CheckerLocalPackage P D r) :
+    LocallyCheckedRecord r := by
+  exact X.checked
 
 end Certificate
 end CaseC

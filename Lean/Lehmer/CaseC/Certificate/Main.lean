@@ -4,9 +4,8 @@ IMPORT CLASSIFICATION
 - Lehmer.Prelude : meta
 - Lehmer.Basic.Defs : def
 - Lehmer.CaseC.Spec : def
-- Lehmer.CaseC.Certificate.Format : def
+- Lehmer.CaseC.Certificate.Format : def thm
 - Lehmer.CaseC.Certificate.Record : def thm
-- Lehmer.CaseC.Certificate.Priority : def thm
 - Lehmer.CaseC.Certificate.Coverage : def thm
 - Lehmer.CaseC.Certificate.SoundnessLocal : def thm
 - Lehmer.CaseC.Certificate.CompletenessLocal : def thm
@@ -14,6 +13,7 @@ IMPORT CLASSIFICATION
 - Lehmer.CaseC.Certificate.CompletenessGlobal : def thm
 - Lehmer.CaseC.Certificate.CheckerLocal : def thm
 - Lehmer.CaseC.Certificate.CheckerGlobal : def thm
+- Lehmer.CaseC.Certificate.VerifiedRecordSoundness : def thm
 -/
 
 import Lehmer.Prelude
@@ -21,7 +21,6 @@ import Lehmer.Basic.Defs
 import Lehmer.CaseC.Spec
 import Lehmer.CaseC.Certificate.Format
 import Lehmer.CaseC.Certificate.Record
-import Lehmer.CaseC.Certificate.Priority
 import Lehmer.CaseC.Certificate.Coverage
 import Lehmer.CaseC.Certificate.SoundnessLocal
 import Lehmer.CaseC.Certificate.CompletenessLocal
@@ -29,177 +28,205 @@ import Lehmer.CaseC.Certificate.SoundnessGlobal
 import Lehmer.CaseC.Certificate.CompletenessGlobal
 import Lehmer.CaseC.Certificate.CheckerLocal
 import Lehmer.CaseC.Certificate.CheckerGlobal
+import Lehmer.CaseC.Certificate.VerifiedRecordSoundness
 
 namespace Lehmer
 namespace CaseC
 namespace Certificate
 
 open Lehmer.Basic
+open Lehmer.Pipeline
 
-def CertificateMainChecked (C : GlobalCertificate) : Prop :=
-  GloballyCheckedCertificate C
+def CertificateMainChecked
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D) : Type :=
+  VerifiedCertificateRecords P D C
 
-@[simp] theorem CertificateMainChecked_def (C : GlobalCertificate) :
-    CertificateMainChecked C = GloballyCheckedCertificate C := rfl
+@[simp] theorem CertificateMainChecked_def
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D) :
+    CertificateMainChecked P D C =
+      VerifiedCertificateRecords P D C := rfl
 
-theorem certificateMainChecked_sound (C : GlobalCertificate) :
-    CertificateMainChecked C → GloballySoundCertificate C := by
-  intro h
-  exact globallyCheckedCertificate_sound C h
+structure CertificateMainPackage
+    (P : Params) (D : ClosureData P) where
+  certificate : GlobalCertificate P D
+  verifiedRecords : VerifiedCertificateRecords P D certificate
 
-theorem certificateMainChecked_complete (C : GlobalCertificate) :
-    CertificateMainChecked C → GloballyCompleteCertificate C := by
-  intro h
-  exact globallyCheckedCertificate_complete C h
+@[simp] theorem CertificateMainPackage.certificate_mk
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (hV : VerifiedCertificateRecords P D C) :
+    (CertificateMainPackage.mk C hV).certificate = C := rfl
 
-theorem certificateMainChecked_coverageReady (C : GlobalCertificate) :
-    CertificateMainChecked C → CoverageReadyCertificate C := by
-  intro h
-  exact globallyCheckedCertificate_coverageReady C h
+@[simp] theorem CertificateMainPackage.verifiedRecords_mk
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (hV : VerifiedCertificateRecords P D C) :
+    (CertificateMainPackage.mk C hV).verifiedRecords = hV := rfl
 
-theorem certificateMain_mem_sound (C : GlobalCertificate) :
-    CertificateMainChecked C →
-      ∀ r, certificateHasRecord C r → LocallySoundRecord r := by
-  intro h r hr
-  exact globallyCheckedCertificate_mem_sound C h r hr
+def mkCertificateMainPackage
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (hV : VerifiedCertificateRecords P D C) :
+    CertificateMainPackage P D :=
+  { certificate := C
+    verifiedRecords := hV }
 
-theorem certificateMain_mem_complete (C : GlobalCertificate) :
-    CertificateMainChecked C →
-      ∀ r, certificateHasRecord C r → LocallyCompleteRecord r := by
-  intro h r hr
-  exact globallyCheckedCertificate_mem_complete C h r hr
+@[simp] theorem mkCertificateMainPackage_certificate
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (hV : VerifiedCertificateRecords P D C) :
+    (mkCertificateMainPackage P D C hV).certificate = C := rfl
 
-theorem certificateMain_mem_checked (C : GlobalCertificate) :
-    CertificateMainChecked C →
-      ∀ r, certificateHasRecord C r → LocallyCheckedRecord r := by
-  intro h r hr
-  exact ⟨certificateMain_mem_sound C h r hr, certificateMain_mem_complete C h r hr⟩
+@[simp] theorem mkCertificateMainPackage_verifiedRecords
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (hV : VerifiedCertificateRecords P D C) :
+    (mkCertificateMainPackage P D C hV).verifiedRecords = hV := rfl
 
-theorem certificateMain_exhaustive (C : GlobalCertificate) :
-    CertificateMainChecked C ∨ ¬ CertificateMainChecked C := by
-  exact Classical.em _
+def CertificateMainPackage.records
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D) : RecordFamily P D :=
+  certificateRecords X.certificate
 
-structure CertificateMainPackage where
-  global : CheckerGlobalPackage
+@[simp] theorem CertificateMainPackage.records_def
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D) :
+    X.records P D = certificateRecords X.certificate := rfl
 
-@[simp] theorem CertificateMainPackage.global_mk (G : CheckerGlobalPackage) :
-    (CertificateMainPackage.mk G).global = G := rfl
+def CertificateMainPackage.head?
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D) : Option (RecordData P D) :=
+  X.certificate.records.head?
 
-def CertificateMainPackage.certificate (X : CertificateMainPackage) : GlobalCertificate :=
-  X.global.certificate
+@[simp] theorem CertificateMainPackage.head?_nil
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (hV : VerifiedCertificateRecords P D C)
+    (h : C.records = []) :
+    (CertificateMainPackage.mk C hV).head? P D = none := by
+  simp [CertificateMainPackage.head?, h]
 
-@[simp] theorem CertificateMainPackage.certificate_def (X : CertificateMainPackage) :
-    X.certificate = X.global.certificate := rfl
+@[simp] theorem CertificateMainPackage.head?_cons
+    (P : Params) (D : ClosureData P)
+    (C : GlobalCertificate P D)
+    (hV : VerifiedCertificateRecords P D C)
+    (r : RecordData P D)
+    (rs : RecordFamily P D)
+    (h : C.records = r :: rs) :
+    (CertificateMainPackage.mk C hV).head? P D = some r := by
+  simp [CertificateMainPackage.head?, h]
 
-def CertificateMainPackage.checked (X : CertificateMainPackage) : CertificateMainChecked X.certificate :=
-  X.global.checked
+theorem CertificateMainPackage.head?_eq_none_of_records_eq_nil
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D)
+    (h : X.certificate.records = []) :
+    X.head? P D = none := by
+  simp [CertificateMainPackage.head?, h]
 
-@[simp] theorem CertificateMainPackage.checked_def (X : CertificateMainPackage) :
-    X.checked = X.global.checked := rfl
+theorem CertificateMainPackage.head?_eq_some_of_records_eq_cons
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D)
+    (r : RecordData P D)
+    (rs : RecordFamily P D)
+    (h : X.certificate.records = r :: rs) :
+    X.head? P D = some r := by
+  simp [CertificateMainPackage.head?, h]
 
-theorem CertificateMainPackage.sound (X : CertificateMainPackage) :
-    GloballySoundCertificate X.certificate := by
-  exact X.global.sound
+def CertificateMainPackage.checked
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D) :
+    CertificateMainChecked P D X.certificate :=
+  X.verifiedRecords
 
-theorem CertificateMainPackage.complete (X : CertificateMainPackage) :
-    GloballyCompleteCertificate X.certificate := by
-  exact X.global.complete
+def CertificateMainPackage.verified
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D) :
+    VerifiedCertificateRecords P D X.certificate :=
+  X.verifiedRecords
 
-theorem CertificateMainPackage.coverageReady (X : CertificateMainPackage) :
-    CoverageReadyCertificate X.certificate := by
-  exact X.global.coverageReady
+def CertificateMainPackage.mem_verified
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D) :
+    ∀ r : RecordData P D,
+      certificateHasRecord X.certificate r →
+        VerifiedRecordCertificate P D r :=
+  fun r hr => X.verifiedRecords r hr
 
-def CertificateMainPackage.records (X : CertificateMainPackage) : RecordFamily :=
-  checkedCertificateRecords X.global
+theorem CertificateMainPackage.covers_admissible_support
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S) :
+    GlobalCertificateCoversSupport P D X.certificate S := by
+  exact globalCertificate_covers_admissible_support
+    P D X.certificate S hAdm
 
-@[simp] theorem CertificateMainPackage.records_def (X : CertificateMainPackage) :
-    X.records = checkedCertificateRecords X.global := rfl
+theorem CertificateMainPackage.covers_admissible_state
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D)
+    (U : State P)
+    (hAdm : CaseCAdmissibleSupport P D U.support) :
+    GlobalCertificateCoversState P D X.certificate U := by
+  exact globalCertificate_covers_admissible_state
+    P D X.certificate U hAdm
 
-theorem CertificateMainPackage.mem_sound (X : CertificateMainPackage) :
-    ∀ r, certificateHasRecord X.certificate r → LocallySoundRecord r := by
-  intro r hr
-  exact X.global.mem_sound r hr
+theorem CertificateMainPackage.excludes_covered_support
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D)
+    (Γ : VerifiedRecordSoundnessContext P D)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S)
+    (hCover : GlobalCertificateCoversSupport P D X.certificate S) :
+    False := by
+  exact verifiedCertificateRecords_excludes_covered_support
+    P D Γ X.certificate X.verifiedRecords S hAdm hCover
 
-theorem CertificateMainPackage.mem_complete (X : CertificateMainPackage) :
-    ∀ r, certificateHasRecord X.certificate r → LocallyCompleteRecord r := by
-  intro r hr
-  exact X.global.mem_complete r hr
+theorem CertificateMainPackage.excludes_covered_state
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D)
+    (Γ : VerifiedRecordSoundnessContext P D)
+    (U : State P)
+    (hAdm : CaseCAdmissibleSupport P D U.support)
+    (hCover : GlobalCertificateCoversState P D X.certificate U) :
+    False := by
+  exact verifiedCertificateRecords_excludes_covered_state
+    P D Γ X.certificate X.verifiedRecords U hAdm hCover
 
-theorem CertificateMainPackage.mem_checked (X : CertificateMainPackage) :
-    ∀ r, certificateHasRecord X.certificate r → LocallyCheckedRecord r := by
-  intro r hr
-  exact ⟨X.mem_sound r hr, X.mem_complete r hr⟩
+theorem CertificateMainPackage.excludes_covered_candidate
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D)
+    (Γ : VerifiedRecordSoundnessContext P D)
+    {n : ℕ}
+    (hL : LehmerComposite n)
+    (hC : InCaseC n)
+    (hAdm : CaseCAdmissibleSupport P D (candidateSupport n))
+    (hCover :
+      CandidateCoveredByCertificate P D X.certificate n) :
+    False := by
+  exact verifiedCertificateRecords_excludes_covered_candidate
+    P D Γ X.certificate X.verifiedRecords hL hC hAdm hCover
 
-theorem CertificateMainPackage.record_mem_sound (X : CertificateMainPackage) :
-    ∀ r, r ∈ X.records → LocallySoundRecord r := by
-  intro r hr
-  rw [CertificateMainPackage.records_def] at hr
-  exact X.global.record_mem_sound r hr
+theorem CertificateMainPackage.excludes_admissible_support
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D)
+    (Γ : VerifiedRecordSoundnessContext P D)
+    (S : Support)
+    (hAdm : CaseCAdmissibleSupport P D S) :
+    False := by
+  exact verifiedCertificateRecords_excludes_admissible_support
+    P D Γ X.certificate X.verifiedRecords S hAdm
 
-theorem CertificateMainPackage.record_mem_complete (X : CertificateMainPackage) :
-    ∀ r, r ∈ X.records → LocallyCompleteRecord r := by
-  intro r hr
-  rw [CertificateMainPackage.records_def] at hr
-  exact X.global.record_mem_complete r hr
-
-theorem CertificateMainPackage.record_mem_checked (X : CertificateMainPackage) :
-    ∀ r, r ∈ X.records → LocallyCheckedRecord r := by
-  intro r hr
-  exact ⟨X.record_mem_sound r hr, X.record_mem_complete r hr⟩
-
-def CertificateMainPackage.head? (X : CertificateMainPackage) : Option RecordData :=
-  checkedCertificateHead? X.global
-
-@[simp] theorem CertificateMainPackage.head?_def (X : CertificateMainPackage) :
-    X.head? = checkedCertificateHead? X.global := rfl
-
-theorem CertificateMainPackage.head?_nil
-    (h : CertificateMainChecked (GlobalCertificate.mk [])) :
-    (CertificateMainPackage.mk (CheckerGlobalPackage.mk (GlobalCertificate.mk []) h)).head? = none := by
-  rfl
-
-theorem CertificateMainPackage.head?_cons (r : RecordData) (rs : RecordFamily)
-    (h : CertificateMainChecked (GlobalCertificate.mk (r :: rs))) :
-    (CertificateMainPackage.mk (CheckerGlobalPackage.mk (GlobalCertificate.mk (r :: rs)) h)).head? = some r := by
-  rfl
-
-theorem CertificateMainPackage.head_sound (r : RecordData) (rs : RecordFamily)
-    (h : CertificateMainChecked (GlobalCertificate.mk (r :: rs))) :
-    LocallySoundRecord r := by
-  exact CheckerGlobalPackage.head_sound r rs h
-
-theorem CertificateMainPackage.head_complete (r : RecordData) (rs : RecordFamily)
-    (h : CertificateMainChecked (GlobalCertificate.mk (r :: rs))) :
-    LocallyCompleteRecord r := by
-  exact CheckerGlobalPackage.head_complete r rs h
-
-def CertificateMainPackage.headCheckedPackage (r : RecordData) (rs : RecordFamily)
-    (h : CertificateMainChecked (GlobalCertificate.mk (r :: rs))) : CheckerLocalPackage :=
-  mkLocallyCheckedRecord r
-    (CertificateMainPackage.head_sound r rs h)
-    (CertificateMainPackage.head_complete r rs h)
-
-@[simp] theorem CertificateMainPackage.headCheckedPackage_record (r : RecordData) (rs : RecordFamily)
-    (h : CertificateMainChecked (GlobalCertificate.mk (r :: rs))) :
-    (CertificateMainPackage.headCheckedPackage r rs h).record = r := by
-  rfl
-
-theorem CertificateMainPackage.headCheckedPackage_checked (r : RecordData) (rs : RecordFamily)
-    (h : CertificateMainChecked (GlobalCertificate.mk (r :: rs))) :
-    LocallyCheckedRecord (CertificateMainPackage.headCheckedPackage r rs h).record := by
-  exact (CertificateMainPackage.headCheckedPackage r rs h).checked
-
-def mkCertificateMainPackage (G : CheckerGlobalPackage) : CertificateMainPackage :=
-  CertificateMainPackage.mk G
-
-@[simp] theorem mkCertificateMainPackage_global (G : CheckerGlobalPackage) :
-    (mkCertificateMainPackage G).global = G := rfl
-
-@[simp] theorem mkCertificateMainPackage_certificate (G : CheckerGlobalPackage) :
-    (mkCertificateMainPackage G).certificate = G.certificate := rfl
-
-@[simp] theorem mkCertificateMainPackage_checked (G : CheckerGlobalPackage) :
-    (mkCertificateMainPackage G).checked = G.checked := rfl
+theorem CertificateMainPackage.excludes_admissible_state
+    (P : Params) (D : ClosureData P)
+    (X : CertificateMainPackage P D)
+    (Γ : VerifiedRecordSoundnessContext P D)
+    (U : State P)
+    (hAdm : CaseCAdmissibleSupport P D U.support) :
+    False := by
+  exact verifiedCertificateRecords_excludes_admissible_state
+    P D Γ X.certificate X.verifiedRecords U hAdm
 
 end Certificate
 end CaseC
