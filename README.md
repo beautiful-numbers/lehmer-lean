@@ -4,7 +4,7 @@ Formalisation in Lean 4 of a structured contradiction strategy around Lehmer can
 
 - the **main mathematical pipeline**
 - the **audit / referee layer**
-- the final top-level contradiction theorem `PierreDeFermat`
+- the final top-level referee theorem `PierreDeFermat`
 
 ## Project structure
 
