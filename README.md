@@ -97,7 +97,7 @@ Conceptually:
 2. each relevant branch has already been closed by the corresponding proof layer
 3. the audit layer packages this into the final no-counterexample statement
 
-So `PierreDeFermat.lean` should be read as a **referee / aggregator theorem**, not as the place where the branch mathematics is developed from scratch.
+`PierreDeFermat.lean` is the final **referee-facing global aggregator theorem**: it turns the actual global range split together with the corresponding branch closures into the final no-counterexample statement.
 
 ## Case B note
 
