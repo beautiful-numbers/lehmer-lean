@@ -162,7 +162,8 @@ theorem caseBGateFailTerminalTraceClassification_terminal_eq
     CaseBGateFailTerminalTrace.terminal K.trace = C := by
   cases K with
   | mk trace =>
-      cases trace <;> rfl
+      cases trace
+      rfl
 
 theorem caseBGateFailTerminalTraceClassification_length_eq_zero
     {C : Context}
@@ -170,7 +171,8 @@ theorem caseBGateFailTerminalTraceClassification_length_eq_zero
     CaseBGateFailTerminalTrace.length K.trace = 0 := by
   cases K with
   | mk trace =>
-      cases trace <;> rfl
+      cases trace
+      rfl
 
 theorem caseBGateFailTerminalTraceClassification_preserves_level
     {C : Context}

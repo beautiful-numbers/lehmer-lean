@@ -80,12 +80,14 @@ theorem CaseBGateFailLockRouting.trace_preserves_level
 theorem CaseBGateFailLockRouting.trace_length_eq_zero
     {C : Context} (R : CaseBGateFailLockRouting C) :
     CaseBGateFailExhaustiveTrace.length R.trace = 0 := by
-  cases R.trace <;> rfl
+  cases R.trace
+  rfl
 
 theorem CaseBGateFailLockRouting.trace_terminal_eq_start
     {C : Context} (R : CaseBGateFailLockRouting C) :
     CaseBGateFailExhaustiveTrace.terminal R.trace = C := by
-  cases R.trace <;> rfl
+  cases R.trace
+  rfl
 
 theorem CaseBGateFailLockRouting.trace_terminal_contextDescentLength_le
     {C : Context} (R : CaseBGateFailLockRouting C) :
@@ -153,7 +155,8 @@ theorem CaseBGateFailLockAssembly.trace_preserves_level
 theorem CaseBGateFailLockAssembly.trace_length_eq_zero
     {C : Context} (A : CaseBGateFailLockAssembly C) :
     CaseBGateFailTerminalTrace.length A.trace = 0 := by
-  cases A.trace <;> rfl
+  cases A.trace
+  rfl
 
 theorem exists_caseBGateFailLockAssembly_of_state
     (C : Context)

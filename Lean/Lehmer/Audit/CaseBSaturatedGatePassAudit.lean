@@ -116,49 +116,49 @@ theorem caseBSaturatedGatePassAuditRouting_sound
   | gatePass G _ _ =>
       exact ⟨G, trivial⟩
 
-theorem progress_audit_of_state
+theorem exists_gatePass_progress_audit_of_state
     (C : Context)
     (hC : AuditCaseBGatePassState C) :
     ∃ _ : AuditCaseBGatePassData C, True := by
   exact exists_gatePass_of_state C hC
 
-theorem exists_trace_audit_of_state
+theorem exists_gatePass_trace_audit_of_state
     (C : Context)
     (hC : AuditCaseBGatePassState C) :
     ∃ _ : CaseBGatePassExhaustiveTrace C, True := by
   exact ⟨caseBGatePassExhaustiveTrace_of_state C hC, trivial⟩
 
-theorem exists_classification_audit_of_state
+theorem exists_gatePass_classification_audit_of_state
     (C : Context)
     (hC : AuditCaseBGatePassState C) :
     ∃ _ : CaseBGatePassExhaustiveTraceClassification C, True := by
   exact exists_caseBGatePassExhaustiveTraceClassification_of_state C hC
 
-theorem exists_lock_audit_of_state
+theorem exists_gatePass_lock_audit_of_state
     (C : Context)
     (hC : AuditCaseBGatePassState C) :
     ∃ _ : CaseBGatePassLockRouting C, True := by
   exact exists_caseBGatePassLockRouting_of_state C hC
 
-theorem exists_witness_audit_of_state
+theorem exists_gatePass_witness_audit_of_state
     (C : Context)
     (hC : AuditCaseBGatePassState C) :
     ∃ _ : CaseBGatePassWitnessAccountingRouting C, True := by
   exact exists_caseBGatePassWitnessAccountingRouting_of_state C hC
 
-theorem exists_supply_audit_of_state
+theorem exists_gatePass_supply_audit_of_state
     (C : Context)
     (hC : AuditCaseBGatePassState C) :
     ∃ _ : CaseBGatePassSupplyRouting C, True := by
   exact exists_caseBGatePassSupplyRouting_of_state C hC
 
-theorem exists_terminal_audit_of_state
+theorem exists_gatePass_terminal_audit_of_state
     (C : Context)
     (hC : AuditCaseBGatePassState C) :
     ∃ _ : CaseBGatePassTerminalRouting C, True := by
   exact exists_caseBGatePassTerminalRouting_of_state C hC
 
-theorem exists_contradiction_audit_of_state
+theorem exists_gatePass_contradiction_audit_of_state
     (C : Context)
     (hC : AuditCaseBGatePassState C) :
     ∃ _ : CaseBGatePassContradictionRouting C, True := by
@@ -170,7 +170,7 @@ theorem exists_saturatedGatePassAudit_of_state
     ∃ _ : CaseBSaturatedGatePassAuditRouting C, True := by
   exact ⟨caseBSaturatedGatePassAuditRouting_of_state C hC, trivial⟩
 
-theorem exists_final_audit_branch_of_state
+theorem exists_final_gatePass_audit_branch_of_state
     (C : Context)
     (hC : AuditCaseBGatePassState C) :
     ∃ _ : AuditCaseBGatePassData C, True := by

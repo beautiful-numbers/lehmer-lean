@@ -22,246 +22,416 @@ namespace Lehmer
 namespace Audit
 namespace CaseC
 
-def auditCaseCGlobalCertificate :
-    Lehmer.CaseC.Certificate.GlobalCertificate :=
-  Lehmer.CaseC.Certificate.GlobalCertificate.mk []
+def auditCaseCCertificateMainPackage
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.GlobalCertificate P D)
+    (hV : Lehmer.CaseC.Certificate.VerifiedCertificateRecords P D C) :
+    Lehmer.CaseC.Certificate.CertificateMainPackage P D :=
+  Lehmer.CaseC.Certificate.mkCertificateMainPackage P D C hV
 
-@[simp] theorem auditCaseCGlobalCertificate_records :
+@[simp] theorem auditCaseCCertificateMainPackage_certificate
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.GlobalCertificate P D)
+    (hV : Lehmer.CaseC.Certificate.VerifiedCertificateRecords P D C) :
+    (auditCaseCCertificateMainPackage P D C hV).certificate = C := by
+  rfl
+
+@[simp] theorem auditCaseCCertificateMainPackage_verifiedRecords
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.GlobalCertificate P D)
+    (hV : Lehmer.CaseC.Certificate.VerifiedCertificateRecords P D C) :
+    (auditCaseCCertificateMainPackage P D C hV).verifiedRecords = hV := by
+  rfl
+
+@[simp] theorem auditCaseCCertificateMainPackage_checked
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.GlobalCertificate P D)
+    (hV : Lehmer.CaseC.Certificate.VerifiedCertificateRecords P D C) :
+    (auditCaseCCertificateMainPackage P D C hV).checked P D = hV := by
+  rfl
+
+@[simp] theorem auditCaseCCertificateMainPackage_verified
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.GlobalCertificate P D)
+    (hV : Lehmer.CaseC.Certificate.VerifiedCertificateRecords P D C) :
+    (auditCaseCCertificateMainPackage P D C hV).verified P D = hV := by
+  rfl
+
+@[simp] theorem auditCaseCCertificateMainPackage_records
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.GlobalCertificate P D)
+    (hV : Lehmer.CaseC.Certificate.VerifiedCertificateRecords P D C) :
+    (auditCaseCCertificateMainPackage P D C hV).records P D =
+      Lehmer.CaseC.Certificate.certificateRecords C := by
+  rfl
+
+def auditCaseCGlobalCertificateOfPackage
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    Lehmer.CaseC.Certificate.GlobalCertificate P D :=
+  X.certificate
+
+@[simp] theorem auditCaseCGlobalCertificateOfPackage_def
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    auditCaseCGlobalCertificateOfPackage P D X = X.certificate := rfl
+
+@[simp] theorem auditCaseCGlobalCertificateOfPackage_records
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
     Lehmer.CaseC.Certificate.certificateRecords
-      auditCaseCGlobalCertificate = [] := rfl
+      (auditCaseCGlobalCertificateOfPackage P D X) =
+      X.records P D := by
+  rfl
 
-theorem auditCaseCGlobalCertificate_checked :
+noncomputable def auditCaseCGlobalCertificateCheckedOfPackage
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
     Lehmer.CaseC.Certificate.CertificateMainChecked
-      auditCaseCGlobalCertificate := by
-  exact Lehmer.CaseC.Certificate.globallyCheckedCertificate_nil
+      P D (auditCaseCGlobalCertificateOfPackage P D X) := by
+  rw [auditCaseCGlobalCertificateOfPackage_def]
+  exact X.checked P D
 
-def auditCaseCCheckerGlobalPackage :
-    Lehmer.CaseC.Certificate.CheckerGlobalPackage :=
-  Lehmer.CaseC.Certificate.CheckerGlobalPackage.mk
-    auditCaseCGlobalCertificate
-    auditCaseCGlobalCertificate_checked
+@[simp] theorem auditCaseCGlobalCertificateCheckedOfPackage_def
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    auditCaseCGlobalCertificateCheckedOfPackage P D X =
+      X.checked P D := rfl
 
-@[simp] theorem auditCaseCCheckerGlobalPackage_certificate :
-    auditCaseCCheckerGlobalPackage.certificate =
-      auditCaseCGlobalCertificate := rfl
+noncomputable def auditCaseCGlobalCertificateVerifiedOfPackage
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    Lehmer.CaseC.Certificate.VerifiedCertificateRecords
+      P D (auditCaseCGlobalCertificateOfPackage P D X) := by
+  rw [auditCaseCGlobalCertificateOfPackage_def]
+  exact X.verified P D
 
-@[simp] theorem auditCaseCCheckerGlobalPackage_checked :
-    auditCaseCCheckerGlobalPackage.checked =
-      auditCaseCGlobalCertificate_checked := rfl
+@[simp] theorem auditCaseCGlobalCertificateVerifiedOfPackage_def
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    auditCaseCGlobalCertificateVerifiedOfPackage P D X =
+      X.verified P D := rfl
 
-def auditCaseCCertificateMainPackage :
-    Lehmer.CaseC.Certificate.CertificateMainPackage :=
-  Lehmer.CaseC.Certificate.mkCertificateMainPackage
-    auditCaseCCheckerGlobalPackage
-
-@[simp] theorem auditCaseCCertificateMainPackage_global :
-    auditCaseCCertificateMainPackage.global =
-      auditCaseCCheckerGlobalPackage := rfl
-
-@[simp] theorem auditCaseCCertificateMainPackage_certificate :
-    auditCaseCCertificateMainPackage.certificate =
-      auditCaseCGlobalCertificate := rfl
-
-@[simp] theorem auditCaseCCertificateMainPackage_checked :
-    auditCaseCCertificateMainPackage.checked =
-      auditCaseCGlobalCertificate_checked := rfl
-
-def auditCaseCCertificateMainPackageOf
-    {n : ℕ} (_hC : Lehmer.Pipeline.InCaseC n) :
-    Lehmer.CaseC.Certificate.CertificateMainPackage :=
-  auditCaseCCertificateMainPackage
+noncomputable def auditCaseCCertificateMainPackageOf
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    Lehmer.CaseC.Certificate.CertificateMainPackage
+      (auditCaseCParamsOf hC)
+      (auditCaseCClosureDataOf hC) :=
+  X
 
 @[simp] theorem auditCaseCCertificateMainPackageOf_eq
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    auditCaseCCertificateMainPackageOf hC =
-      auditCaseCCertificateMainPackage := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    auditCaseCCertificateMainPackageOf hC X = X := rfl
 
 @[simp] theorem auditCaseCCertificateMainPackageOf_certificate
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCCertificateMainPackageOf hC).certificate =
-      auditCaseCGlobalCertificate := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    (auditCaseCCertificateMainPackageOf hC X).certificate = X.certificate := rfl
+
+@[simp] theorem auditCaseCCertificateMainPackageOf_verifiedRecords
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    (auditCaseCCertificateMainPackageOf hC X).verifiedRecords = X.verifiedRecords := rfl
+
+@[simp] theorem auditCaseCCertificateMainPackageOf_checked
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    (auditCaseCCertificateMainPackageOf hC X).checked
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC) =
+      X.checked
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC) := rfl
+
+@[simp] theorem auditCaseCCertificateMainPackageOf_records
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    (auditCaseCCertificateMainPackageOf hC X).records
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC) =
+      X.records
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC) := rfl
 
 structure AuditCaseCCertificateData (n : ℕ) where
   inCaseC : Lehmer.Pipeline.InCaseC n
+  params : Lehmer.CaseC.Params
+  closure : Lehmer.CaseC.ClosureData params
   certificate :
-    Lehmer.CaseC.Certificate.CertificateMainPackage
+    Lehmer.CaseC.Certificate.CertificateMainPackage params closure
 
 @[simp] theorem AuditCaseCCertificateData.inCaseC_mk
     {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
-    (C : Lehmer.CaseC.Certificate.CertificateMainPackage) :
-    (AuditCaseCCertificateData.mk hC C).inCaseC = hC := rfl
+    (P : Lehmer.CaseC.Params)
+    (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    (AuditCaseCCertificateData.mk hC P D C).inCaseC = hC := rfl
+
+@[simp] theorem AuditCaseCCertificateData.params_mk
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (P : Lehmer.CaseC.Params)
+    (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    (AuditCaseCCertificateData.mk hC P D C).params = P := rfl
+
+@[simp] theorem AuditCaseCCertificateData.closure_mk
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (P : Lehmer.CaseC.Params)
+    (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    (AuditCaseCCertificateData.mk hC P D C).closure = D := rfl
 
 @[simp] theorem AuditCaseCCertificateData.certificate_mk
     {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
-    (C : Lehmer.CaseC.Certificate.CertificateMainPackage) :
-    (AuditCaseCCertificateData.mk hC C).certificate = C := rfl
+    (P : Lehmer.CaseC.Params)
+    (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    (AuditCaseCCertificateData.mk hC P D C).certificate = C := rfl
 
-def auditCaseCCertificateDataOf
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
+noncomputable def auditCaseCCertificateDataOf
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
     AuditCaseCCertificateData n :=
   AuditCaseCCertificateData.mk hC
-    (auditCaseCCertificateMainPackageOf hC)
+    (auditCaseCParamsOf hC)
+    (auditCaseCClosureDataOf hC)
+    X
 
 @[simp] theorem auditCaseCCertificateDataOf_inCaseC
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCCertificateDataOf hC).inCaseC = hC := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    (auditCaseCCertificateDataOf hC X).inCaseC = hC := rfl
+
+@[simp] theorem auditCaseCCertificateDataOf_params
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    (auditCaseCCertificateDataOf hC X).params = auditCaseCParamsOf hC := rfl
+
+@[simp] theorem auditCaseCCertificateDataOf_closure
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    (auditCaseCCertificateDataOf hC X).closure = auditCaseCClosureDataOf hC := rfl
 
 @[simp] theorem auditCaseCCertificateDataOf_certificate
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCCertificateDataOf hC).certificate =
-      auditCaseCCertificateMainPackageOf hC := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    (auditCaseCCertificateDataOf hC X).certificate = X := rfl
 
-theorem auditCaseCCertificateMainPackage_checked_prop :
-    Lehmer.CaseC.Certificate.CertificateMainChecked
-      auditCaseCCertificateMainPackage.certificate := by
-  exact auditCaseCCertificateMainPackage.checked
-
-theorem auditCaseCCertificateMainPackage_sound :
-    Lehmer.CaseC.Certificate.GloballySoundCertificate
-      auditCaseCCertificateMainPackage.certificate := by
-  exact auditCaseCCertificateMainPackage.sound
-
-theorem auditCaseCCertificateMainPackage_complete :
-    Lehmer.CaseC.Certificate.GloballyCompleteCertificate
-      auditCaseCCertificateMainPackage.certificate := by
-  exact auditCaseCCertificateMainPackage.complete
-
-theorem auditCaseCCertificateMainPackage_coverageReady :
-    Lehmer.CaseC.Certificate.CoverageReadyCertificate
-      auditCaseCCertificateMainPackage.certificate := by
-  exact auditCaseCCertificateMainPackage.coverageReady
-
-theorem auditCaseCCertificateMainPackageOf_checked
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    Lehmer.CaseC.Certificate.CertificateMainChecked
-      (auditCaseCCertificateMainPackageOf hC).certificate := by
-  exact (auditCaseCCertificateMainPackageOf hC).checked
-
-theorem auditCaseCCertificateMainPackageOf_sound
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    Lehmer.CaseC.Certificate.GloballySoundCertificate
-      (auditCaseCCertificateMainPackageOf hC).certificate := by
-  exact (auditCaseCCertificateMainPackageOf hC).sound
-
-theorem auditCaseCCertificateMainPackageOf_complete
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    Lehmer.CaseC.Certificate.GloballyCompleteCertificate
-      (auditCaseCCertificateMainPackageOf hC).certificate := by
-  exact (auditCaseCCertificateMainPackageOf hC).complete
-
-theorem auditCaseCCertificateMainPackageOf_coverageReady
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    Lehmer.CaseC.Certificate.CoverageReadyCertificate
-      (auditCaseCCertificateMainPackageOf hC).certificate := by
-  exact (auditCaseCCertificateMainPackageOf hC).coverageReady
-
-structure CaseCCertificateAuditRouting where
+structure CaseCCertificateAuditRouting
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P) where
   package :
-    Lehmer.CaseC.Certificate.CertificateMainPackage
+    Lehmer.CaseC.Certificate.CertificateMainPackage P D
 
 @[simp] theorem CaseCCertificateAuditRouting.package_mk
-    (C : Lehmer.CaseC.Certificate.CertificateMainPackage) :
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
     (CaseCCertificateAuditRouting.mk C).package = C := rfl
 
 def CaseCCertificateAuditRouting.certificate
-    (R : CaseCCertificateAuditRouting) :
-    Lehmer.CaseC.Certificate.GlobalCertificate :=
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (R : CaseCCertificateAuditRouting P D) :
+    Lehmer.CaseC.Certificate.GlobalCertificate P D :=
   R.package.certificate
 
 @[simp] theorem CaseCCertificateAuditRouting.certificate_def
-    (R : CaseCCertificateAuditRouting) :
-    R.certificate = R.package.certificate := rfl
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (R : CaseCCertificateAuditRouting P D) :
+    R.certificate P D = R.package.certificate := rfl
 
-theorem CaseCCertificateAuditRouting.checked
-    (R : CaseCCertificateAuditRouting) :
-    Lehmer.CaseC.Certificate.CertificateMainChecked R.certificate := by
-  simpa [CaseCCertificateAuditRouting.certificate_def] using R.package.checked
+def CaseCCertificateAuditRouting.records
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (R : CaseCCertificateAuditRouting P D) :
+    Lehmer.CaseC.Certificate.RecordFamily P D :=
+  R.package.records P D
 
-theorem CaseCCertificateAuditRouting.sound
-    (R : CaseCCertificateAuditRouting) :
-    Lehmer.CaseC.Certificate.GloballySoundCertificate R.certificate := by
-  simpa [CaseCCertificateAuditRouting.certificate_def] using R.package.sound
+@[simp] theorem CaseCCertificateAuditRouting.records_def
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (R : CaseCCertificateAuditRouting P D) :
+    R.records P D =
+      Lehmer.CaseC.Certificate.certificateRecords (R.certificate P D) := by
+  rfl
 
-theorem CaseCCertificateAuditRouting.complete
-    (R : CaseCCertificateAuditRouting) :
-    Lehmer.CaseC.Certificate.GloballyCompleteCertificate R.certificate := by
-  simpa [CaseCCertificateAuditRouting.certificate_def] using R.package.complete
+def CaseCCertificateAuditRouting.head?
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (R : CaseCCertificateAuditRouting P D) :
+    Option (Lehmer.CaseC.Certificate.RecordData P D) :=
+  R.package.head? P D
 
-theorem CaseCCertificateAuditRouting.coverageReady
-    (R : CaseCCertificateAuditRouting) :
-    Lehmer.CaseC.Certificate.CoverageReadyCertificate R.certificate := by
-  simpa [CaseCCertificateAuditRouting.certificate_def] using R.package.coverageReady
+@[simp] theorem CaseCCertificateAuditRouting.head?_def
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (R : CaseCCertificateAuditRouting P D) :
+    R.head? P D = R.package.head? P D := rfl
+
+noncomputable def CaseCCertificateAuditRouting.checked
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (R : CaseCCertificateAuditRouting P D) :
+    Lehmer.CaseC.Certificate.CertificateMainChecked
+      P D (R.certificate P D) := by
+  rw [CaseCCertificateAuditRouting.certificate_def]
+  exact R.package.checked P D
+
+noncomputable def CaseCCertificateAuditRouting.verified
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (R : CaseCCertificateAuditRouting P D) :
+    Lehmer.CaseC.Certificate.VerifiedCertificateRecords
+      P D (R.certificate P D) := by
+  rw [CaseCCertificateAuditRouting.certificate_def]
+  exact R.package.verified P D
+
+noncomputable def CaseCCertificateAuditRouting.mem_verified
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (R : CaseCCertificateAuditRouting P D) :
+    ∀ r : Lehmer.CaseC.Certificate.RecordData P D,
+      Lehmer.CaseC.Certificate.certificateHasRecord (R.certificate P D) r →
+        Lehmer.CaseC.Certificate.VerifiedRecordCertificate P D r :=
+  fun r hr => by
+    rw [CaseCCertificateAuditRouting.certificate_def] at hr
+    exact R.package.mem_verified P D r hr
 
 def caseCCertificateAuditRouting_of_package
-    (C : Lehmer.CaseC.Certificate.CertificateMainPackage) :
-    CaseCCertificateAuditRouting :=
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    CaseCCertificateAuditRouting P D :=
   CaseCCertificateAuditRouting.mk C
 
 @[simp] theorem caseCCertificateAuditRouting_of_package_package
-    (C : Lehmer.CaseC.Certificate.CertificateMainPackage) :
-    (caseCCertificateAuditRouting_of_package C).package = C := rfl
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    (caseCCertificateAuditRouting_of_package P D C).package = C := rfl
 
-def caseCCertificateAuditRouting_of_inCaseC
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    CaseCCertificateAuditRouting :=
+@[simp] theorem caseCCertificateAuditRouting_of_package_certificate
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    (caseCCertificateAuditRouting_of_package P D C).certificate P D =
+      C.certificate := rfl
+
+@[simp] theorem caseCCertificateAuditRouting_of_package_records
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (C : Lehmer.CaseC.Certificate.CertificateMainPackage P D) :
+    (caseCCertificateAuditRouting_of_package P D C).records P D =
+      C.records P D := rfl
+
+noncomputable def caseCCertificateAuditRouting_of_inCaseC
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    CaseCCertificateAuditRouting
+      (auditCaseCParamsOf hC)
+      (auditCaseCClosureDataOf hC) :=
   caseCCertificateAuditRouting_of_package
-    (auditCaseCCertificateMainPackageOf hC)
+    (auditCaseCParamsOf hC)
+    (auditCaseCClosureDataOf hC)
+    X
 
 @[simp] theorem caseCCertificateAuditRouting_of_inCaseC_package
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (caseCCertificateAuditRouting_of_inCaseC hC).package =
-      auditCaseCCertificateMainPackageOf hC := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    (caseCCertificateAuditRouting_of_inCaseC hC X).package = X := rfl
 
 @[simp] theorem caseCCertificateAuditRouting_of_inCaseC_certificate
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (caseCCertificateAuditRouting_of_inCaseC hC).certificate =
-      auditCaseCGlobalCertificate := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    (caseCCertificateAuditRouting_of_inCaseC hC X).certificate
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC) =
+      X.certificate := rfl
+
+@[simp] theorem caseCCertificateAuditRouting_of_inCaseC_records
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    (caseCCertificateAuditRouting_of_inCaseC hC X).records
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC) =
+      X.records
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC) := rfl
 
 theorem caseCCertificateAuditRouting_sound
-    (R : CaseCCertificateAuditRouting) :
-    ∃ C : Lehmer.CaseC.Certificate.CertificateMainPackage, True := by
+    (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
+    (R : CaseCCertificateAuditRouting P D) :
+    ∃ _C : Lehmer.CaseC.Certificate.CertificateMainPackage P D, True := by
   exact ⟨R.package, trivial⟩
 
 theorem exists_caseCCertificateAuditRouting_of_inCaseC
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    ∃ R : CaseCCertificateAuditRouting, True := by
-  exact ⟨caseCCertificateAuditRouting_of_inCaseC hC, trivial⟩
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
+    ∃ _R : CaseCCertificateAuditRouting
+      (auditCaseCParamsOf hC)
+      (auditCaseCClosureDataOf hC), True := by
+  exact ⟨caseCCertificateAuditRouting_of_inCaseC hC X, trivial⟩
 
 def CaseCCertificateAuditAvailable
-    {n : ℕ} (_hC : Lehmer.Pipeline.InCaseC n) : Prop :=
-  Nonempty CaseCCertificateAuditRouting
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) : Prop :=
+  Nonempty
+    (CaseCCertificateAuditRouting
+      (auditCaseCParamsOf hC)
+      (auditCaseCClosureDataOf hC))
 
-theorem caseCCertificateAuditAvailable
+@[simp] theorem CaseCCertificateAuditAvailable_def
     {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
+    CaseCCertificateAuditAvailable hC =
+      Nonempty
+        (CaseCCertificateAuditRouting
+          (auditCaseCParamsOf hC)
+          (auditCaseCClosureDataOf hC)) := rfl
+
+theorem caseCCertificateAuditAvailable_of_package
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (X :
+      Lehmer.CaseC.Certificate.CertificateMainPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)) :
     CaseCCertificateAuditAvailable hC := by
-  exact ⟨caseCCertificateAuditRouting_of_inCaseC hC⟩
-
-theorem CaseCCertificateAuditRouting.mem_sound
-    (R : CaseCCertificateAuditRouting) :
-    ∀ r,
-      Lehmer.CaseC.Certificate.certificateHasRecord R.certificate r →
-      Lehmer.CaseC.Certificate.LocallySoundRecord r := by
-  intro r hr
-  simpa [CaseCCertificateAuditRouting.certificate_def] using
-    R.package.mem_sound r hr
-
-theorem CaseCCertificateAuditRouting.mem_complete
-    (R : CaseCCertificateAuditRouting) :
-    ∀ r,
-      Lehmer.CaseC.Certificate.certificateHasRecord R.certificate r →
-      Lehmer.CaseC.Certificate.LocallyCompleteRecord r := by
-  intro r hr
-  simpa [CaseCCertificateAuditRouting.certificate_def] using
-    R.package.mem_complete r hr
-
-theorem CaseCCertificateAuditRouting.mem_checked
-    (R : CaseCCertificateAuditRouting) :
-    ∀ r,
-      Lehmer.CaseC.Certificate.certificateHasRecord R.certificate r →
-      Lehmer.CaseC.Certificate.LocallyCheckedRecord r := by
-  intro r hr
-  simpa [CaseCCertificateAuditRouting.certificate_def] using
-    R.package.mem_checked r hr
+  exact ⟨caseCCertificateAuditRouting_of_inCaseC hC X⟩
 
 end CaseC
 end Audit

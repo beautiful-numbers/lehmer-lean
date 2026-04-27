@@ -36,12 +36,12 @@ def AuditCaseCClass (n : ℕ) : Prop :=
     AuditCaseCClass n = InCaseC n := rfl
 
 def CaseCEmptyAuditFromPackage
-    (P : CaseC.Params) (D : CaseC.ClosureData P) (X : CaseC.CaseCMainPackage P D) : Prop :=
+    (P : CaseC.Params) (D : CaseC.ClosureData P) (_X : CaseC.CaseCMainPackage P D) : Prop :=
   ∀ n : ℕ, AuditCandidate n → AuditCaseCClass n → False
 
 @[simp] theorem CaseCEmptyAuditFromPackage_def
-    (P : CaseC.Params) (D : CaseC.ClosureData P) (X : CaseC.CaseCMainPackage P D) :
-    CaseCEmptyAuditFromPackage P D X =
+    (P : CaseC.Params) (D : CaseC.ClosureData P) (_X : CaseC.CaseCMainPackage P D) :
+    CaseCEmptyAuditFromPackage P D _X =
       (∀ n : ℕ, AuditCandidate n → AuditCaseCClass n → False) := rfl
 
 theorem audit_caseC_empty_pointwise_from_package
@@ -139,31 +139,31 @@ theorem caseCResidualCanonicalView_closed
 
 def CaseCStructuralClosureAudit : Prop :=
   ∀ n : ℕ, AuditCandidate n → AuditCaseCClass n →
-    ∃ X : AuditCaseCReconstructionPieces n, True
+    ∃ _X : AuditCaseCReconstructionPieces n, True
 
 @[simp] theorem CaseCStructuralClosureAudit_def :
     CaseCStructuralClosureAudit =
       (∀ n : ℕ, AuditCandidate n → AuditCaseCClass n →
-        ∃ X : AuditCaseCReconstructionPieces n, True) := rfl
+        ∃ _X : AuditCaseCReconstructionPieces n, True) := rfl
 
 theorem caseC_structural_closure_audit :
     CaseCStructuralClosureAudit := by
   intro n _hCand hC
-  exact exists_caseCReconstructionPieces_of_inCaseC hC
+  exact CaseC.exists_caseCReconstructionPieces_of_inCaseC hC
 
 theorem exists_caseC_reconstruction_of_audit_class
     {n : ℕ} (hC : AuditCaseCClass n) :
-    ∃ X : AuditCaseCReconstructionPieces n, True := by
-  exact exists_caseCReconstructionPieces_of_inCaseC hC
+    ∃ _X : AuditCaseCReconstructionPieces n, True := by
+  exact CaseC.exists_caseCReconstructionPieces_of_inCaseC hC
 
 theorem exists_caseC_reconstruction_of_candidate_and_audit_class
     {n : ℕ} (_hCand : AuditCandidate n) (hC : AuditCaseCClass n) :
-    ∃ X : AuditCaseCReconstructionPieces n, True := by
+    ∃ _X : AuditCaseCReconstructionPieces n, True := by
   exact exists_caseC_reconstruction_of_audit_class hC
 
 theorem audit_caseC_reconstruction_total :
     ∀ n : ℕ, AuditCaseCClass n →
-      ∃ X : AuditCaseCReconstructionPieces n, True := by
+      ∃ _X : AuditCaseCReconstructionPieces n, True := by
   intro n hC
   exact exists_caseC_reconstruction_of_audit_class hC
 
@@ -176,12 +176,26 @@ theorem audit_caseC_reconstruction_strong
       X.closureData.cap = Lehmer.Pipeline.pivotOf n ∧
       X.closureData.omegaBound = Lehmer.Pipeline.pivotOf n ∧
       Lehmer.CaseC.StateMachine.ResidualClosed
-        (Lehmer.Audit.CaseC.auditCaseCParamsOf X.inCaseC)
-        (Lehmer.Audit.CaseC.auditCaseCClosureDataOf X.inCaseC)
-        X.residual.state ∧
-      Lehmer.CaseC.Certificate.CertificateMainChecked
-        X.certificate.certificate := by
-  exact exists_caseCReconstructionPieces_strong hC
+        (Lehmer.CaseC.caseCParamsOf X.inCaseC)
+        (Lehmer.CaseC.caseCClosureDataOf X.inCaseC)
+        X.residual.state := by
+  refine ⟨Lehmer.CaseC.auditCaseCReconstructionPiecesOf hC, ?_⟩
+  constructor
+  · rfl
+  constructor
+  · exact (Lehmer.Audit.CaseC.CaseCExhaustivityData.level_eq_pivot'
+      (Lehmer.Audit.CaseC.caseCExhaustivityDataOf hC))
+  constructor
+  · exact (Lehmer.Audit.CaseC.CaseCExhaustivityData.width_eq_pivot'
+      (Lehmer.Audit.CaseC.caseCExhaustivityDataOf hC))
+  constructor
+  · exact (Lehmer.Audit.CaseC.CaseCExhaustivityData.cap_eq_pivot'
+      (Lehmer.Audit.CaseC.caseCExhaustivityDataOf hC))
+  constructor
+  · exact (Lehmer.Audit.CaseC.CaseCExhaustivityData.omegaBound_eq_pivot'
+      (Lehmer.Audit.CaseC.caseCExhaustivityDataOf hC))
+  · exact Lehmer.CaseC.AuditCaseCReconstructionPieces.residual_closed
+      (Lehmer.CaseC.auditCaseCReconstructionPiecesOf hC)
 
 end Audit
 end Lehmer

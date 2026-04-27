@@ -80,12 +80,14 @@ theorem CaseBGatePassLockRouting.trace_preserves_level
 theorem CaseBGatePassLockRouting.trace_length_eq_zero
     {C : Context} (R : CaseBGatePassLockRouting C) :
     CaseBGatePassExhaustiveTrace.length R.trace = 0 := by
-  cases R.trace <;> rfl
+  cases R.trace
+  rfl
 
 theorem CaseBGatePassLockRouting.trace_terminal_eq_start
     {C : Context} (R : CaseBGatePassLockRouting C) :
     CaseBGatePassExhaustiveTrace.terminal R.trace = C := by
-  cases R.trace <;> rfl
+  cases R.trace
+  rfl
 
 theorem CaseBGatePassLockRouting.trace_terminal_contextDescentLength_le
     {C : Context} (R : CaseBGatePassLockRouting C) :

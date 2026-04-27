@@ -13,8 +13,7 @@ IMPORT CLASSIFICATION
 - Lehmer.Audit.CaseB.CaseBGateFailTerminal : def thm
 - Lehmer.Audit.CaseB.CaseBGateFailContradiction : def thm
 - Lehmer.Audit.CaseBGateFailAudit : def thm
-- Lehmer.Audit.CaseC.CaseBGateFailToCaseCBridge : def thm
-- Lehmer.Audit.CaseC.CaseCFiniteClosure : def thm
+- Lehmer.Audit.CaseCClosure : def thm
 -/
 
 import Lehmer.Prelude
@@ -29,8 +28,7 @@ import Lehmer.Audit.CaseB.CaseBGateFailSupplyAudit
 import Lehmer.Audit.CaseB.CaseBGateFailTerminal
 import Lehmer.Audit.CaseB.CaseBGateFailContradiction
 import Lehmer.Audit.CaseBGateFailAudit
-import Lehmer.Audit.CaseC.CaseBGateFailToCaseCBridge
-import Lehmer.Audit.CaseC.CaseCFiniteClosure
+import Lehmer.Audit.CaseCClosure
 
 namespace Lehmer
 namespace CaseB
@@ -134,12 +132,91 @@ theorem exists_final_caseBGateFailClosure_branch_of_state
   exact caseBGateFailClosureRouting_sound
     (caseBGateFailClosureRouting_of_state C hC)
 
+structure CaseBGateFailToCaseCBridgeInput (C : Context) where
+  n : ℕ
+  candidate : Lehmer.Audit.AuditCandidate n
+  inCaseC : Lehmer.Audit.AuditCaseCClass n
+  P : Lehmer.CaseC.Params
+  D : Lehmer.CaseC.ClosureData P
+  main : Lehmer.CaseC.CaseCMainPackage P D
+
+@[simp] theorem CaseBGateFailToCaseCBridgeInput.n_mk
+    {C : Context}
+    (n : ℕ)
+    (hCand : Lehmer.Audit.AuditCandidate n)
+    (hC : Lehmer.Audit.AuditCaseCClass n)
+    (P : Lehmer.CaseC.Params)
+    (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.CaseCMainPackage P D) :
+    (CaseBGateFailToCaseCBridgeInput.mk (C := C) n hCand hC P D X).n = n := rfl
+
+@[simp] theorem CaseBGateFailToCaseCBridgeInput.candidate_mk
+    {C : Context}
+    (n : ℕ)
+    (hCand : Lehmer.Audit.AuditCandidate n)
+    (hC : Lehmer.Audit.AuditCaseCClass n)
+    (P : Lehmer.CaseC.Params)
+    (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.CaseCMainPackage P D) :
+    (CaseBGateFailToCaseCBridgeInput.mk (C := C) n hCand hC P D X).candidate = hCand := rfl
+
+@[simp] theorem CaseBGateFailToCaseCBridgeInput.inCaseC_mk
+    {C : Context}
+    (n : ℕ)
+    (hCand : Lehmer.Audit.AuditCandidate n)
+    (hC : Lehmer.Audit.AuditCaseCClass n)
+    (P : Lehmer.CaseC.Params)
+    (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.CaseCMainPackage P D) :
+    (CaseBGateFailToCaseCBridgeInput.mk (C := C) n hCand hC P D X).inCaseC = hC := rfl
+
+@[simp] theorem CaseBGateFailToCaseCBridgeInput.P_mk
+    {C : Context}
+    (n : ℕ)
+    (hCand : Lehmer.Audit.AuditCandidate n)
+    (hC : Lehmer.Audit.AuditCaseCClass n)
+    (P : Lehmer.CaseC.Params)
+    (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.CaseCMainPackage P D) :
+    (CaseBGateFailToCaseCBridgeInput.mk (C := C) n hCand hC P D X).P = P := rfl
+
+@[simp] theorem CaseBGateFailToCaseCBridgeInput.D_mk
+    {C : Context}
+    (n : ℕ)
+    (hCand : Lehmer.Audit.AuditCandidate n)
+    (hC : Lehmer.Audit.AuditCaseCClass n)
+    (P : Lehmer.CaseC.Params)
+    (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.CaseCMainPackage P D) :
+    (CaseBGateFailToCaseCBridgeInput.mk (C := C) n hCand hC P D X).D = D := rfl
+
+@[simp] theorem CaseBGateFailToCaseCBridgeInput.main_mk
+    {C : Context}
+    (n : ℕ)
+    (hCand : Lehmer.Audit.AuditCandidate n)
+    (hC : Lehmer.Audit.AuditCaseCClass n)
+    (P : Lehmer.CaseC.Params)
+    (D : Lehmer.CaseC.ClosureData P)
+    (X : Lehmer.CaseC.CaseCMainPackage P D) :
+    (CaseBGateFailToCaseCBridgeInput.mk (C := C) n hCand hC P D X).main = X := rfl
+
+theorem false_of_caseCClosure
+    {C : Context}
+    (I : CaseBGateFailToCaseCBridgeInput C) :
+    False := by
+  have hCand : LehmerComposite I.n := by
+    simpa [Lehmer.Audit.AuditCandidate_def] using I.candidate
+  have hCaseC : Lehmer.Pipeline.InCaseC I.n := by
+    simpa [Lehmer.Audit.AuditCaseCClass_def] using I.inCaseC
+  exact Lehmer.CaseC.caseC_impossible_from_package
+    I.P I.D I.main hCand hCaseC
+
 theorem false_of_caseBGateFailClosureRouting
     {C : Context}
     (_R : CaseBGateFailClosureRouting C)
     (I : CaseBGateFailToCaseCBridgeInput C) :
     False := by
-  exact false_of_caseCFiniteClosure I
+  exact false_of_caseCClosure I
 
 theorem false_of_AuditCaseBGateFailState_via_caseC
     {C : Context}

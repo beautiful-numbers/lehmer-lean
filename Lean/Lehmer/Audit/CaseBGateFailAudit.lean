@@ -116,49 +116,49 @@ theorem caseBGateFailAuditRouting_sound
   | gateFail G _ _ =>
       exact ⟨G, trivial⟩
 
-theorem progress_audit_of_state
+theorem exists_gateFail_progress_audit_of_state
     (C : Context)
     (hC : AuditCaseBGateFailState C) :
-    AuditCaseBGateFailOutcome C := by
-  exact AuditCaseBGateFailOutcome_of_state hC
+    ∃ _ : AuditCaseBGateFailData C, True := by
+  exact ⟨auditCaseBGateFailData_of_state C hC, trivial⟩
 
-theorem exists_trace_audit_of_state
+theorem exists_gateFail_trace_audit_of_state
     (C : Context)
     (hC : AuditCaseBGateFailState C) :
     ∃ _ : CaseBGateFailExhaustiveTrace C, True := by
   exact ⟨caseBGateFailExhaustiveTrace_of_state C hC, trivial⟩
 
-theorem exists_classification_audit_of_state
+theorem exists_gateFail_classification_audit_of_state
     (C : Context)
     (hC : AuditCaseBGateFailState C) :
     ∃ _ : CaseBGateFailExhaustiveTraceClassification C, True := by
   exact exists_caseBGateFailExhaustiveTraceClassification_of_state C hC
 
-theorem exists_lock_audit_of_state
+theorem exists_gateFail_lock_audit_of_state
     (C : Context)
     (hC : AuditCaseBGateFailState C) :
     ∃ _ : CaseBGateFailLockRouting C, True := by
   exact exists_caseBGateFailLockRouting_of_state C hC
 
-theorem exists_witness_audit_of_state
+theorem exists_gateFail_witness_audit_of_state
     (C : Context)
     (hC : AuditCaseBGateFailState C) :
     ∃ _ : CaseBGateFailWitnessAccountingRouting C, True := by
   exact exists_caseBGateFailWitnessAccountingRouting_of_state C hC
 
-theorem exists_supply_audit_of_state
+theorem exists_gateFail_supply_audit_of_state
     (C : Context)
     (hC : AuditCaseBGateFailState C) :
     ∃ _ : CaseBGateFailSupplyRouting C, True := by
   exact exists_caseBGateFailSupplyRouting_of_state C hC
 
-theorem exists_terminal_audit_of_state
+theorem exists_gateFail_terminal_audit_of_state
     (C : Context)
     (hC : AuditCaseBGateFailState C) :
     ∃ _ : CaseBGateFailTerminalRouting C, True := by
   exact exists_caseBGateFailTerminalRouting_of_state C hC
 
-theorem exists_contradiction_audit_of_state
+theorem exists_gateFail_contradiction_audit_of_state
     (C : Context)
     (hC : AuditCaseBGateFailState C) :
     ∃ _ : CaseBGateFailContradictionRouting C, True := by

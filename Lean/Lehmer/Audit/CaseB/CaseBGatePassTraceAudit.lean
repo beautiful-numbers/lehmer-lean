@@ -51,12 +51,14 @@ def length {C : Context} :
 theorem preserves_level
     {C : Context} (T : CaseBGatePassExhaustiveTrace C) :
     (terminal T).y = C.y := by
-  cases T <;> rfl
+  cases T
+  rfl
 
 theorem terminal_contextDescentLength_le
     {C : Context} (T : CaseBGatePassExhaustiveTrace C) :
     contextDescentLength (terminal T) ≤ contextDescentLength C := by
-  cases T <;> exact le_rfl
+  cases T
+  exact le_rfl
 
 theorem finite
     {C : Context} (T : CaseBGatePassExhaustiveTrace C) :

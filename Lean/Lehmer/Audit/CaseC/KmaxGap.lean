@@ -1,17 +1,18 @@
 -- FILE: Lean/Lehmer/Audit/CaseC/KmaxGap.lean
 /-
 IMPORT CLASSIFICATION
-- Lehmer.Prelude : meta
-- Lehmer.Basic.Defs : def
-- Lehmer.CaseC.Spec : def
-- Lehmer.CaseC.GapClosure.SupportProfiles : def thm
-- Lehmer.CaseC.GapClosure.Rigidity : def thm
-- Lehmer.CaseC.GapClosure.NonIntegrality : def thm
-- Lehmer.CaseC.GapClosure.KmaxGap : def thm
-- Lehmer.Pipeline.GlobalSplit : def thm
-- Lehmer.Audit.CaseC.Params : def thm
-- Lehmer.Audit.CaseC.ClosureData : def thm
-- Lehmer.Audit.CaseC.NonIntegrality : def thm
+
+Lehmer.Prelude : meta
+Lehmer.Basic.Defs : def
+Lehmer.CaseC.Spec : def
+Lehmer.CaseC.GapClosure.SupportProfiles : def thm
+Lehmer.CaseC.GapClosure.Rigidity : def thm
+Lehmer.CaseC.GapClosure.NonIntegrality : def thm
+Lehmer.CaseC.GapClosure.KmaxGap : def thm
+Lehmer.Pipeline.GlobalSplit : def thm
+Lehmer.Audit.CaseC.Params : def thm
+Lehmer.Audit.CaseC.ClosureData : def thm
+Lehmer.Audit.CaseC.NonIntegrality : def thm
 -/
 
 import Lehmer.Prelude
@@ -29,6 +30,8 @@ import Lehmer.Audit.CaseC.NonIntegrality
 namespace Lehmer
 namespace Audit
 namespace CaseC
+
+open Lehmer.Basic
 
 structure AuditCaseCKmaxGapData (n : ℕ) where
   inCaseC : Lehmer.Pipeline.InCaseC n
@@ -79,60 +82,224 @@ structure AuditCaseCKmaxGapData (n : ℕ) where
     (K : Lehmer.CaseC.GapClosure.KmaxGapPackage P D) :
     (AuditCaseCKmaxGapData.mk hC P D N K).kmaxGap = K := rfl
 
-def auditCaseCKmaxGapOf
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
+structure AuditCaseCKmaxGapReconstruction
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) where
+  kmaxGap :
     Lehmer.CaseC.GapClosure.KmaxGapPackage
       (auditCaseCParamsOf hC)
-      (auditCaseCClosureDataOf hC) :=
-  let N := auditCaseCNonIntegralityOf hC
-  let G :=
-    Lehmer.CaseC.GapClosure.mkPositiveGapData
+      (auditCaseCClosureDataOf hC)
+  nonIntegrality_agrees :
+    Lehmer.CaseC.GapClosure.KmaxGapPackage.nonIntegralityFamilyPackage
       (auditCaseCParamsOf hC)
       (auditCaseCClosureDataOf hC)
-      N 1 (by decide)
-  let K :=
-    Lehmer.CaseC.GapClosure.mkKmaxData
-      (auditCaseCParamsOf hC)
-      (auditCaseCClosureDataOf hC)
-      1 (by decide)
-  let C :=
-    Lehmer.CaseC.GapClosure.mkClosureCapCandidate
-      (auditCaseCParamsOf hC)
-      (auditCaseCClosureDataOf hC)
-      1 (by decide)
-  Lehmer.CaseC.GapClosure.mkKmaxGapPackage
+      kmaxGap =
+      auditCaseCNonIntegralityOf hC
+
+@[simp] theorem AuditCaseCKmaxGapReconstruction.kmaxGap_mk
+    {n : ℕ} {hC : Lehmer.Pipeline.InCaseC n}
+    (K :
+      Lehmer.CaseC.GapClosure.KmaxGapPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC))
+    (hK :
+      Lehmer.CaseC.GapClosure.KmaxGapPackage.nonIntegralityFamilyPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)
+        K =
+        auditCaseCNonIntegralityOf hC) :
+    (AuditCaseCKmaxGapReconstruction.mk K hK).kmaxGap = K := rfl
+
+@[simp] theorem AuditCaseCKmaxGapReconstruction.nonIntegrality_agrees_mk
+    {n : ℕ} {hC : Lehmer.Pipeline.InCaseC n}
+    (K :
+      Lehmer.CaseC.GapClosure.KmaxGapPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC))
+    (hK :
+      Lehmer.CaseC.GapClosure.KmaxGapPackage.nonIntegralityFamilyPackage
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)
+        K =
+        auditCaseCNonIntegralityOf hC) :
+    (AuditCaseCKmaxGapReconstruction.mk K hK).nonIntegrality_agrees = hK := rfl
+
+theorem AuditCaseCKmaxGapReconstruction.family_eq_auditNonIntegralityFamily
+    {n : ℕ} {hC : Lehmer.Pipeline.InCaseC n}
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    R.kmaxGap.family = (auditCaseCNonIntegralityOf hC).family := by
+  have hEq := R.nonIntegrality_agrees
+  rw [← hEq]
+  rfl
+
+theorem AuditCaseCKmaxGapReconstruction.witnesses_eq_auditNonIntegralityWitnesses
+    {n : ℕ} {hC : Lehmer.Pipeline.InCaseC n}
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    HEq R.kmaxGap.nonIntegrality (auditCaseCNonIntegralityOf hC).witnesses := by
+  cases R with
+  | mk K hAgree =>
+      cases K with
+      | mk F hRigid hNI hGap hKmax hClosureCap =>
+          have hFam : F = [] := by
+            have hFam' : F = (auditCaseCNonIntegralityOf hC).family := by
+              exact congrArg (fun X => X.family) hAgree
+            rw [auditCaseCNonIntegrality_family_nil] at hFam'
+            exact hFam'
+          cases hFam
+          cases hAgree
+          exact HEq.rfl
+
+theorem AuditCaseCKmaxGapReconstruction.gapValue_pos
+    {n : ℕ} {hC : Lehmer.Pipeline.InCaseC n}
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    0 <
+      Lehmer.CaseC.GapClosure.kmaxGapPositiveValue
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)
+        R.kmaxGap := by
+  exact Lehmer.CaseC.GapClosure.kmaxGap_delta_positive
     (auditCaseCParamsOf hC)
     (auditCaseCClosureDataOf hC)
-    G K C
+    R.kmaxGap
+
+theorem AuditCaseCKmaxGapReconstruction.kmaxValue_pos
+    {n : ℕ} {hC : Lehmer.Pipeline.InCaseC n}
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    0 <
+      Lehmer.CaseC.GapClosure.kmaxGapKmaxValue
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)
+        R.kmaxGap := by
+  exact Lehmer.CaseC.GapClosure.kmaxGap_kmax_positive
+    (auditCaseCParamsOf hC)
+    (auditCaseCClosureDataOf hC)
+    R.kmaxGap
+
+theorem AuditCaseCKmaxGapReconstruction.closureCapValue_pos
+    {n : ℕ} {hC : Lehmer.Pipeline.InCaseC n}
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    0 <
+      Lehmer.CaseC.GapClosure.kmaxGapClosureCapValue
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)
+        R.kmaxGap := by
+  exact Lehmer.CaseC.GapClosure.kmaxGap_closureCap_positive
+    (auditCaseCParamsOf hC)
+    (auditCaseCClosureDataOf hC)
+    R.kmaxGap
+
+theorem AuditCaseCKmaxGapReconstruction.closureCapValue_atLeastCap
+    {n : ℕ} {hC : Lehmer.Pipeline.InCaseC n}
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    Lehmer.CaseC.cap (auditCaseCParamsOf hC) (auditCaseCClosureDataOf hC) ≤
+      Lehmer.CaseC.GapClosure.kmaxGapClosureCapValue
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)
+        R.kmaxGap := by
+  exact Lehmer.CaseC.GapClosure.kmaxGap_closureCap_atLeastCap
+    (auditCaseCParamsOf hC)
+    (auditCaseCClosureDataOf hC)
+    R.kmaxGap
+
+theorem AuditCaseCKmaxGapReconstruction.closureCapValue_atLeastClosureN
+    {n : ℕ} {hC : Lehmer.Pipeline.InCaseC n}
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCClosureDataOf hC).N ≤
+      Lehmer.CaseC.GapClosure.kmaxGapClosureCapValue
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)
+        R.kmaxGap := by
+  exact Lehmer.CaseC.GapClosure.kmaxGap_closureCap_atLeastClosureN
+    (auditCaseCParamsOf hC)
+    (auditCaseCClosureDataOf hC)
+    R.kmaxGap
+
+theorem AuditCaseCKmaxGapReconstruction.kmaxControlled
+    {n : ℕ} {hC : Lehmer.Pipeline.InCaseC n}
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    Lehmer.CaseC.GapClosure.kmaxGapKmaxValue
+      (auditCaseCParamsOf hC)
+      (auditCaseCClosureDataOf hC)
+      R.kmaxGap
+      ≤
+      (Lehmer.CaseC.GapClosure.kmaxGapClosureCapValue
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)
+        R.kmaxGap : ℚ) *
+      Lehmer.CaseC.GapClosure.kmaxGapPositiveValue
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)
+        R.kmaxGap := by
+  exact Lehmer.CaseC.GapClosure.kmaxGap_kmaxControlled
+    (auditCaseCParamsOf hC)
+    (auditCaseCClosureDataOf hC)
+    R.kmaxGap
+
+theorem AuditCaseCKmaxGapReconstruction.mem_hasWitness
+    {n : ℕ} {hC : Lehmer.Pipeline.InCaseC n}
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    ∀ S,
+      S ∈ R.kmaxGap.family →
+      Lehmer.CaseC.GapClosure.hasNonIntegralityWitness
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)
+        S := by
+  intro S hS
+  exact Lehmer.CaseC.GapClosure.kmaxGapFamily_mem_hasWitness
+    (auditCaseCParamsOf hC)
+    (auditCaseCClosureDataOf hC)
+    R.kmaxGap
+    S hS
+
+def AuditCaseCKmaxGapReconstruction.mem_rigid
+    {n : ℕ} {hC : Lehmer.Pipeline.InCaseC n}
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    ∀ S,
+      S ∈ R.kmaxGap.family →
+      Lehmer.CaseC.GapClosure.RigidProfile
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)
+        S := by
+  intro S hS
+  exact Lehmer.CaseC.GapClosure.kmaxGapFamily_mem_rigid
+    (auditCaseCParamsOf hC)
+    (auditCaseCClosureDataOf hC)
+    R.kmaxGap
+    S hS
 
 def auditCaseCKmaxGapDataOf
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
     AuditCaseCKmaxGapData n :=
   AuditCaseCKmaxGapData.mk hC
     (auditCaseCParamsOf hC)
     (auditCaseCClosureDataOf hC)
     (auditCaseCNonIntegralityOf hC)
-    (auditCaseCKmaxGapOf hC)
+    R.kmaxGap
 
 @[simp] theorem auditCaseCKmaxGapDataOf_inCaseC
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCKmaxGapDataOf hC).inCaseC = hC := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).inCaseC = hC := rfl
 
 @[simp] theorem auditCaseCKmaxGapDataOf_params
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCKmaxGapDataOf hC).params = auditCaseCParamsOf hC := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).params = auditCaseCParamsOf hC := rfl
 
 @[simp] theorem auditCaseCKmaxGapDataOf_closure
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCKmaxGapDataOf hC).closure = auditCaseCClosureDataOf hC := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).closure = auditCaseCClosureDataOf hC := rfl
 
 @[simp] theorem auditCaseCKmaxGapDataOf_nonIntegrality
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCKmaxGapDataOf hC).nonIntegrality = auditCaseCNonIntegralityOf hC := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).nonIntegrality = auditCaseCNonIntegralityOf hC := rfl
 
 @[simp] theorem auditCaseCKmaxGapDataOf_kmaxGap
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCKmaxGapDataOf hC).kmaxGap = auditCaseCKmaxGapOf hC := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).kmaxGap = R.kmaxGap := rfl
 
 theorem AuditCaseCKmaxGapData.in_caseC
     {n : ℕ} (X : AuditCaseCKmaxGapData n) :
@@ -200,16 +367,16 @@ def AuditCaseCKmaxGapData.gapFamily
       Lehmer.CaseC.GapClosure.kmaxGapFamily X.params X.closure X.kmaxGap := rfl
 
 def AuditCaseCKmaxGapData.gapValue
-    {n : ℕ} (X : AuditCaseCKmaxGapData n) : ℕ :=
-  Lehmer.CaseC.GapClosure.kmaxGapValue X.params X.closure X.kmaxGap
+    {n : ℕ} (X : AuditCaseCKmaxGapData n) : ℚ :=
+  Lehmer.CaseC.GapClosure.kmaxGapPositiveValue X.params X.closure X.kmaxGap
 
 @[simp] theorem AuditCaseCKmaxGapData.gapValue_def
     {n : ℕ} (X : AuditCaseCKmaxGapData n) :
     X.gapValue =
-      Lehmer.CaseC.GapClosure.kmaxGapValue X.params X.closure X.kmaxGap := rfl
+      Lehmer.CaseC.GapClosure.kmaxGapPositiveValue X.params X.closure X.kmaxGap := rfl
 
 def AuditCaseCKmaxGapData.kmaxValue
-    {n : ℕ} (X : AuditCaseCKmaxGapData n) : ℕ :=
+    {n : ℕ} (X : AuditCaseCKmaxGapData n) : ℚ :=
   Lehmer.CaseC.GapClosure.kmaxGapKmaxValue X.params X.closure X.kmaxGap
 
 @[simp] theorem AuditCaseCKmaxGapData.kmaxValue_def
@@ -225,6 +392,46 @@ def AuditCaseCKmaxGapData.closureCapValue
     {n : ℕ} (X : AuditCaseCKmaxGapData n) :
     X.closureCapValue =
       Lehmer.CaseC.GapClosure.kmaxGapClosureCapValue X.params X.closure X.kmaxGap := rfl
+
+theorem auditCaseCKmaxGap_family_eq_main
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    R.kmaxGap.family =
+      Lehmer.CaseC.GapClosure.kmaxGapFamily
+        (auditCaseCParamsOf hC)
+        (auditCaseCClosureDataOf hC)
+        R.kmaxGap := by
+  rfl
+
+theorem auditCaseCKmaxGap_gapValue_eq_main
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    Lehmer.CaseC.GapClosure.kmaxGapPositiveValue
+      (auditCaseCParamsOf hC)
+      (auditCaseCClosureDataOf hC)
+      R.kmaxGap =
+      (auditCaseCKmaxGapDataOf hC R).gapValue := by
+  rfl
+
+theorem auditCaseCKmaxGap_kmaxValue_eq_main
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    Lehmer.CaseC.GapClosure.kmaxGapKmaxValue
+      (auditCaseCParamsOf hC)
+      (auditCaseCClosureDataOf hC)
+      R.kmaxGap =
+      (auditCaseCKmaxGapDataOf hC R).kmaxValue := by
+  rfl
+
+theorem auditCaseCKmaxGap_closureCapValue_eq_main
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    Lehmer.CaseC.GapClosure.kmaxGapClosureCapValue
+      (auditCaseCParamsOf hC)
+      (auditCaseCClosureDataOf hC)
+      R.kmaxGap =
+      (auditCaseCKmaxGapDataOf hC R).closureCapValue := by
+  rfl
 
 theorem auditCaseCKmaxGap_level_eq
     {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
@@ -249,72 +456,72 @@ theorem auditCaseCKmaxGap_omegaBound_eq
   rfl
 
 @[simp] theorem auditCaseCKmaxGapDataOf_level
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCKmaxGapDataOf hC).level = Lehmer.Pipeline.pivotOf n := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).level = Lehmer.Pipeline.pivotOf n := rfl
 
 @[simp] theorem auditCaseCKmaxGapDataOf_width
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCKmaxGapDataOf hC).width = Lehmer.Pipeline.pivotOf n := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).width = Lehmer.Pipeline.pivotOf n := rfl
 
 @[simp] theorem auditCaseCKmaxGapDataOf_cap
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCKmaxGapDataOf hC).cap = Lehmer.Pipeline.pivotOf n := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).cap = Lehmer.Pipeline.pivotOf n := rfl
 
 @[simp] theorem auditCaseCKmaxGapDataOf_omegaBound
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCKmaxGapDataOf hC).omegaBound = Lehmer.Pipeline.pivotOf n := rfl
-
-@[simp] theorem auditCaseCKmaxGapDataOf_gapValue
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCKmaxGapDataOf hC).gapValue = 1 := rfl
-
-@[simp] theorem auditCaseCKmaxGapDataOf_kmaxValue
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCKmaxGapDataOf hC).kmaxValue = 1 := rfl
-
-@[simp] theorem auditCaseCKmaxGapDataOf_closureCapValue
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCKmaxGapDataOf hC).closureCapValue = 1 := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).omegaBound = Lehmer.Pipeline.pivotOf n := rfl
 
 theorem AuditCaseCKmaxGapData.level_ge_YA
-    {n : ℕ} (X : AuditCaseCKmaxGapData n) :
-    Lehmer.Pipeline.YA ≤ X.level := by
-  exact X.inCaseC.1
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    Lehmer.Pipeline.YA ≤ (auditCaseCKmaxGapDataOf hC R).level := by
+  simpa using hC.1
 
 theorem AuditCaseCKmaxGapData.width_ge_YA
-    {n : ℕ} (X : AuditCaseCKmaxGapData n) :
-    Lehmer.Pipeline.YA ≤ X.width := by
-  exact X.inCaseC.1
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    Lehmer.Pipeline.YA ≤ (auditCaseCKmaxGapDataOf hC R).width := by
+  simpa using hC.1
 
 theorem AuditCaseCKmaxGapData.cap_ge_YA
-    {n : ℕ} (X : AuditCaseCKmaxGapData n) :
-    Lehmer.Pipeline.YA ≤ X.cap := by
-  exact X.inCaseC.1
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    Lehmer.Pipeline.YA ≤ (auditCaseCKmaxGapDataOf hC R).cap := by
+  simpa using hC.1
 
 theorem AuditCaseCKmaxGapData.omegaBound_ge_YA
-    {n : ℕ} (X : AuditCaseCKmaxGapData n) :
-    Lehmer.Pipeline.YA ≤ X.omegaBound := by
-  exact X.inCaseC.1
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    Lehmer.Pipeline.YA ≤ (auditCaseCKmaxGapDataOf hC R).omegaBound := by
+  simpa using hC.1
 
 theorem AuditCaseCKmaxGapData.level_lt_YC
-    {n : ℕ} (X : AuditCaseCKmaxGapData n) :
-    X.level < Lehmer.Pipeline.YC := by
-  exact X.inCaseC.2
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).level < Lehmer.Pipeline.YC := by
+  simpa using hC.2
 
 theorem AuditCaseCKmaxGapData.width_lt_YC
-    {n : ℕ} (X : AuditCaseCKmaxGapData n) :
-    X.width < Lehmer.Pipeline.YC := by
-  exact X.inCaseC.2
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).width < Lehmer.Pipeline.YC := by
+  simpa using hC.2
 
 theorem AuditCaseCKmaxGapData.cap_lt_YC
-    {n : ℕ} (X : AuditCaseCKmaxGapData n) :
-    X.cap < Lehmer.Pipeline.YC := by
-  exact X.inCaseC.2
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).cap < Lehmer.Pipeline.YC := by
+  simpa using hC.2
 
 theorem AuditCaseCKmaxGapData.omegaBound_lt_YC
-    {n : ℕ} (X : AuditCaseCKmaxGapData n) :
-    X.omegaBound < Lehmer.Pipeline.YC := by
-  exact X.inCaseC.2
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (auditCaseCKmaxGapDataOf hC R).omegaBound < Lehmer.Pipeline.YC := by
+  simpa using hC.2
 
 structure CaseCKmaxGapAuditRouting
     (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P) where
@@ -339,17 +546,17 @@ def CaseCKmaxGapAuditRouting.family
 
 def CaseCKmaxGapAuditRouting.gapValue
     (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
-    (R : CaseCKmaxGapAuditRouting P D) : ℕ :=
-  Lehmer.CaseC.GapClosure.kmaxGapValue P D R.package
+    (R : CaseCKmaxGapAuditRouting P D) : ℚ :=
+  Lehmer.CaseC.GapClosure.kmaxGapPositiveValue P D R.package
 
 @[simp] theorem CaseCKmaxGapAuditRouting.gapValue_def
     (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
     (R : CaseCKmaxGapAuditRouting P D) :
-    R.gapValue = Lehmer.CaseC.GapClosure.kmaxGapValue P D R.package := rfl
+    R.gapValue = Lehmer.CaseC.GapClosure.kmaxGapPositiveValue P D R.package := rfl
 
 def CaseCKmaxGapAuditRouting.kmaxValue
     (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
-    (R : CaseCKmaxGapAuditRouting P D) : ℕ :=
+    (R : CaseCKmaxGapAuditRouting P D) : ℚ :=
   Lehmer.CaseC.GapClosure.kmaxGapKmaxValue P D R.package
 
 @[simp] theorem CaseCKmaxGapAuditRouting.kmaxValue_def
@@ -380,70 +587,61 @@ def caseCKmaxGapAuditRouting_of_package
     (caseCKmaxGapAuditRouting_of_package P D X).package = X := rfl
 
 def caseCKmaxGapAuditRouting_of_inCaseC
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
     CaseCKmaxGapAuditRouting
       (auditCaseCParamsOf hC)
       (auditCaseCClosureDataOf hC) :=
   caseCKmaxGapAuditRouting_of_package
     (auditCaseCParamsOf hC)
     (auditCaseCClosureDataOf hC)
-    (auditCaseCKmaxGapOf hC)
+    R.kmaxGap
 
 @[simp] theorem caseCKmaxGapAuditRouting_of_inCaseC_package
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (caseCKmaxGapAuditRouting_of_inCaseC hC).package =
-      auditCaseCKmaxGapOf hC := rfl
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (caseCKmaxGapAuditRouting_of_inCaseC hC R).package = R.kmaxGap := rfl
 
 @[simp] theorem caseCKmaxGapAuditRouting_of_inCaseC_family
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (caseCKmaxGapAuditRouting_of_inCaseC hC).family =
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    (caseCKmaxGapAuditRouting_of_inCaseC hC R).family =
       Lehmer.CaseC.GapClosure.kmaxGapFamily
         (auditCaseCParamsOf hC)
         (auditCaseCClosureDataOf hC)
-        (auditCaseCKmaxGapOf hC) := rfl
-
-@[simp] theorem caseCKmaxGapAuditRouting_of_inCaseC_gapValue
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (caseCKmaxGapAuditRouting_of_inCaseC hC).gapValue = 1 := rfl
-
-@[simp] theorem caseCKmaxGapAuditRouting_of_inCaseC_kmaxValue
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (caseCKmaxGapAuditRouting_of_inCaseC hC).kmaxValue = 1 := rfl
-
-@[simp] theorem caseCKmaxGapAuditRouting_of_inCaseC_closureCapValue
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (caseCKmaxGapAuditRouting_of_inCaseC hC).closureCapValue = 1 := rfl
+        R.kmaxGap := rfl
 
 theorem caseCKmaxGapAuditRouting_sound
     (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
     (R : CaseCKmaxGapAuditRouting P D) :
-    ∃ X : Lehmer.CaseC.GapClosure.KmaxGapPackage P D, True := by
+    ∃ _X : Lehmer.CaseC.GapClosure.KmaxGapPackage P D, True := by
   exact ⟨R.package, trivial⟩
 
 theorem exists_caseCKmaxGapAuditRouting_of_inCaseC
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    ∃ R : CaseCKmaxGapAuditRouting
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    ∃ _T : CaseCKmaxGapAuditRouting
       (auditCaseCParamsOf hC)
       (auditCaseCClosureDataOf hC), True := by
-  exact ⟨caseCKmaxGapAuditRouting_of_inCaseC hC, trivial⟩
+  exact ⟨caseCKmaxGapAuditRouting_of_inCaseC hC R, trivial⟩
 
 theorem CaseCKmaxGapAuditRouting.gapValue_pos
     (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
     (R : CaseCKmaxGapAuditRouting P D) :
     0 < R.gapValue := by
-  exact Lehmer.CaseC.GapClosure.kmaxGapValue_pos P D R.package
+  exact Lehmer.CaseC.GapClosure.kmaxGap_delta_positive P D R.package
 
 theorem CaseCKmaxGapAuditRouting.kmaxValue_pos
     (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
     (R : CaseCKmaxGapAuditRouting P D) :
     0 < R.kmaxValue := by
-  exact Lehmer.CaseC.GapClosure.kmaxGapKmaxValue_pos P D R.package
+  exact Lehmer.CaseC.GapClosure.kmaxGap_kmax_positive P D R.package
 
 theorem CaseCKmaxGapAuditRouting.closureCapValue_pos
     (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
     (R : CaseCKmaxGapAuditRouting P D) :
     0 < R.closureCapValue := by
-  exact Lehmer.CaseC.GapClosure.kmaxGapClosureCapValue_pos P D R.package
+  exact Lehmer.CaseC.GapClosure.kmaxGap_closureCap_positive P D R.package
 
 theorem CaseCKmaxGapAuditRouting.mem_hasWitness
     (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
@@ -454,7 +652,7 @@ theorem CaseCKmaxGapAuditRouting.mem_hasWitness
   intro S hS
   exact Lehmer.CaseC.GapClosure.kmaxGapFamily_mem_hasWitness P D R.package S hS
 
-theorem CaseCKmaxGapAuditRouting.mem_rigid
+def CaseCKmaxGapAuditRouting.mem_rigid
     (P : Lehmer.CaseC.Params) (D : Lehmer.CaseC.ClosureData P)
     (R : CaseCKmaxGapAuditRouting P D) :
     ∀ S,
@@ -464,33 +662,37 @@ theorem CaseCKmaxGapAuditRouting.mem_rigid
   exact Lehmer.CaseC.GapClosure.kmaxGapFamily_mem_rigid P D R.package S hS
 
 theorem caseCKmaxGapAuditRouting_of_inCaseC_gapValue_pos
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    0 < (caseCKmaxGapAuditRouting_of_inCaseC hC).gapValue := by
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    0 < (caseCKmaxGapAuditRouting_of_inCaseC hC R).gapValue := by
   exact CaseCKmaxGapAuditRouting.gapValue_pos
     (auditCaseCParamsOf hC)
     (auditCaseCClosureDataOf hC)
-    (caseCKmaxGapAuditRouting_of_inCaseC hC)
+    (caseCKmaxGapAuditRouting_of_inCaseC hC R)
 
 theorem caseCKmaxGapAuditRouting_of_inCaseC_kmaxValue_pos
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    0 < (caseCKmaxGapAuditRouting_of_inCaseC hC).kmaxValue := by
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    0 < (caseCKmaxGapAuditRouting_of_inCaseC hC R).kmaxValue := by
   exact CaseCKmaxGapAuditRouting.kmaxValue_pos
     (auditCaseCParamsOf hC)
     (auditCaseCClosureDataOf hC)
-    (caseCKmaxGapAuditRouting_of_inCaseC hC)
+    (caseCKmaxGapAuditRouting_of_inCaseC hC R)
 
 theorem caseCKmaxGapAuditRouting_of_inCaseC_closureCapValue_pos
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    0 < (caseCKmaxGapAuditRouting_of_inCaseC hC).closureCapValue := by
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    0 < (caseCKmaxGapAuditRouting_of_inCaseC hC R).closureCapValue := by
   exact CaseCKmaxGapAuditRouting.closureCapValue_pos
     (auditCaseCParamsOf hC)
     (auditCaseCClosureDataOf hC)
-    (caseCKmaxGapAuditRouting_of_inCaseC hC)
+    (caseCKmaxGapAuditRouting_of_inCaseC hC R)
 
 theorem caseCKmaxGapAuditRouting_of_inCaseC_mem_hasWitness
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
     ∀ S,
-      S ∈ (caseCKmaxGapAuditRouting_of_inCaseC hC).family →
+      S ∈ (caseCKmaxGapAuditRouting_of_inCaseC hC R).family →
       Lehmer.CaseC.GapClosure.hasNonIntegralityWitness
         (auditCaseCParamsOf hC)
         (auditCaseCClosureDataOf hC)
@@ -498,12 +700,13 @@ theorem caseCKmaxGapAuditRouting_of_inCaseC_mem_hasWitness
   exact CaseCKmaxGapAuditRouting.mem_hasWitness
     (auditCaseCParamsOf hC)
     (auditCaseCClosureDataOf hC)
-    (caseCKmaxGapAuditRouting_of_inCaseC hC)
+    (caseCKmaxGapAuditRouting_of_inCaseC hC R)
 
-theorem caseCKmaxGapAuditRouting_of_inCaseC_mem_rigid
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
+def caseCKmaxGapAuditRouting_of_inCaseC_mem_rigid
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
     ∀ S,
-      S ∈ (caseCKmaxGapAuditRouting_of_inCaseC hC).family →
+      S ∈ (caseCKmaxGapAuditRouting_of_inCaseC hC R).family →
       Lehmer.CaseC.GapClosure.RigidProfile
         (auditCaseCParamsOf hC)
         (auditCaseCClosureDataOf hC)
@@ -511,19 +714,22 @@ theorem caseCKmaxGapAuditRouting_of_inCaseC_mem_rigid
   exact CaseCKmaxGapAuditRouting.mem_rigid
     (auditCaseCParamsOf hC)
     (auditCaseCClosureDataOf hC)
-    (caseCKmaxGapAuditRouting_of_inCaseC hC)
+    (caseCKmaxGapAuditRouting_of_inCaseC hC R)
 
-def CaseCKmaxGapAuditAvailable
+def CaseCKmaxGapAuditReconstructible
     {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) : Prop :=
-  Nonempty
-    (CaseCKmaxGapAuditRouting
-      (auditCaseCParamsOf hC)
-      (auditCaseCClosureDataOf hC))
+  Nonempty (AuditCaseCKmaxGapReconstruction hC)
 
-theorem caseCKmaxGapAuditAvailable
+@[simp] theorem CaseCKmaxGapAuditReconstructible_def
     {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    CaseCKmaxGapAuditAvailable hC := by
-  exact ⟨caseCKmaxGapAuditRouting_of_inCaseC hC⟩
+    CaseCKmaxGapAuditReconstructible hC =
+      Nonempty (AuditCaseCKmaxGapReconstruction hC) := rfl
+
+theorem caseCKmaxGapAuditReconstructible_of
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n)
+    (R : AuditCaseCKmaxGapReconstruction hC) :
+    CaseCKmaxGapAuditReconstructible hC := by
+  exact ⟨R⟩
 
 end CaseC
 end Audit

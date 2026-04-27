@@ -28,7 +28,7 @@ structure AuditCaseCParamsData (n : ℕ) where
     {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) (P : Lehmer.CaseC.Params) :
     (AuditCaseCParamsData.mk hC P).params = P := rfl
 
-def auditCaseCParamsOf {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) : Lehmer.CaseC.Params :=
+def auditCaseCParamsOf {n : ℕ} (_hC : Lehmer.Pipeline.InCaseC n) : Lehmer.CaseC.Params :=
   ⟨Lehmer.Pipeline.pivotOf n, Lehmer.Pipeline.pivotOf n⟩
 
 @[simp] theorem auditCaseCParamsOf_level
@@ -102,25 +102,25 @@ theorem auditCaseCParams_width_lt_YC
     Lehmer.CaseC.width (auditCaseCParamsOf hC) < Lehmer.Pipeline.YC := by
   exact hC.2
 
-theorem AuditCaseCParamsData.level_ge_YA
-    {n : ℕ} (X : AuditCaseCParamsData n) :
-    Lehmer.Pipeline.YA ≤ X.level := by
-  exact auditCaseCParams_level_ge_YA X.inCaseC
+theorem auditCaseCParamsDataOf_level_ge_YA
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
+    Lehmer.Pipeline.YA ≤ (auditCaseCParamsDataOf hC).level := by
+  simpa using auditCaseCParams_level_ge_YA hC
 
-theorem AuditCaseCParamsData.width_ge_YA
-    {n : ℕ} (X : AuditCaseCParamsData n) :
-    Lehmer.Pipeline.YA ≤ X.width := by
-  exact auditCaseCParams_width_ge_YA X.inCaseC
+theorem auditCaseCParamsDataOf_width_ge_YA
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
+    Lehmer.Pipeline.YA ≤ (auditCaseCParamsDataOf hC).width := by
+  simpa using auditCaseCParams_width_ge_YA hC
 
-theorem AuditCaseCParamsData.level_lt_YC
-    {n : ℕ} (X : AuditCaseCParamsData n) :
-    X.level < Lehmer.Pipeline.YC := by
-  exact auditCaseCParams_level_lt_YC X.inCaseC
+theorem auditCaseCParamsDataOf_level_lt_YC
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
+    (auditCaseCParamsDataOf hC).level < Lehmer.Pipeline.YC := by
+  simpa using auditCaseCParams_level_lt_YC hC
 
-theorem AuditCaseCParamsData.width_lt_YC
-    {n : ℕ} (X : AuditCaseCParamsData n) :
-    X.width < Lehmer.Pipeline.YC := by
-  exact auditCaseCParams_width_lt_YC X.inCaseC
+theorem auditCaseCParamsDataOf_width_lt_YC
+    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
+    (auditCaseCParamsDataOf hC).width < Lehmer.Pipeline.YC := by
+  simpa using auditCaseCParams_width_lt_YC hC
 
 end CaseC
 end Audit

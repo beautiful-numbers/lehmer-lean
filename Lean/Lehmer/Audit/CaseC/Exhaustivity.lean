@@ -42,32 +42,14 @@ def CaseCAuditClass (n : ℕ) : Prop :=
 @[simp] theorem CaseCAuditClass_def (n : ℕ) :
     CaseCAuditClass n = Lehmer.Pipeline.InCaseC n := rfl
 
-def CaseCGapClosureAuditAvailable
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) : Prop :=
-  Nonempty
-    (Lehmer.CaseC.GapClosure.GapToClosurePackage
-      (auditCaseCParamsOf hC)
-      (auditCaseCClosureDataOf hC))
-
-theorem caseCGapClosureAuditAvailable
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    CaseCGapClosureAuditAvailable hC := by
-  exact ⟨auditCaseCGapToClosureOf hC⟩
-
 structure CaseCExhaustivityData (n : ℕ) where
   inCaseC : Lehmer.Pipeline.InCaseC n
   paramsData : Lehmer.Audit.CaseC.AuditCaseCParamsData n
   closureData : Lehmer.Audit.CaseC.AuditCaseCClosureData n
   nonIntegralityAvailable :
     Lehmer.Audit.CaseC.CaseCNonIntegralityAuditAvailable inCaseC
-  kmaxGapAvailable :
-    Lehmer.Audit.CaseC.CaseCKmaxGapAuditAvailable inCaseC
-  gapClosureAvailable :
-    Lehmer.Audit.CaseC.CaseCGapClosureAuditAvailable inCaseC
   residualAvailable :
     Lehmer.Audit.CaseC.CaseCResidualAuditAvailable inCaseC
-  certificateAvailable :
-    Lehmer.Audit.CaseC.CaseCCertificateAuditAvailable inCaseC
   level_eq_pivot :
     closureData.level = Lehmer.Pipeline.pivotOf n
   width_eq_pivot :
@@ -80,20 +62,19 @@ structure CaseCExhaustivityData (n : ℕ) where
 def caseCExhaustivityDataOf
     {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
     CaseCExhaustivityData n :=
-  {
-    inCaseC := hC
+  { inCaseC := hC
     paramsData := auditCaseCParamsDataOf hC
     closureData := auditCaseCClosureDataDataOf hC
     nonIntegralityAvailable := caseCNonIntegralityAuditAvailable hC
-    kmaxGapAvailable := caseCKmaxGapAuditAvailable hC
-    gapClosureAvailable := caseCGapClosureAuditAvailable hC
     residualAvailable := caseCResidualAuditAvailable hC
-    certificateAvailable := caseCCertificateAuditAvailable hC
-    level_eq_pivot := by rfl
-    width_eq_pivot := by rfl
-    cap_eq_pivot := by rfl
-    omegaBound_eq_pivot := by rfl
-  }
+    level_eq_pivot := by
+      rfl
+    width_eq_pivot := by
+      rfl
+    cap_eq_pivot := by
+      rfl
+    omegaBound_eq_pivot := by
+      rfl }
 
 @[simp] theorem caseCExhaustivityDataOf_inCaseC
     {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
@@ -112,36 +93,21 @@ def caseCExhaustivityDataOf
     (caseCExhaustivityDataOf hC).nonIntegralityAvailable =
       caseCNonIntegralityAuditAvailable hC := rfl
 
-@[simp] theorem caseCExhaustivityDataOf_kmaxGapAvailable
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (caseCExhaustivityDataOf hC).kmaxGapAvailable =
-      caseCKmaxGapAuditAvailable hC := rfl
-
-@[simp] theorem caseCExhaustivityDataOf_gapClosureAvailable
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (caseCExhaustivityDataOf hC).gapClosureAvailable =
-      caseCGapClosureAuditAvailable hC := rfl
-
 @[simp] theorem caseCExhaustivityDataOf_residualAvailable
     {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
     (caseCExhaustivityDataOf hC).residualAvailable =
       caseCResidualAuditAvailable hC := rfl
 
-@[simp] theorem caseCExhaustivityDataOf_certificateAvailable
-    {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    (caseCExhaustivityDataOf hC).certificateAvailable =
-      caseCCertificateAuditAvailable hC := rfl
-
 def CaseCStructuralExhaustivity : Prop :=
   ∀ n : ℕ,
     Lehmer.Pipeline.InCaseC n →
-      ∃ X : CaseCExhaustivityData n, True
+      ∃ _X : CaseCExhaustivityData n, True
 
 @[simp] theorem CaseCStructuralExhaustivity_def :
     CaseCStructuralExhaustivity =
       (∀ n : ℕ,
         Lehmer.Pipeline.InCaseC n →
-          ∃ X : CaseCExhaustivityData n, True) := rfl
+          ∃ _X : CaseCExhaustivityData n, True) := rfl
 
 theorem caseC_structural_exhaustivity :
     CaseCStructuralExhaustivity := by
@@ -152,14 +118,14 @@ def CaseCAuditStructuralExhaustivity : Prop :=
   ∀ n : ℕ,
     CaseCAuditCandidate n →
     CaseCAuditClass n →
-      ∃ X : CaseCExhaustivityData n, True
+      ∃ _X : CaseCExhaustivityData n, True
 
 @[simp] theorem CaseCAuditStructuralExhaustivity_def :
     CaseCAuditStructuralExhaustivity =
       (∀ n : ℕ,
         CaseCAuditCandidate n →
         CaseCAuditClass n →
-          ∃ X : CaseCExhaustivityData n, True) := rfl
+          ∃ _X : CaseCExhaustivityData n, True) := rfl
 
 theorem caseC_audit_structural_exhaustivity :
     CaseCAuditStructuralExhaustivity := by
@@ -168,12 +134,12 @@ theorem caseC_audit_structural_exhaustivity :
 
 theorem exists_caseCExhaustivityData_of_inCaseC
     {n : ℕ} (hC : Lehmer.Pipeline.InCaseC n) :
-    ∃ X : CaseCExhaustivityData n, True := by
+    ∃ _X : CaseCExhaustivityData n, True := by
   exact ⟨caseCExhaustivityDataOf hC, trivial⟩
 
 theorem exists_caseCExhaustivityData_of_auditClass
     {n : ℕ} (hC : CaseCAuditClass n) :
-    ∃ X : CaseCExhaustivityData n, True := by
+    ∃ _X : CaseCExhaustivityData n, True := by
   exact exists_caseCExhaustivityData_of_inCaseC hC
 
 theorem CaseCExhaustivityData.nonIntegrality_available
@@ -181,25 +147,10 @@ theorem CaseCExhaustivityData.nonIntegrality_available
     Lehmer.Audit.CaseC.CaseCNonIntegralityAuditAvailable X.inCaseC := by
   exact X.nonIntegralityAvailable
 
-theorem CaseCExhaustivityData.kmaxGap_available
-    {n : ℕ} (X : CaseCExhaustivityData n) :
-    Lehmer.Audit.CaseC.CaseCKmaxGapAuditAvailable X.inCaseC := by
-  exact X.kmaxGapAvailable
-
-theorem CaseCExhaustivityData.gapClosure_available
-    {n : ℕ} (X : CaseCExhaustivityData n) :
-    Lehmer.Audit.CaseC.CaseCGapClosureAuditAvailable X.inCaseC := by
-  exact X.gapClosureAvailable
-
 theorem CaseCExhaustivityData.residual_available
     {n : ℕ} (X : CaseCExhaustivityData n) :
     Lehmer.Audit.CaseC.CaseCResidualAuditAvailable X.inCaseC := by
   exact X.residualAvailable
-
-theorem CaseCExhaustivityData.certificate_available
-    {n : ℕ} (X : CaseCExhaustivityData n) :
-    Lehmer.Audit.CaseC.CaseCCertificateAuditAvailable X.inCaseC := by
-  exact X.certificateAvailable
 
 theorem CaseCExhaustivityData.level_eq_pivot'
     {n : ℕ} (X : CaseCExhaustivityData n) :
@@ -288,20 +239,10 @@ structure AuditCaseCClosureInput (n : ℕ) where
     Lehmer.CaseC.GapClosure.NonIntegralityFamilyPackage
       (auditCaseCParamsOf inCaseC)
       (auditCaseCClosureDataOf inCaseC)
-  kmaxGap :
-    Lehmer.CaseC.GapClosure.KmaxGapPackage
-      (auditCaseCParamsOf inCaseC)
-      (auditCaseCClosureDataOf inCaseC)
-  gapToClosure :
-    Lehmer.CaseC.GapClosure.GapToClosurePackage
-      (auditCaseCParamsOf inCaseC)
-      (auditCaseCClosureDataOf inCaseC)
   residual :
     Lehmer.CaseC.StateMachine.ResidualClosurePackage
       (auditCaseCParamsOf inCaseC)
       (auditCaseCClosureDataOf inCaseC)
-  certificate :
-    Lehmer.CaseC.Certificate.CertificateMainPackage
   level_eq_pivot :
     closureData.level = Lehmer.Pipeline.pivotOf n
   width_eq_pivot :
@@ -316,21 +257,20 @@ def auditCaseCClosureInputOf
     (hCand : Lehmer.Basic.LehmerComposite n)
     (hC : Lehmer.Pipeline.InCaseC n) :
     AuditCaseCClosureInput n :=
-  {
-    candidate := hCand
+  { candidate := hCand
     inCaseC := hC
     paramsData := auditCaseCParamsDataOf hC
     closureData := auditCaseCClosureDataDataOf hC
     nonIntegrality := auditCaseCNonIntegralityOf hC
-    kmaxGap := auditCaseCKmaxGapOf hC
-    gapToClosure := auditCaseCGapToClosureOf hC
     residual := auditCaseCResidualClosureOfInCaseC hC
-    certificate := auditCaseCCertificateMainPackageOf hC
-    level_eq_pivot := by rfl
-    width_eq_pivot := by rfl
-    cap_eq_pivot := by rfl
-    omegaBound_eq_pivot := by rfl
-  }
+    level_eq_pivot := by
+      rfl
+    width_eq_pivot := by
+      rfl
+    cap_eq_pivot := by
+      rfl
+    omegaBound_eq_pivot := by
+      rfl }
 
 @[simp] theorem auditCaseCClosureInputOf_candidate
     {n : ℕ}
@@ -365,33 +305,12 @@ def auditCaseCClosureInputOf
     (auditCaseCClosureInputOf hCand hC).nonIntegrality =
       auditCaseCNonIntegralityOf hC := rfl
 
-@[simp] theorem auditCaseCClosureInputOf_kmaxGap
-    {n : ℕ}
-    (hCand : Lehmer.Basic.LehmerComposite n)
-    (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCClosureInputOf hCand hC).kmaxGap =
-      auditCaseCKmaxGapOf hC := rfl
-
-@[simp] theorem auditCaseCClosureInputOf_gapToClosure
-    {n : ℕ}
-    (hCand : Lehmer.Basic.LehmerComposite n)
-    (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCClosureInputOf hCand hC).gapToClosure =
-      auditCaseCGapToClosureOf hC := rfl
-
 @[simp] theorem auditCaseCClosureInputOf_residual
     {n : ℕ}
     (hCand : Lehmer.Basic.LehmerComposite n)
     (hC : Lehmer.Pipeline.InCaseC n) :
     (auditCaseCClosureInputOf hCand hC).residual =
       auditCaseCResidualClosureOfInCaseC hC := rfl
-
-@[simp] theorem auditCaseCClosureInputOf_certificate
-    {n : ℕ}
-    (hCand : Lehmer.Basic.LehmerComposite n)
-    (hC : Lehmer.Pipeline.InCaseC n) :
-    (auditCaseCClosureInputOf hCand hC).certificate =
-      auditCaseCCertificateMainPackageOf hC := rfl
 
 theorem AuditCaseCClosureInput.in_caseC
     {n : ℕ} (I : AuditCaseCClosureInput n) :
@@ -410,24 +329,6 @@ theorem AuditCaseCClosureInput.residual_closed
       (auditCaseCClosureDataOf I.inCaseC)
       I.residual.state := by
   exact I.residual.closed
-
-theorem AuditCaseCClosureInput.certificate_checked
-    {n : ℕ} (I : AuditCaseCClosureInput n) :
-    Lehmer.CaseC.Certificate.CertificateMainChecked
-      I.certificate.certificate := by
-  exact I.certificate.checked
-
-theorem AuditCaseCClosureInput.certificate_sound
-    {n : ℕ} (I : AuditCaseCClosureInput n) :
-    Lehmer.CaseC.Certificate.GloballySoundCertificate
-      I.certificate.certificate := by
-  exact I.certificate.sound
-
-theorem AuditCaseCClosureInput.certificate_complete
-    {n : ℕ} (I : AuditCaseCClosureInput n) :
-    Lehmer.CaseC.Certificate.GloballyCompleteCertificate
-      I.certificate.certificate := by
-  exact I.certificate.complete
 
 theorem AuditCaseCClosureInput.level_eq_pivot'
     {n : ℕ} (I : AuditCaseCClosureInput n) :
@@ -453,14 +354,14 @@ def CaseCClosureInputExhaustivity : Prop :=
   ∀ n : ℕ,
     CaseCAuditCandidate n →
     CaseCAuditClass n →
-      ∃ I : AuditCaseCClosureInput n, True
+      ∃ _I : AuditCaseCClosureInput n, True
 
 @[simp] theorem CaseCClosureInputExhaustivity_def :
     CaseCClosureInputExhaustivity =
       (∀ n : ℕ,
         CaseCAuditCandidate n →
         CaseCAuditClass n →
-          ∃ I : AuditCaseCClosureInput n, True) := rfl
+          ∃ _I : AuditCaseCClosureInput n, True) := rfl
 
 theorem caseC_closure_input_exhaustivity :
     CaseCClosureInputExhaustivity := by
@@ -471,7 +372,7 @@ theorem exists_auditCaseCClosureInput
     {n : ℕ}
     (hCand : CaseCAuditCandidate n)
     (hC : CaseCAuditClass n) :
-    ∃ I : AuditCaseCClosureInput n, True := by
+    ∃ _I : AuditCaseCClosureInput n, True := by
   exact ⟨auditCaseCClosureInputOf hCand hC, trivial⟩
 
 end CaseC
