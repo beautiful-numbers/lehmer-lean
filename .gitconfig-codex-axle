@@ -1,0 +1,11 @@
+[safe]
+	directory = C:/Users/stran/Documents/lehmer-lean/.lake/packages/mathlib
+	directory = C:/Users/stran/Documents/lehmer-lean/.lake/packages/aesop
+	directory = C:/Users/stran/Documents/lehmer-lean/.lake/packages/batteries
+	directory = C:/Users/stran/Documents/lehmer-lean/.lake/packages/Cli
+	directory = C:/Users/stran/Documents/lehmer-lean/.lake/packages/importGraph
+	directory = C:/Users/stran/Documents/lehmer-lean/.lake/packages/LeanSearchClient
+	directory = C:/Users/stran/Documents/lehmer-lean/.lake/packages/mathlib
+	directory = C:/Users/stran/Documents/lehmer-lean/.lake/packages/plausible
+	directory = C:/Users/stran/Documents/lehmer-lean/.lake/packages/proofwidgets
+	directory = C:/Users/stran/Documents/lehmer-lean/.lake/packages/Qq

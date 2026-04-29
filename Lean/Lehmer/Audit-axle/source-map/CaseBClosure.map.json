@@ -1,0 +1,151 @@
+{
+  "schema": "axle-source-map-v1",
+  "updated_unix_ms": 1777379892466,
+  "base": "CaseBClosure",
+  "source_file": "Lean/Lehmer/Audit/CaseBClosure.lean",
+  "statement_file": "Lean/Lehmer/Audit-axle/Audit_statement/CaseBClosure.statement.lean",
+  "proof_file": "Lean/Lehmer/Audit-axle/Audit_proof/CaseBClosure.proof.lean",
+  "certificate_file": "Lean/Lehmer/Audit-axle/certificate/CaseBClosure.axle.json",
+  "environment": "lean-4.28.0",
+  "statement_imports": [
+    "Mathlib"
+  ],
+  "proof_imports": [
+    "Mathlib"
+  ],
+  "statement_theorems": [
+    "tag_nonSaturated",
+    "tag_gatePass",
+    "tag_gateFail",
+    "sound",
+    "caseBClosureRouting_of_nonSaturated_def",
+    "caseBClosureRouting_of_gatePass_def",
+    "caseBClosureRouting_of_gateFail_def",
+    "caseBClosureRouting_sound",
+    "exists_caseBClosureRouting_of_nonSaturated",
+    "exists_caseBClosureRouting_of_gatePass",
+    "exists_caseBClosureRouting_of_gateFail",
+    "false_of_caseBClosureRouting_nonSaturated",
+    "false_of_caseBClosureRouting_gatePass",
+    "false_of_caseBClosureRouting_gateFail"
+  ],
+  "proof_theorems": [
+    "tag_nonSaturated",
+    "tag_gatePass",
+    "tag_gateFail",
+    "sound",
+    "caseBClosureRouting_of_nonSaturated_def",
+    "caseBClosureRouting_of_gatePass_def",
+    "caseBClosureRouting_of_gateFail_def",
+    "caseBClosureRouting_sound",
+    "exists_caseBClosureRouting_of_nonSaturated",
+    "exists_caseBClosureRouting_of_gatePass",
+    "exists_caseBClosureRouting_of_gateFail",
+    "false_of_caseBClosureRouting_nonSaturated",
+    "false_of_caseBClosureRouting_gatePass",
+    "false_of_caseBClosureRouting_gateFail"
+  ],
+  "axle_okay": false,
+  "failed_declarations": [],
+  "valid_certificate": false,
+  "theorems": [
+    {
+      "source_name": "caseBClosureRouting_of_gateFail_def",
+      "axle_name": "caseBClosureRouting_of_gateFail_def",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "caseBClosureRouting_of_gatePass_def",
+      "axle_name": "caseBClosureRouting_of_gatePass_def",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "caseBClosureRouting_of_nonSaturated_def",
+      "axle_name": "caseBClosureRouting_of_nonSaturated_def",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "caseBClosureRouting_sound",
+      "axle_name": "caseBClosureRouting_sound",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "exists_caseBClosureRouting_of_gateFail",
+      "axle_name": "exists_caseBClosureRouting_of_gateFail",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "exists_caseBClosureRouting_of_gatePass",
+      "axle_name": "exists_caseBClosureRouting_of_gatePass",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "exists_caseBClosureRouting_of_nonSaturated",
+      "axle_name": "exists_caseBClosureRouting_of_nonSaturated",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "false_of_caseBClosureRouting_gateFail",
+      "axle_name": "false_of_caseBClosureRouting_gateFail",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "false_of_caseBClosureRouting_gatePass",
+      "axle_name": "false_of_caseBClosureRouting_gatePass",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "false_of_caseBClosureRouting_nonSaturated",
+      "axle_name": "false_of_caseBClosureRouting_nonSaturated",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "sound",
+      "axle_name": "sound",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "tag_gateFail",
+      "axle_name": "tag_gateFail",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "tag_gatePass",
+      "axle_name": "tag_gatePass",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    },
+    {
+      "source_name": "tag_nonSaturated",
+      "axle_name": "tag_nonSaturated",
+      "in_statement": true,
+      "in_proof": true,
+      "certificate_okay": false
+    }
+  ]
+}

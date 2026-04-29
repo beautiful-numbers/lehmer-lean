@@ -1,0 +1,450 @@
+{
+  "schema": "axle-batch-orchestrator-v1",
+  "created_unix_ms": 1777364070306,
+  "manifest_file": "Lean/Lehmer/Audit-axle/axle-manifest.json",
+  "root": "C:\\Users\\stran\\Documents\\lehmer-lean",
+  "total_selected": 1,
+  "processed": 1,
+  "verified": 0,
+  "skipped": 0,
+  "certified_or_skipped_valid": 0,
+  "failed": 1,
+  "rows": [
+    {
+      "base": "CandidateCoverage",
+      "okay": false,
+      "failed_stage": "local_proof_compile",
+      "stages": [
+        {
+          "stage": "copy_source",
+          "okay": true,
+          "source_file": "Lean/Lehmer/Audit/CandidateCoverage.lean",
+          "statement_file": "Lean/Lehmer/Audit-axle/Audit_statement/CandidateCoverage.statement.lean",
+          "proof_file": "Lean/Lehmer/Audit-axle/Audit_proof/CandidateCoverage.proof.lean"
+        },
+        {
+          "stage": "axle_ready",
+          "okay": true,
+          "json": {
+            "prepared": true,
+            "dry_run": false,
+            "base": "CandidateCoverage",
+            "statement_file": "Lean/Lehmer/Audit-axle/Audit_statement/CandidateCoverage.statement.lean",
+            "proof_file": "Lean/Lehmer/Audit-axle/Audit_proof/CandidateCoverage.proof.lean",
+            "map_file": "Lean/Lehmer/Audit-axle/source-map/CandidateCoverage.map.json",
+            "statement_imports": [
+              "Mathlib"
+            ],
+            "proof_imports": [
+              "Mathlib"
+            ],
+            "statement_theorems": [
+              "ClassifiedInRange_smallPivotRange",
+              "ClassifiedInRange_caseC",
+              "ClassifiedInRange_intermediate",
+              "ClassifiedInRange_caseB",
+              "RangeBranchHandled_smallPivotRange",
+              "RangeBranchHandled_caseC",
+              "RangeBranchHandled_intermediate",
+              "RangeBranchHandled_caseB",
+              "all_range_branches_present",
+              "every_LehmerComposite_has_witness",
+              "every_LehmerComposite_is_range_classified",
+              "classified_range_branch_is_handled",
+              "every_LehmerComposite_is_range_classified_and_handled",
+              "RangeTaxonomyExhaustiveAudit_def",
+              "RangeTaxonomyHandledAudit_def",
+              "range_taxonomy_exhaustive_audit",
+              "range_taxonomy_handled_audit",
+              "NoCandidateLeftOut_def",
+              "no_candidate_left_out",
+              "NoActiveRangeBranchMissing_def",
+              "no_active_range_branch_missing",
+              "all_global_branches_present",
+              "candidate_coverage_audit_complete",
+              "candidate_coverage_from_pipeline"
+            ],
+            "proof_theorems": [
+              "ClassifiedInRange_smallPivotRange",
+              "ClassifiedInRange_caseC",
+              "ClassifiedInRange_intermediate",
+              "ClassifiedInRange_caseB",
+              "RangeBranchHandled_smallPivotRange",
+              "RangeBranchHandled_caseC",
+              "RangeBranchHandled_intermediate",
+              "RangeBranchHandled_caseB",
+              "all_range_branches_present",
+              "every_LehmerComposite_has_witness",
+              "every_LehmerComposite_is_range_classified",
+              "classified_range_branch_is_handled",
+              "every_LehmerComposite_is_range_classified_and_handled",
+              "RangeTaxonomyExhaustiveAudit_def",
+              "RangeTaxonomyHandledAudit_def",
+              "range_taxonomy_exhaustive_audit",
+              "range_taxonomy_handled_audit",
+              "NoCandidateLeftOut_def",
+              "no_candidate_left_out",
+              "NoActiveRangeBranchMissing_def",
+              "no_active_range_branch_missing",
+              "all_global_branches_present",
+              "candidate_coverage_audit_complete",
+              "candidate_coverage_from_pipeline"
+            ],
+            "statement_non_ascii": [
+              {
+                "index": 13333,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 14492,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 17338,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 17759,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 19048,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 19475,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 20902,
+                "char": "∃",
+                "codepoint": "U+2203"
+              }
+            ],
+            "proof_non_ascii": [
+              {
+                "index": 13934,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 13996,
+                "char": "⟨",
+                "codepoint": "U+27E8"
+              },
+              {
+                "index": 14048,
+                "char": "⟩",
+                "codepoint": "U+27E9"
+              },
+              {
+                "index": 15289,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 15451,
+                "char": "·",
+                "codepoint": "U+00B7"
+              },
+              {
+                "index": 15459,
+                "char": "⟨",
+                "codepoint": "U+27E8"
+              },
+              {
+                "index": 15480,
+                "char": "⟩",
+                "codepoint": "U+27E9"
+              },
+              {
+                "index": 15484,
+                "char": "·",
+                "codepoint": "U+00B7"
+              },
+              {
+                "index": 15492,
+                "char": "⟨",
+                "codepoint": "U+27E8"
+              },
+              {
+                "index": 15503,
+                "char": "⟩",
+                "codepoint": "U+27E9"
+              },
+              {
+                "index": 15507,
+                "char": "·",
+                "codepoint": "U+00B7"
+              },
+              {
+                "index": 15515,
+                "char": "⟨",
+                "codepoint": "U+27E8"
+              },
+              {
+                "index": 15533,
+                "char": "⟩",
+                "codepoint": "U+27E9"
+              },
+              {
+                "index": 15537,
+                "char": "·",
+                "codepoint": "U+00B7"
+              },
+              {
+                "index": 15545,
+                "char": "⟨",
+                "codepoint": "U+27E8"
+              },
+              {
+                "index": 15556,
+                "char": "⟩",
+                "codepoint": "U+27E9"
+              },
+              {
+                "index": 18369,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 18970,
+                "char": "⟨",
+                "codepoint": "U+27E8"
+              },
+              {
+                "index": 18976,
+                "char": "⟩",
+                "codepoint": "U+27E9"
+              },
+              {
+                "index": 18986,
+                "char": "⟨",
+                "codepoint": "U+27E8"
+              },
+              {
+                "index": 19392,
+                "char": "⟩",
+                "codepoint": "U+27E9"
+              },
+              {
+                "index": 19795,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 21084,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 21736,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 23163,
+                "char": "∃",
+                "codepoint": "U+2203"
+              },
+              {
+                "index": 36067,
+                "char": "⟨",
+                "codepoint": "U+27E8"
+              },
+              {
+                "index": 38102,
+                "char": "⟩",
+                "codepoint": "U+27E9"
+              },
+              {
+                "index": 39374,
+                "char": "⟨",
+                "codepoint": "U+27E8"
+              },
+              {
+                "index": 39790,
+                "char": "⟩",
+                "codepoint": "U+27E9"
+              }
+            ],
+            "proof_contains_sorry_or_admit": false,
+            "abstracted_dependencies": [
+              "LehmerComposite : Nat -> Prop",
+              "InSmallPivotRange : Nat -> Prop",
+              "InCaseC : Nat -> Prop",
+              "InIntermediate : Nat -> Prop",
+              "InCaseB : Nat -> Prop",
+              "CaseCHandled : Nat -> Prop",
+              "IntermediateHandled : Nat -> Prop",
+              "CaseBHandled : Nat -> Prop",
+              "CaseAClosedAudit : Prop",
+              "CaseBClosedAudit : Prop",
+              "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+              "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+              "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+              "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+              "caseA_audit_exhaustive : CaseAClosedAudit",
+              "caseB_audit_exhaustive : CaseBClosedAudit",
+              "GlobalBranch : Type",
+              "RangePipelineExhaustive : Prop",
+              "range_pipeline_exhaustive : RangePipelineExhaustive"
+            ],
+            "def_params": {
+              "ClassifiedInRange": [
+                "InSmallPivotRange",
+                "InCaseC",
+                "InIntermediate",
+                "InCaseB"
+              ],
+              "RangeBranchHandled": [
+                "InSmallPivotRange",
+                "CaseCHandled",
+                "IntermediateHandled",
+                "CaseBHandled"
+              ],
+              "CandidateWitness": [
+                "LehmerComposite"
+              ],
+              "witnessOfLehmerComposite": [
+                "LehmerComposite"
+              ],
+              "RangeTaxonomyExhaustiveAudit": [
+                "LehmerComposite",
+                "InSmallPivotRange",
+                "InCaseC",
+                "InIntermediate",
+                "InCaseB"
+              ],
+              "RangeTaxonomyHandledAudit": [
+                "LehmerComposite",
+                "InSmallPivotRange",
+                "InCaseC",
+                "InIntermediate",
+                "InCaseB",
+                "CaseCHandled",
+                "IntermediateHandled",
+                "CaseBHandled"
+              ],
+              "GlobalBranchPresent": [
+                "GlobalBranch"
+              ]
+            },
+            "replacements": [
+              {
+                "from": "Lehmer.Pipeline.GlobalBranch",
+                "to": "GlobalBranch"
+              },
+              {
+                "from": "Lehmer.Pipeline.RangePipelineExhaustive",
+                "to": "RangePipelineExhaustive"
+              },
+              {
+                "from": "Lehmer.Pipeline.range_pipeline_exhaustive",
+                "to": "range_pipeline_exhaustive"
+              }
+            ]
+          },
+          "command_result": {
+            "returncode": 0,
+            "duration_ms": 208,
+            "timed_out": false,
+            "command": [
+              "C:\\Users\\stran\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+              "C:\\Users\\stran\\Documents\\lehmer-lean\\scripts\\axle_ready.py",
+              "prepare-one",
+              "--root",
+              "C:\\Users\\stran\\Documents\\lehmer-lean",
+              "--base",
+              "CandidateCoverage",
+              "--dep",
+              "LehmerComposite : Nat -> Prop",
+              "--dep",
+              "InSmallPivotRange : Nat -> Prop",
+              "--dep",
+              "InCaseC : Nat -> Prop",
+              "--dep",
+              "InIntermediate : Nat -> Prop",
+              "--dep",
+              "InCaseB : Nat -> Prop",
+              "--dep",
+              "CaseCHandled : Nat -> Prop",
+              "--dep",
+              "IntermediateHandled : Nat -> Prop",
+              "--dep",
+              "CaseBHandled : Nat -> Prop",
+              "--dep",
+              "CaseAClosedAudit : Prop",
+              "--dep",
+              "CaseBClosedAudit : Prop",
+              "--dep",
+              "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+              "--dep",
+              "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+              "--dep",
+              "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+              "--dep",
+              "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+              "--dep",
+              "caseA_audit_exhaustive : CaseAClosedAudit",
+              "--dep",
+              "caseB_audit_exhaustive : CaseBClosedAudit",
+              "--dep",
+              "GlobalBranch : Type",
+              "--dep",
+              "RangePipelineExhaustive : Prop",
+              "--dep",
+              "range_pipeline_exhaustive : RangePipelineExhaustive",
+              "--def-param",
+              "ClassifiedInRange=InSmallPivotRange,InCaseC,InIntermediate,InCaseB",
+              "--def-param",
+              "RangeBranchHandled=InSmallPivotRange,CaseCHandled,IntermediateHandled,CaseBHandled",
+              "--def-param",
+              "CandidateWitness=LehmerComposite",
+              "--def-param",
+              "witnessOfLehmerComposite=LehmerComposite",
+              "--def-param",
+              "RangeTaxonomyExhaustiveAudit=LehmerComposite,InSmallPivotRange,InCaseC,InIntermediate,InCaseB",
+              "--def-param",
+              "RangeTaxonomyHandledAudit=LehmerComposite,InSmallPivotRange,InCaseC,InIntermediate,InCaseB,CaseCHandled,IntermediateHandled,CaseBHandled",
+              "--def-param",
+              "GlobalBranchPresent=GlobalBranch",
+              "--replace",
+              "Lehmer.Pipeline.GlobalBranch=GlobalBranch",
+              "--replace",
+              "Lehmer.Pipeline.RangePipelineExhaustive=RangePipelineExhaustive",
+              "--replace",
+              "Lehmer.Pipeline.range_pipeline_exhaustive=range_pipeline_exhaustive"
+            ],
+            "stdout_tail": "at -> Prop\",\n    \"IntermediateHandled : Nat -> Prop\",\n    \"CaseBHandled : Nat -> Prop\",\n    \"CaseAClosedAudit : Prop\",\n    \"CaseBClosedAudit : Prop\",\n    \"global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\\\/ InCaseC n \\\\/ InIntermediate n \\\\/ InCaseB n\",\n    \"caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n\",\n    \"intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n\",\n    \"caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n\",\n    \"caseA_audit_exhaustive : CaseAClosedAudit\",\n    \"caseB_audit_exhaustive : CaseBClosedAudit\",\n    \"GlobalBranch : Type\",\n    \"RangePipelineExhaustive : Prop\",\n    \"range_pipeline_exhaustive : RangePipelineExhaustive\"\n  ],\n  \"def_params\": {\n    \"ClassifiedInRange\": [\n      \"InSmallPivotRange\",\n      \"InCaseC\",\n      \"InIntermediate\",\n      \"InCaseB\"\n    ],\n    \"RangeBranchHandled\": [\n      \"InSmallPivotRange\",\n      \"CaseCHandled\",\n      \"IntermediateHandled\",\n      \"CaseBHandled\"\n    ],\n    \"CandidateWitness\": [\n      \"LehmerComposite\"\n    ],\n    \"witnessOfLehmerComposite\": [\n      \"LehmerComposite\"\n    ],\n    \"RangeTaxonomyExhaustiveAudit\": [\n      \"LehmerComposite\",\n      \"InSmallPivotRange\",\n      \"InCaseC\",\n      \"InIntermediate\",\n      \"InCaseB\"\n    ],\n    \"RangeTaxonomyHandledAudit\": [\n      \"LehmerComposite\",\n      \"InSmallPivotRange\",\n      \"InCaseC\",\n      \"InIntermediate\",\n      \"InCaseB\",\n      \"CaseCHandled\",\n      \"IntermediateHandled\",\n      \"CaseBHandled\"\n    ],\n    \"GlobalBranchPresent\": [\n      \"GlobalBranch\"\n    ]\n  },\n  \"replacements\": [\n    {\n      \"from\": \"Lehmer.Pipeline.GlobalBranch\",\n      \"to\": \"GlobalBranch\"\n    },\n    {\n      \"from\": \"Lehmer.Pipeline.RangePipelineExhaustive\",\n      \"to\": \"RangePipelineExhaustive\"\n    },\n    {\n      \"from\": \"Lehmer.Pipeline.range_pipeline_exhaustive\",\n      \"to\": \"range_pipeline_exhaustive\"\n    }\n  ]\n}\n",
+            "stderr_tail": ""
+          }
+        },
+        {
+          "stage": "local_proof_compile",
+          "okay": false,
+          "file": "Lean/Lehmer/Audit-axle/Audit_proof/CandidateCoverage.proof.lean",
+          "command_result": {
+            "returncode": 1,
+            "duration_ms": 26099,
+            "timed_out": false,
+            "command": [
+              "C:\\Users\\stran\\.elan\\bin\\lake.exe",
+              "env",
+              "lean",
+              "C:\\Users\\stran\\Documents\\lehmer-lean\\Lean\\Lehmer\\Audit-axle\\Audit_proof\\CandidateCoverage.proof.lean"
+            ],
+            "stdout_tail": ".proof.lean:609:5: warning: unused variable `range_pipeline_exhaustive`\n\nNote: This linter can be disabled with `set_option linter.unusedVariables false`\nC:\\Users\\stran\\Documents\\lehmer-lean\\Lean\\Lehmer\\Audit-axle\\Audit_proof\\CandidateCoverage.proof.lean:633:35: error: Application type mismatch: The argument\n  LehmerComposite\nhas type\n  ℕ → Prop\nbut is expected to have type\n  RangeBranch\nin the application\n  all_range_branches_present LehmerComposite\nC:\\Users\\stran\\Documents\\lehmer-lean\\Lean\\Lehmer\\Audit-axle\\Audit_proof\\CandidateCoverage.proof.lean:642:4: error(lean.invalidDottedIdent): Invalid dotted identifier notation: The expected type of `.caseA`\n  GlobalBranch\nis not of the form `C ...` or `... → C ...` where C is a constant\nC:\\Users\\stran\\Documents\\lehmer-lean\\Lean\\Lehmer\\Audit-axle\\Audit_proof\\CandidateCoverage.proof.lean:669:2: error: Tactic `cases` failed: major premise type is not an inductive type\n  GlobalBranch\n\nExplanation: the `cases` tactic is for constructor-based reasoning as well as for applying custom cases principles with a 'using' clause or a registered '@[cases_eliminator]' theorem. The above type neither is an inductive type nor has a registered theorem.\n\nLehmerComposite InSmallPivotRange InCaseC InIntermediate InCaseB CaseCHandled IntermediateHandled CaseBHandled :\n  ℕ → Prop\nCaseAClosedAudit CaseBClosedAudit : Prop\nglobal_range_split_exhaustive :\n  ∀ {n : ℕ}, LehmerComposite n → InSmallPivotRange n ∨ InCaseC n ∨ InIntermediate n ∨ InCaseB n\ncaseC_bridge_of_falls : ∀ {n : ℕ}, LehmerComposite n → InCaseC n → CaseCHandled n\nintermediate_bridge_of_falls : ∀ {n : ℕ}, LehmerComposite n → InIntermediate n → IntermediateHandled n\ncaseB_bridge_of_falls : ∀ {n : ℕ}, LehmerComposite n → InCaseB n → CaseBHandled n\ncaseA_audit_exhaustive : CaseAClosedAudit\ncaseB_audit_exhaustive : CaseBClosedAudit\nGlobalBranch : Type\nRangePipelineExhaustive : Prop\nrange_pipeline_exhaustive : RangePipelineExhaustive\nb : GlobalBranch\n⊢ GlobalBranchPresent GlobalBranch b\n",
+            "stderr_tail": ""
+          }
+        }
+      ]
+    }
+  ]
+}
