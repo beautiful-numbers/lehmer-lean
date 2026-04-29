@@ -1,0 +1,402 @@
+{
+  "base": "CandidateCoverage",
+  "source_file": "Lean/Lehmer/Audit/CandidateCoverage.lean",
+  "statement_file": "Lean/Lehmer/Audit-axle/Audit_statement/CandidateCoverage.statement.lean",
+  "proof_file": "Lean/Lehmer/Audit-axle/Audit_proof/CandidateCoverage.proof.lean",
+  "map_file": "Lean/Lehmer/Audit-axle/source-map/CandidateCoverage.map.json",
+  "mathlib_import": "Mathlib",
+  "replacements": [
+    {
+      "from": "Lehmer.Pipeline.GlobalBranch",
+      "to": "GlobalBranch"
+    },
+    {
+      "from": "Lehmer.Pipeline.RangePipelineExhaustive",
+      "to": "RangePipelineExhaustive"
+    },
+    {
+      "from": "Lehmer.Pipeline.range_pipeline_exhaustive",
+      "to": "range_pipeline_exhaustive"
+    }
+  ],
+  "abstracted_dependencies": [
+    "LehmerComposite : Nat -> Prop",
+    "InSmallPivotRange : Nat -> Prop",
+    "InCaseC : Nat -> Prop",
+    "InIntermediate : Nat -> Prop",
+    "InCaseB : Nat -> Prop",
+    "CaseCHandled : Nat -> Prop",
+    "IntermediateHandled : Nat -> Prop",
+    "CaseBHandled : Nat -> Prop",
+    "CaseAClosedAudit : Prop",
+    "CaseBClosedAudit : Prop",
+    "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+    "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+    "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+    "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+    "caseA_audit_exhaustive : CaseAClosedAudit",
+    "caseB_audit_exhaustive : CaseBClosedAudit",
+    "GlobalBranch : Type",
+    "RangePipelineExhaustive : Prop",
+    "range_pipeline_exhaustive : RangePipelineExhaustive"
+  ],
+  "def_params": {
+    "ClassifiedInRange": [
+      "InSmallPivotRange",
+      "InCaseC",
+      "InIntermediate",
+      "InCaseB"
+    ],
+    "RangeBranchHandled": [
+      "InSmallPivotRange",
+      "CaseCHandled",
+      "IntermediateHandled",
+      "CaseBHandled"
+    ],
+    "CandidateWitness": [
+      "LehmerComposite"
+    ],
+    "witnessOfLehmerComposite": [
+      "LehmerComposite"
+    ],
+    "RangeTaxonomyExhaustiveAudit": [
+      "LehmerComposite",
+      "InSmallPivotRange",
+      "InCaseC",
+      "InIntermediate",
+      "InCaseB"
+    ],
+    "RangeTaxonomyHandledAudit": [
+      "LehmerComposite",
+      "InSmallPivotRange",
+      "InCaseC",
+      "InIntermediate",
+      "InCaseB",
+      "CaseCHandled",
+      "IntermediateHandled",
+      "CaseBHandled"
+    ],
+    "GlobalBranchPresent": [
+      "GlobalBranch"
+    ]
+  },
+  "theorems": [
+    {
+      "source_name": "all_global_branches_present",
+      "axle_name": "all_global_branches_present",
+      "in_statement": true,
+      "in_proof": true,
+      "abstracted_dependencies": [
+        "LehmerComposite : Nat -> Prop",
+        "InSmallPivotRange : Nat -> Prop",
+        "InCaseC : Nat -> Prop",
+        "InIntermediate : Nat -> Prop",
+        "InCaseB : Nat -> Prop",
+        "CaseCHandled : Nat -> Prop",
+        "IntermediateHandled : Nat -> Prop",
+        "CaseBHandled : Nat -> Prop",
+        "CaseAClosedAudit : Prop",
+        "CaseBClosedAudit : Prop",
+        "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+        "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+        "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+        "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+        "caseA_audit_exhaustive : CaseAClosedAudit",
+        "caseB_audit_exhaustive : CaseBClosedAudit",
+        "GlobalBranch : Type",
+        "RangePipelineExhaustive : Prop",
+        "range_pipeline_exhaustive : RangePipelineExhaustive"
+      ],
+      "certificate_okay": true
+    },
+    {
+      "source_name": "candidate_coverage_audit_complete",
+      "axle_name": "candidate_coverage_audit_complete",
+      "in_statement": true,
+      "in_proof": true,
+      "abstracted_dependencies": [
+        "LehmerComposite : Nat -> Prop",
+        "InSmallPivotRange : Nat -> Prop",
+        "InCaseC : Nat -> Prop",
+        "InIntermediate : Nat -> Prop",
+        "InCaseB : Nat -> Prop",
+        "CaseCHandled : Nat -> Prop",
+        "IntermediateHandled : Nat -> Prop",
+        "CaseBHandled : Nat -> Prop",
+        "CaseAClosedAudit : Prop",
+        "CaseBClosedAudit : Prop",
+        "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+        "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+        "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+        "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+        "caseA_audit_exhaustive : CaseAClosedAudit",
+        "caseB_audit_exhaustive : CaseBClosedAudit",
+        "GlobalBranch : Type",
+        "RangePipelineExhaustive : Prop",
+        "range_pipeline_exhaustive : RangePipelineExhaustive"
+      ],
+      "certificate_okay": true
+    },
+    {
+      "source_name": "candidate_coverage_from_pipeline",
+      "axle_name": "candidate_coverage_from_pipeline",
+      "in_statement": true,
+      "in_proof": true,
+      "abstracted_dependencies": [
+        "LehmerComposite : Nat -> Prop",
+        "InSmallPivotRange : Nat -> Prop",
+        "InCaseC : Nat -> Prop",
+        "InIntermediate : Nat -> Prop",
+        "InCaseB : Nat -> Prop",
+        "CaseCHandled : Nat -> Prop",
+        "IntermediateHandled : Nat -> Prop",
+        "CaseBHandled : Nat -> Prop",
+        "CaseAClosedAudit : Prop",
+        "CaseBClosedAudit : Prop",
+        "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+        "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+        "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+        "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+        "caseA_audit_exhaustive : CaseAClosedAudit",
+        "caseB_audit_exhaustive : CaseBClosedAudit",
+        "GlobalBranch : Type",
+        "RangePipelineExhaustive : Prop",
+        "range_pipeline_exhaustive : RangePipelineExhaustive"
+      ],
+      "certificate_okay": true
+    },
+    {
+      "source_name": "classified_range_branch_is_handled",
+      "axle_name": "classified_range_branch_is_handled",
+      "in_statement": true,
+      "in_proof": true,
+      "abstracted_dependencies": [
+        "LehmerComposite : Nat -> Prop",
+        "InSmallPivotRange : Nat -> Prop",
+        "InCaseC : Nat -> Prop",
+        "InIntermediate : Nat -> Prop",
+        "InCaseB : Nat -> Prop",
+        "CaseCHandled : Nat -> Prop",
+        "IntermediateHandled : Nat -> Prop",
+        "CaseBHandled : Nat -> Prop",
+        "CaseAClosedAudit : Prop",
+        "CaseBClosedAudit : Prop",
+        "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+        "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+        "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+        "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+        "caseA_audit_exhaustive : CaseAClosedAudit",
+        "caseB_audit_exhaustive : CaseBClosedAudit",
+        "GlobalBranch : Type",
+        "RangePipelineExhaustive : Prop",
+        "range_pipeline_exhaustive : RangePipelineExhaustive"
+      ],
+      "certificate_okay": true
+    },
+    {
+      "source_name": "every_LehmerComposite_is_range_classified",
+      "axle_name": "every_LehmerComposite_is_range_classified",
+      "in_statement": true,
+      "in_proof": true,
+      "abstracted_dependencies": [
+        "LehmerComposite : Nat -> Prop",
+        "InSmallPivotRange : Nat -> Prop",
+        "InCaseC : Nat -> Prop",
+        "InIntermediate : Nat -> Prop",
+        "InCaseB : Nat -> Prop",
+        "CaseCHandled : Nat -> Prop",
+        "IntermediateHandled : Nat -> Prop",
+        "CaseBHandled : Nat -> Prop",
+        "CaseAClosedAudit : Prop",
+        "CaseBClosedAudit : Prop",
+        "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+        "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+        "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+        "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+        "caseA_audit_exhaustive : CaseAClosedAudit",
+        "caseB_audit_exhaustive : CaseBClosedAudit",
+        "GlobalBranch : Type",
+        "RangePipelineExhaustive : Prop",
+        "range_pipeline_exhaustive : RangePipelineExhaustive"
+      ],
+      "certificate_okay": true
+    },
+    {
+      "source_name": "every_LehmerComposite_is_range_classified_and_handled",
+      "axle_name": "every_LehmerComposite_is_range_classified_and_handled",
+      "in_statement": true,
+      "in_proof": true,
+      "abstracted_dependencies": [
+        "LehmerComposite : Nat -> Prop",
+        "InSmallPivotRange : Nat -> Prop",
+        "InCaseC : Nat -> Prop",
+        "InIntermediate : Nat -> Prop",
+        "InCaseB : Nat -> Prop",
+        "CaseCHandled : Nat -> Prop",
+        "IntermediateHandled : Nat -> Prop",
+        "CaseBHandled : Nat -> Prop",
+        "CaseAClosedAudit : Prop",
+        "CaseBClosedAudit : Prop",
+        "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+        "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+        "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+        "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+        "caseA_audit_exhaustive : CaseAClosedAudit",
+        "caseB_audit_exhaustive : CaseBClosedAudit",
+        "GlobalBranch : Type",
+        "RangePipelineExhaustive : Prop",
+        "range_pipeline_exhaustive : RangePipelineExhaustive"
+      ],
+      "certificate_okay": true
+    },
+    {
+      "source_name": "no_active_range_branch_missing",
+      "axle_name": "no_active_range_branch_missing",
+      "in_statement": true,
+      "in_proof": true,
+      "abstracted_dependencies": [
+        "LehmerComposite : Nat -> Prop",
+        "InSmallPivotRange : Nat -> Prop",
+        "InCaseC : Nat -> Prop",
+        "InIntermediate : Nat -> Prop",
+        "InCaseB : Nat -> Prop",
+        "CaseCHandled : Nat -> Prop",
+        "IntermediateHandled : Nat -> Prop",
+        "CaseBHandled : Nat -> Prop",
+        "CaseAClosedAudit : Prop",
+        "CaseBClosedAudit : Prop",
+        "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+        "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+        "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+        "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+        "caseA_audit_exhaustive : CaseAClosedAudit",
+        "caseB_audit_exhaustive : CaseBClosedAudit",
+        "GlobalBranch : Type",
+        "RangePipelineExhaustive : Prop",
+        "range_pipeline_exhaustive : RangePipelineExhaustive"
+      ],
+      "certificate_okay": true
+    },
+    {
+      "source_name": "no_candidate_left_out",
+      "axle_name": "no_candidate_left_out",
+      "in_statement": true,
+      "in_proof": true,
+      "abstracted_dependencies": [
+        "LehmerComposite : Nat -> Prop",
+        "InSmallPivotRange : Nat -> Prop",
+        "InCaseC : Nat -> Prop",
+        "InIntermediate : Nat -> Prop",
+        "InCaseB : Nat -> Prop",
+        "CaseCHandled : Nat -> Prop",
+        "IntermediateHandled : Nat -> Prop",
+        "CaseBHandled : Nat -> Prop",
+        "CaseAClosedAudit : Prop",
+        "CaseBClosedAudit : Prop",
+        "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+        "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+        "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+        "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+        "caseA_audit_exhaustive : CaseAClosedAudit",
+        "caseB_audit_exhaustive : CaseBClosedAudit",
+        "GlobalBranch : Type",
+        "RangePipelineExhaustive : Prop",
+        "range_pipeline_exhaustive : RangePipelineExhaustive"
+      ],
+      "certificate_okay": true
+    },
+    {
+      "source_name": "range_taxonomy_exhaustive_audit",
+      "axle_name": "range_taxonomy_exhaustive_audit",
+      "in_statement": true,
+      "in_proof": true,
+      "abstracted_dependencies": [
+        "LehmerComposite : Nat -> Prop",
+        "InSmallPivotRange : Nat -> Prop",
+        "InCaseC : Nat -> Prop",
+        "InIntermediate : Nat -> Prop",
+        "InCaseB : Nat -> Prop",
+        "CaseCHandled : Nat -> Prop",
+        "IntermediateHandled : Nat -> Prop",
+        "CaseBHandled : Nat -> Prop",
+        "CaseAClosedAudit : Prop",
+        "CaseBClosedAudit : Prop",
+        "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+        "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+        "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+        "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+        "caseA_audit_exhaustive : CaseAClosedAudit",
+        "caseB_audit_exhaustive : CaseBClosedAudit",
+        "GlobalBranch : Type",
+        "RangePipelineExhaustive : Prop",
+        "range_pipeline_exhaustive : RangePipelineExhaustive"
+      ],
+      "certificate_okay": true
+    },
+    {
+      "source_name": "range_taxonomy_handled_audit",
+      "axle_name": "range_taxonomy_handled_audit",
+      "in_statement": true,
+      "in_proof": true,
+      "abstracted_dependencies": [
+        "LehmerComposite : Nat -> Prop",
+        "InSmallPivotRange : Nat -> Prop",
+        "InCaseC : Nat -> Prop",
+        "InIntermediate : Nat -> Prop",
+        "InCaseB : Nat -> Prop",
+        "CaseCHandled : Nat -> Prop",
+        "IntermediateHandled : Nat -> Prop",
+        "CaseBHandled : Nat -> Prop",
+        "CaseAClosedAudit : Prop",
+        "CaseBClosedAudit : Prop",
+        "global_range_split_exhaustive : forall {n : Nat}, LehmerComposite n -> InSmallPivotRange n \\/ InCaseC n \\/ InIntermediate n \\/ InCaseB n",
+        "caseC_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseC n -> CaseCHandled n",
+        "intermediate_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InIntermediate n -> IntermediateHandled n",
+        "caseB_bridge_of_falls : forall {n : Nat}, LehmerComposite n -> InCaseB n -> CaseBHandled n",
+        "caseA_audit_exhaustive : CaseAClosedAudit",
+        "caseB_audit_exhaustive : CaseBClosedAudit",
+        "GlobalBranch : Type",
+        "RangePipelineExhaustive : Prop",
+        "range_pipeline_exhaustive : RangePipelineExhaustive"
+      ],
+      "certificate_okay": true
+    }
+  ],
+  "schema": "axle-source-map-v1",
+  "updated_unix_ms": 1777379890870,
+  "certificate_file": "Lean/Lehmer/Audit-axle/certificate/CandidateCoverage.axle.json",
+  "environment": "lean-4.28.0",
+  "statement_imports": [
+    "Mathlib"
+  ],
+  "proof_imports": [
+    "Mathlib"
+  ],
+  "statement_theorems": [
+    "every_LehmerComposite_is_range_classified",
+    "classified_range_branch_is_handled",
+    "every_LehmerComposite_is_range_classified_and_handled",
+    "range_taxonomy_exhaustive_audit",
+    "range_taxonomy_handled_audit",
+    "no_candidate_left_out",
+    "no_active_range_branch_missing",
+    "all_global_branches_present",
+    "candidate_coverage_audit_complete",
+    "candidate_coverage_from_pipeline"
+  ],
+  "proof_theorems": [
+    "every_LehmerComposite_is_range_classified",
+    "classified_range_branch_is_handled",
+    "every_LehmerComposite_is_range_classified_and_handled",
+    "range_taxonomy_exhaustive_audit",
+    "range_taxonomy_handled_audit",
+    "no_candidate_left_out",
+    "no_active_range_branch_missing",
+    "all_global_branches_present",
+    "candidate_coverage_audit_complete",
+    "candidate_coverage_from_pipeline"
+  ],
+  "axle_okay": true,
+  "failed_declarations": [],
+  "valid_certificate": true
+}
