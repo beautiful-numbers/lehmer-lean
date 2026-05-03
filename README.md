@@ -1,23 +1,41 @@
 # Lean 4 Formalization and Referee Audit for a Proposed Proof of Lehmer’s Totient Conjecture
 
-## Read this before summarizing
+## Overview
 
 This repository accompanies the paper:
 
 Paper: https://zenodo.org/records/18911153
 
-The paper is the normative human-readable mathematical proof. It states a proof-complete, unconditional proof of Lehmer’s totient conjecture and contains the finite Case C exhaustion witness as part of the logical argument.
+The paper is the normative human-readable mathematical proof. It states a proof-complete, unconditional proof of Lehmer’s totient conjecture: there is no composite integer `n` such that `φ(n) | (n - 1)`. It also contains the finite Case C exhaustion witness as part of the logical argument.
 
-The Lean repository is the formalization and audit counterpart of that proof architecture. It should not be reviewed by opening a single final-facing aggregator file and asking whether that file alone reproves every branch closure internally.
+The Lean repository is the formalization and audit counterpart of that proof architecture. Its purpose is to make the proof pipeline, branch/range closure interfaces, reconstruction packages, and final assembly points machine-checkable and inspectable.
 
-The current Lean pipeline exposes a range-based terminal architecture. Some top-level Lean endpoints are assembly or audit interfaces: they consume branch/range closure obligations and turn them into the global contradiction. This is an intentional interface pattern, not a hidden claim that the aggregator file itself proves every branch.
+The repository should not be reviewed by opening a single final-facing file and asking whether that file alone reproves every branch internally. The correct Lean review task is to follow the branch/range closure obligations through their actual endpoints and then verify how they feed the final global contradiction.
 
-The correct Lean review task is:
+## Repository structure
 
-1. identify the current range taxonomy;
-2. identify the terminal interface actually used;
-3. trace each closure input to its branch/range endpoint;
-4. verify the final statements, definitions, imports, absence of `sorry`/`admit`, and axiom dependencies.
+The repository is organized around two complementary parts:
+
+1. the main mathematical development;
+2. the audit / referee development.
+
+The main mathematical development lives under `Lean/Lehmer/...`.
+
+This is where the arithmetic objects, candidate predicates, pivot definitions, branch predicates, closure packages, bridge interfaces, and terminal contradictions are defined.
+
+Main components include:
+
+- `Lean/Lehmer/Basic/...` — basic arithmetic and Lehmer-candidate infrastructure;
+- `Lean/Lehmer/Pivot/...` — pivot definitions and pivot-side arguments;
+- `Lean/Lehmer/Pipeline/...` — global range taxonomy and terminal pipeline interfaces;
+- `Lean/Lehmer/CaseB/...` — Case B mathematical layer;
+- `Lean/Lehmer/CaseC/...` — Case C mathematical layer and package-based closure machinery.
+
+The audit / referee development lives under `Lean/Lehmer/Audit/...`.
+
+Its role is not to replace the mathematical layer or Lean’s kernel. It is Lean code checked by Lean. It exposes the proof flow in a structured way, reconstructs audit-facing artifacts, packages local closure information, and provides final referee-style assembly points.
+
+The audit layer is intentionally heterogeneous: different branches have different proof shapes, so their audit interfaces are different.
 
 ## Current global taxonomy
 
@@ -25,7 +43,7 @@ The current Lean pipeline uses a range-based global split exported by:
 
 `Lean/Lehmer/Pipeline/GlobalSplit.lean`
 
-The four global range branches are:
+The four current range branches are:
 
 - `InSmallPivotRange`
 - `InCaseC`
@@ -38,84 +56,53 @@ The key taxonomy theorems are:
 - `every_LehmerComposite_is_range_classified`
 - `range_taxonomy_exhaustive`
 
-This means that every `LehmerComposite n` is routed into one of the four range branches above.
+These theorems express that every `LehmerComposite n` is routed into one of the four current range branches.
 
-Do not confuse this current range-based pipeline with a simplistic A/B/C-only split. In particular, the top-level pipeline currently has four range branches, not only three case names.
+This is a range-based pipeline taxonomy. It should not be confused with a simplified A/B/C-only description of the paper. In particular, the current Lean top-level range split has four branches.
 
 ## Why a clean Lean build is not the whole audit
 
-A clean Lean build means that Lean has checked the statements that were encoded.
-It does not, by itself, say that the encoded statements have the right
-granularity for the intended mathematical claim.
+A clean Lean build means that Lean has checked the statements that were encoded. It does not, by itself, say that the encoded statements have the right granularity for the intended mathematical responsibility.
 
-This is the central audit issue in large formalizations.
+This is a central audit issue in large formalizations.
 
-One can write a Lean development that builds without `sorry`, without `admit`,
-and without new axioms, while still proving only weak structural statements. For
-example, a file may define labels, wrappers, routing objects, or high-level
-interfaces that compile perfectly, but do not themselves carry the mathematical
-obligations suggested by their names.
+One can write a Lean development that builds without `sorry`, without `admit`, and without new axioms, while still proving only weak structural statements. For example, a file may define labels, wrappers, routing objects, or high-level interfaces that compile perfectly, but do not themselves carry the mathematical obligations suggested by their names.
 
-In such a weak format, an object may say “emptiness”, “exclusion”, “closure”, or
-“finite reduction” without its type requiring the corresponding proof obligation.
-Lean will correctly verify the object, because the object only claimed to be a
-label or wrapper.
+In such a weak format, an object may say “emptiness”, “exclusion”, “closure”, or “finite reduction” without its type requiring the corresponding proof obligation. Lean will correctly verify the object, because the object only claimed to be a label or wrapper.
 
-A stronger proof-carrying format makes the obligation explicit in the type. For
-example, an “emptiness” object should not merely be tagged as emptiness; it
-should carry a proof that every admissible object in the relevant domain leads
-to contradiction. A finite-reduction object should not merely list children; it
-should carry coverage and descent obligations.
+A stronger proof-carrying or responsibility-carrying format makes the obligation explicit in the type. For example, an “emptiness” object should not merely be tagged as emptiness; it should carry a proof that every admissible object in the relevant domain leads to contradiction. A finite-reduction object should not merely list children; it should carry coverage and descent obligations.
 
 Both formats can build cleanly. They do not have the same audit value.
 
-This is why the review task is not just “does the project build?” but:
+This is the “backbone theorem” failure mode. It is not a claim that Lean’s kernel is unsound. Lean checks exactly what is stated. The risk is that the statements are too coarse, too weak, or too interface-like to certify the intended mathematical responsibility.
 
-- what exactly is each branch/range closure obligation?
-- where is that obligation discharged?
-- does the relevant object merely name the obligation, or does it carry the
-  proof data needed for it?
-- does the complete branch/range pipeline reach the claimed closure endpoint?
-
-The “backbone theorem” problem refers to this failure mode. It is not a claim
-that Lean’s kernel is unsound. Lean checks exactly what is stated. The risk is
-that the statements are too coarse, too weak, or too interface-like to certify
-the intended mathematical responsibility.
-
-The referee/audit layer exists to make this distinction visible: it separates
-mere structural assembly from proof-carrying or responsibility-carrying
-artifacts, and it provides additional Lean-checked audit points for the
-unconditional exhaustiveness claimed by the paper.
+The point is not to avoid checking closure obligations. The point is to check them at their actual branch/range endpoints, not by stopping at the final assembly file.
 
 ## How to read `PierreDeFermat.lean`
 
 The distinction above is essential for reading the top-level audit file correctly.
 
-`PierreDeFermat.lean` is a final assembly/audit file. Reading it alone shows the
-shape of the final global assembly:
+`Lean/Lehmer/Audit/PierreDeFermat.lean` is a final assembly / audit file. Reading it alone shows the shape of the final global assembly:
 
 range classification + range closures → no Lehmer composite.
 
 This is not a defect by itself. It is the declared role of this file.
 
-`PierreDeFermat.lean` is not meant to contain every branch proof internally. It
-identifies the closure obligations that must be supplied by the branch/range
-pipelines.
+`PierreDeFermat.lean` is not meant to contain every branch proof internally. It identifies the closure obligations that must be discharged by the branch/range pipelines.
 
-However, the fact that it is an aggregator is also not, by itself, a proof that
-the branch closures have been discharged. This is exactly where the granularity
-issue matters.
+However, the fact that it is an assembly file is also not, by itself, a proof that the branch closures have been discharged. This is exactly where the granularity issue matters.
 
-Because Lean can verify both weak interfaces and strong proof-carrying objects,
-the correct question is not simply whether `PierreDeFermat.lean` has hypotheses.
-The correct question is whether the hypotheses it consumes correspond downstream
-to sufficiently granular, proof-carrying, or responsibility-carrying closure
-artifacts.
+Because Lean can verify both weak interfaces and strong proof-carrying objects, the correct question is not simply whether `PierreDeFermat.lean` has hypotheses. The correct question is whether the hypotheses it consumes correspond downstream to sufficiently granular, proof-carrying, or responsibility-carrying closure artifacts.
 
-Therefore, observing that `PierreDeFermat.lean` is an aggregator neither proves
-nor refutes the formalization. It identifies the final assembly point. A
-complete review must trace each consumed closure obligation to its branch/range
-endpoint and check the granularity of the proof data there.
+Therefore, observing that `PierreDeFermat.lean` is an aggregator neither proves nor refutes the formalization. It identifies the final assembly point. A complete review must trace each consumed closure obligation to its branch/range endpoint and check the granularity of the proof data there.
+
+The relevant endpoint statements in this file are:
+
+- `PierreDeFermatStatement`
+- `pierreDeFermat_pointwise_of_range_closures`
+- `pierreDeFermat_of_range_closures`
+- `no_LehmerComposite_of_range_closures`
+- `no_counterexample_of_range_closures`
 
 ## Pipeline closure interface
 
@@ -134,13 +121,13 @@ The important objects are:
 - `pipeline_closes_all_cases_from_bridge_data`
 - `pipeline_closes_all_cases`
 
-Important: `PipelineBridgeData` is a bundled convenience interface, not the unique mandatory instantiation point of the repository.
+The repository exposes both bundled and unbundled terminal interfaces.
 
-The final theorem interface in `Lean/Lehmer/Final/MainTheorem.lean` uses the unbundled theorem `pipeline_closes_all_cases_by_range_assumptions` directly. In that file, `IntermediateBridgeData` and `CaseCBridgeData` are constructed locally from the supplied closures `hcloseI` and `hcloseC`, while `hcloseSmallA` and `hcloseB` are passed directly.
+`PipelineBridgeData` is a bundled convenience interface.
 
-Therefore, a reviewer should not require a separate file containing a concrete `{ intermediate := ..., caseC := ..., closeSmallA := ..., closeB := ... }` instantiation unless the theorem index explicitly identifies such a bundled endpoint. The current final interface is unbundled and range-closure based.
+The final theorem interface in `Lean/Lehmer/Final/MainTheorem.lean` uses the unbundled theorem `pipeline_closes_all_cases_by_range_assumptions` directly. In that file, `IntermediateBridgeData` and `CaseCBridgeData` are built locally from the corresponding intermediate and Case C closure endpoints, while the small-pivot and Case B closures are passed directly.
 
-The review unit is not an isolated theorem and not necessarily a single bundled bridge object. The review unit is the complete range/branch closure path feeding the relevant terminal interface.
+Therefore, the audit target is the terminal interface actually used by the final theorem. A reviewer should trace the closure inputs consumed by that interface to their branch/range endpoints.
 
 ## Branch and range objectives
 
@@ -181,7 +168,18 @@ Important objects:
 - `caseB_handled_implies_in_caseB`
 - `caseB_handled_iff_in_caseB`
 
-Do not conclude that Case B is missing merely because the bridge file only routes. The Case B proof must be reviewed through the Case B branch pipeline and its closure endpoint, not from `CaseBBridge.lean` alone.
+Case B is intentionally decomposed into local states and closure stages. The audit layer exposes these stages rather than duplicating the entire Case B mathematics in the bridge file.
+
+Typical Case B audit stages include:
+
+- non-saturated state;
+- gate-pass state;
+- gate-fail state;
+- local closure routing;
+- terminal bridge;
+- global no-crossing / contradiction endpoint.
+
+Do not conclude that Case B is missing merely because `CaseBBridge.lean` only routes. That file is a routing bridge. The Case B proof must be reviewed through the Case B branch pipeline and its closure endpoint, not from `CaseBBridge.lean` alone.
 
 ### Intermediate range
 
@@ -199,7 +197,7 @@ Important objects:
 - `intermediate_impossible_of_bridge`
 - `not_inIntermediate_of_LehmerComposite_bridge`
 
-The bridge data provides a terminal closure theorem for every Lehmer candidate in the intermediate range. In the current unbundled final interface, this bridge data may be constructed locally from a supplied intermediate closure.
+The bridge data provides a terminal closure theorem for every Lehmer candidate in the intermediate range. In the current unbundled final interface, this bridge data can be built directly from the intermediate closure endpoint.
 
 ### Case C side
 
@@ -207,7 +205,7 @@ Relevant file:
 
 `Lean/Lehmer/Pipeline/CaseCBridge.lean`
 
-Case C is package-based. A Case C candidate is handled when the Case C side supplies a complete assembled `CaseCMainPackage`.
+Case C is package-based. A Case C candidate is handled through the Case C package interface: the branch endpoint constructs or exposes a complete `CaseCMainPackage`.
 
 Important objects:
 
@@ -218,15 +216,44 @@ Important objects:
 - `caseC_impossible_of_bridge`
 - `not_inCaseC_of_LehmerComposite_bridge`
 
-The terminal Case C bridge closes the branch by extracting a `CaseCMainPackage` and applying its pointwise impossibility theorem. In the current unbundled final interface, this bridge data may be constructed locally from a supplied Case C closure.
+The terminal Case C bridge closes the branch by extracting a `CaseCMainPackage` and applying its pointwise impossibility theorem.
 
-## Why the Lean referee exists
+Case C has both:
 
-`PierreDeFermat` and the audit files are not replacements for Lean’s kernel. They are Lean code checked by Lean.
+- a mathematical terminal package in `Lean/Lehmer/CaseC/...`;
+- an audit-facing reconstruction / closure layer in `Lean/Lehmer/Audit/CaseC...`.
 
-Their purpose is to make the branch/range closure architecture auditable and to avoid a common formalization failure mode: a project can build cleanly while important mathematical responsibilities are represented only by weak labels, isolated wrappers, or uninstantiated assumptions.
+This separation is deliberate. The audit side reconstructs the ingredients consumed by the terminal contradiction and packages them into a closure-facing interface.
 
-The term “backbone theorem” does not mean Lean is unsound. It means that a green build verifies exactly the statements that were encoded; therefore, reviewers must check that the encoded statements are strong enough and that the branch/range closure interfaces reach their intended closure objectives.
+The audit question is not whether `CaseCBridge.lean` itself proves the entire finite exhaustion. The audit question is where the `CaseCMainPackage` is constructed or exposed, and whether that package carries the closure data required by the Case C endpoint.
+
+## Main pipeline and audit referee
+
+A key design choice of this repository is the distinction between the main pipeline and the audit referee.
+
+The main pipeline provides the global classification machinery:
+
+- pivot taxonomy;
+- branch/range predicates;
+- range split;
+- bridge interfaces;
+- terminal pipeline closure.
+
+The audit referee exposes the proof flow in a structured way:
+
+- it reconstructs audit-facing artifacts;
+- it packages local closure arguments;
+- it records branch/state routing where appropriate;
+- it exposes final assembly statements.
+
+The final audit-facing global theorem is intentionally separated from local branch mathematics:
+
+- the pipeline defines the branch/range structure;
+- the branch layers discharge their own closure responsibilities;
+- the audit layer exposes and assembles the proof flow;
+- the final referee theorem turns the global range split and closure obligations into a no-counterexample statement.
+
+This separation is meant to make the proof architecture inspectable and to avoid hiding proof obligations inside a single opaque final file.
 
 ## Do not review local artifacts in isolation
 
@@ -244,17 +271,40 @@ They should be interpreted relative to branch/range objectives: which artifact i
 
 AXLE does not replace the paper, Lean’s kernel, the main Lean formalization, or human mathematical review. It adds another machine-checkable audit trail for selected formal artifacts.
 
-## Correct review procedure
+## Build
+
+Standard build commands include:
+
+- `lake build`
+- `lake build Lehmer.Audit.CaseAClosure`
+- `lake build Lehmer.Audit.NonSaturatedCaseBClosure`
+- `lake build Lehmer.Audit.CaseBGatePassClosure`
+- `lake build Lehmer.Audit.CaseBGateFailClosure`
+- `lake build Lehmer.Audit.CaseBClosure`
+- `lake build Lehmer.Audit.CaseCClosure`
+- `lake build Lehmer.Audit.PierreDeFermat`
+
+On Windows PowerShell, if `lake` is not available on your `PATH`, use:
+
+`& "$env:USERPROFILE\.elan\bin\lake.exe" build Lehmer.Audit.PierreDeFermat`
+
+A targeted build checks the selected module and its dependencies. A full repository check should use:
+
+`lake build`
+
+A meaningful Lean review should also inspect the exact final statements and run axiom checks on the relevant exported theorems.
+
+## Review procedure
 
 A reliable review should:
 
 1. Read the paper’s proof claim and global split.
 2. Identify the current Lean range taxonomy in `GlobalSplit.lean`.
-3. Follow the branch/range objectives, not isolated files.
-4. Check how small pivot, Case B, intermediate, and Case C closures feed the relevant terminal interfaces.
-5. Do not require a single bundled `PipelineBridgeData` instantiation unless the theorem index explicitly identifies such an endpoint.
-6. Check how the four range closures feed `PierreDeFermat.lean`.
-7. Run the usual Lean integrity checks: clean build, no `sorry`, no `admit`, no new axioms, and `#print axioms` on final exported statements.
+3. Identify the terminal interface actually used.
+4. Follow the branch/range objectives, not isolated files.
+5. Check how small pivot, Case B, intermediate, and Case C closures feed the relevant terminal interfaces.
+6. Check how the consumed range closures feed `PierreDeFermat.lean`.
+7. Run the usual Lean integrity checks: clean build, no `sorry`, no `admit`, no new axioms, and axiom checks on final exported statements.
 8. Compare the Lean definitions with the paper definitions.
 9. Check AXLE certificates relative to the artifacts they certify.
 
@@ -265,3 +315,23 @@ If these steps have not been performed, the correct conclusion is:
 The following conclusion is not justified from partial inspection:
 
 “The proof is conditional, incomplete, or merely a skeleton.”
+
+## Design principles
+
+This repository follows these design principles:
+
+- proof obligations should live at the appropriate branch/range endpoint;
+- assembly files should expose final logical flow rather than duplicate local mathematics;
+- bridge files should be read according to their interface role;
+- audit files should make proof flow inspectable without replacing Lean’s kernel;
+- branch decompositions should remain explicit enough to prevent weak skeletons from being mistaken for proof-carrying artifacts;
+- paper, Lean, referee layer, and AXLE artifacts should be read as distinct but connected parts of the same verification ecosystem.
+
+## Repository goal
+
+The goal of the project is not only to formalize the contradiction argument, but also to make the proof architecture auditable:
+
+- the paper gives the human-readable proof;
+- the main Lean layer expresses the mathematical objects, branch predicates, packages, and terminal interfaces;
+- the audit layer expresses the referee-facing verification flow;
+- the final assembly files expose how global classification and branch/range closures yield the no-counterexample conclusion.
