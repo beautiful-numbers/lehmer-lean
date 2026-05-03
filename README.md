@@ -42,33 +42,71 @@ This means that every `LehmerComposite n` is routed into one of the four range b
 
 Do not confuse this current range-based pipeline with a simplistic A/B/C-only split. In particular, the top-level pipeline currently has four range branches, not only three case names.
 
-## What `PierreDeFermat.lean` does
+## Why a clean Lean build is not the whole audit
 
-`Lean/Lehmer/Audit/PierreDeFermat.lean` is a top-level global closure aggregator.
+A clean Lean build means that Lean has checked the statements that were encoded.
+It does not, by itself, say that the encoded statements have the right
+granularity for the intended mathematical claim.
 
-It does not claim to independently reprove every branch closure inside one file. Its role is to consume the four actual range closures exported by the current pipeline taxonomy and turn them into the final contradiction statement.
+This is the central audit issue in large formalizations.
 
-The relevant endpoint statements are:
+One can write a Lean development that builds without `sorry`, without `admit`,
+and without new axioms, while still proving only weak structural statements. For
+example, a file may define labels, wrappers, routing objects, or high-level
+interfaces that compile perfectly, but do not themselves carry the mathematical
+obligations suggested by their names.
 
-- `PierreDeFermatStatement`
-- `pierreDeFermat_pointwise_of_range_closures`
-- `pierreDeFermat_of_range_closures`
-- `no_LehmerComposite_of_range_closures`
-- `no_counterexample_of_range_closures`
+In such a weak format, an object may say “emptiness”, “exclusion”, “closure”, or
+“finite reduction” without its type requiring the corresponding proof obligation.
+Lean will correctly verify the object, because the object only claimed to be a
+label or wrapper.
 
-A summary that says “the proof is conditional because `PierreDeFermat.lean` takes range closures as hypotheses” is not a valid review. It is only observing that this file is an aggregator. The correct review task is to check the relevant range-closure interfaces and their intended sources, not to treat this one file as the whole proof.
+A stronger proof-carrying format makes the obligation explicit in the type. For
+example, an “emptiness” object should not merely be tagged as emptiness; it
+should carry a proof that every admissible object in the relevant domain leads
+to contradiction. A finite-reduction object should not merely list children; it
+should carry coverage and descent obligations.
 
-## What is not claimed by `PierreDeFermat.lean`
+Both formats can build cleanly. They do not have the same audit value.
 
-`PierreDeFermat.lean` is not advertised as a one-file standalone proof of all mathematical branches.
+This is why the review task is not just “does the project build?” but:
 
-It is a top-level audit aggregator. Its job is to verify the final logical assembly:
+- what exactly is each branch/range closure obligation?
+- where is that obligation discharged?
+- does the relevant object merely name the obligation, or does it carry the
+  proof data needed for it?
+- does the complete branch/range pipeline reach the claimed closure endpoint?
 
-range split + range closures → no Lehmer composite.
+The “backbone theorem” problem refers to this failure mode. It is not a claim
+that Lean’s kernel is unsound. Lean checks exactly what is stated. The risk is
+that the statements are too coarse, too weak, or too interface-like to certify
+the intended mathematical responsibility.
 
-Reading this file alone can only show the shape of the final assembly. It cannot by itself establish whether the branch/range closures have been supplied elsewhere, nor can it refute that they have.
+The referee/audit layer exists to make this distinction visible: it separates
+mere structural assembly from proof-carrying or responsibility-carrying
+artifacts, and it provides additional Lean-checked audit points for the
+unconditional exhaustiveness claimed by the paper.
 
-A review that stops at `PierreDeFermat.lean` is incomplete.
+## How to read `PierreDeFermat.lean`
+
+`PierreDeFermat.lean` is a final assembly/audit file. Reading it alone shows the
+shape of the final global assembly:
+
+range classification + range closures → no Lehmer composite.
+
+This file is not meant to contain every branch proof internally. It identifies
+the closure obligations that must be supplied by the branch/range pipelines.
+
+Because Lean can verify both weak interfaces and strong proof-carrying objects,
+the correct question is not simply whether `PierreDeFermat.lean` has hypotheses.
+The correct question is whether the hypotheses it consumes correspond downstream
+to sufficiently granular, proof-carrying, or responsibility-carrying closure
+artifacts.
+
+Therefore, observing that `PierreDeFermat.lean` is an aggregator neither proves
+nor refutes the formalization. It only identifies the final assembly point. A
+complete review must trace each consumed closure obligation to its branch/range
+endpoint and check the granularity of the proof data there.
 
 ## Pipeline closure interface
 
