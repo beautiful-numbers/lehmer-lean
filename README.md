@@ -11,6 +11,26 @@ The paper is the normative human-readable mathematical proof. It states a proof-
 The Lean repository is the formalization and audit counterpart of that proof architecture. Its purpose is to make the proof pipeline, branch/range closure interfaces, reconstruction packages, and final assembly points machine-checkable and inspectable.
 
 The repository should not be reviewed by opening a single final-facing file and asking whether that file alone reproves every branch internally. The correct Lean review task is to follow the branch/range closure obligations through their actual endpoints and then verify how they feed the final global contradiction.
+## Formal verification status
+
+The repository is intended to be checked as a Lean project, not only read as prose.
+
+The expected integrity checks are:
+
+- full `lake build`;
+- no `sorry` in the main Lean development;
+- no `admit`;
+- no new project axioms;
+- no hidden external oracle;
+- final exported statements inspected with `#check`;
+- axiom dependencies inspected with `#print axioms`;
+- branch/range closure obligations traced to their actual endpoints.
+
+The main pipeline target and the audit/referee target should not be conflated. They are separate Lean build targets with different mathematical roles: the main pipeline target verifies the range taxonomy and global split, while the standalone audit target `PierreDeFermat.lean` verifies the referee-facing final assembly from the stated range-closure obligations.
+
+A clean build is necessary but not the whole audit: the exact theorem statements, definitions, closure endpoints, and axiom output must also be inspected.
+
+The central Lean integrity question is not whether `PierreDeFermat.lean` alone contains every branch proof internally. It is whether the branch/range closure obligations consumed by the final assembly are discharged by the corresponding Lean endpoints, without `sorry`, `admit`, or new axioms.
 
 ## Repository structure
 
