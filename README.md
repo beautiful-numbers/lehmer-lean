@@ -26,6 +26,8 @@ The repository is intended to be checked as a Lean project.
 The expected integrity checks are:
 
 - full `lake build`;
+- targeted build of the main entrypoint;
+- targeted build of the standalone audit/referee endpoint;
 - no `sorry` in the main Lean development;
 - no `admit`;
 - no new project axioms;
@@ -42,6 +44,48 @@ The main pipeline target and the audit/referee target have different mathematica
 `PierreDeFermat.lean` belongs to the standalone audit/referee target. It verifies the referee-facing assembly from stated range-closure obligations to the no-counterexample conclusion, adding an additional Lean-checked layer of unconditional-exhaustiveness audit.
 
 A clean build verifies the Lean statements that were encoded. A full audit also inspects the exact theorem statements, definitions, closure endpoints, and axiom output.
+
+### Current verification outputs
+
+The following checks were run successfully on the repository.
+
+Full project build:
+
+````powershell
+lake build
+````
+
+Result:
+
+````text
+Build completed successfully (16806 jobs).
+````
+
+Standalone audit/referee endpoint build:
+
+````powershell
+lake build Lehmer.Audit.PierreDeFermat
+````
+
+Result:
+
+````text
+Build completed successfully (8341 jobs).
+````
+
+Placeholder and project-local axiom scan, excluding AXLE statement files:
+
+````powershell
+Get-ChildItem -Path .\Lean -Recurse -Filter *.lean | Where-Object { $_.FullName -notmatch "\\Audit-axle\\" } | Select-String -Pattern "\bsorry\b|\badmit\b|\baxiom\b"
+````
+
+Result:
+
+````text
+No matches.
+````
+
+`Lean/Lehmer/Audit-axle/.../*.statement.lean` files are excluded from this scan because they are AXLE statement/specification files. Their `sorry` placeholders are intentional: each statement file is paired with a corresponding proof file and checked by AXLE.
 
 ## Repository structure
 
