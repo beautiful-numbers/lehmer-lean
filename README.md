@@ -73,6 +73,173 @@ Result:
 Build completed successfully (8341 jobs).
 ````
 
+Verification file build:
+
+````powershell
+lake build Lehmer.Verify
+````
+
+Result:
+
+````text
+Build completed successfully (8409 jobs).
+````
+
+Placeholder and project-local axiom scan, excluding AXLE statement files:
+
+````powershell
+Get-ChildItem -Path .\Lean -Recurse -Filter *.lean | Where-Object { $_.FullName -notmatch "\\Audit-axle\\" } | Select-String -Pattern "\bsorry\b|\badmit\b|\baxiom\b"
+````
+
+Result:
+
+````text
+No matches.
+````
+
+`Lean/Lehmer/Audit-axle/.../*.statement.lean` files are excluded from this scan because they are AXLE statement/specification files. Their `sorry` placeholders are intentional: each statement file is paired with a corresponding proof file and checked by AXLE.
+
+### Exported statement and axiom checks
+
+The file `Lean/Lehmer/Verify.lean` records `#check` and `#print axioms` checks for the main exported pipeline endpoints and the standalone audit/referee endpoints.
+
+Main / final pipeline endpoints:
+
+````lean
+#check Lehmer.Final.main_theorem_of_pipeline_closure
+#print axioms Lehmer.Final.main_theorem_of_pipeline_closure
+
+#check Lehmer.Final.no_LehmerComposite_of_pipeline_closure
+#print axioms Lehmer.Final.no_LehmerComposite_of_pipeline_closure
+
+#check Lehmer.Final.no_composite_Lehmer_of_pipeline_closure
+#print axioms Lehmer.Final.no_composite_Lehmer_of_pipeline_closure
+
+#check Lehmer.Final.LehmerComposite_implies_false_of_pipeline_closure
+#print axioms Lehmer.Final.LehmerComposite_implies_false_of_pipeline_closure
+````
+
+Lean output:
+
+````text
+Lehmer.Final.main_theorem_of_pipeline_closure
+  (hcloseSmallA : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InSmallPivotRange n → False)
+  (hcloseB : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InCaseB n → False)
+  (hcloseI : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InIntermediate n → False)
+  (hcloseC : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InCaseC n → False) {n : ℕ} :
+  Lehmer.Basic.LehmerComposite n → False
+
+'Lehmer.Final.main_theorem_of_pipeline_closure' depends on axioms:
+[propext, Classical.choice, Quot.sound]
+
+Lehmer.Final.no_LehmerComposite_of_pipeline_closure
+  (hcloseSmallA : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InSmallPivotRange n → False)
+  (hcloseB : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InCaseB n → False)
+  (hcloseI : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InIntermediate n → False)
+  (hcloseC : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InCaseC n → False) {n : ℕ} :
+  ¬Lehmer.Basic.LehmerComposite n
+
+'Lehmer.Final.no_LehmerComposite_of_pipeline_closure' depends on axioms:
+[propext, Classical.choice, Quot.sound]
+
+Lehmer.Final.no_composite_Lehmer_of_pipeline_closure
+  (hcloseSmallA : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InSmallPivotRange n → False)
+  (hcloseB : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InCaseB n → False)
+  (hcloseI : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InIntermediate n → False)
+  (hcloseC : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InCaseC n → False) {n : ℕ} :
+  ¬Lehmer.Basic.LehmerComposite n
+
+'Lehmer.Final.no_composite_Lehmer_of_pipeline_closure' depends on axioms:
+[propext, Classical.choice, Quot.sound]
+
+Lehmer.Final.LehmerComposite_implies_false_of_pipeline_closure
+  (hcloseSmallA : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InSmallPivotRange n → False)
+  (hcloseB : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InCaseB n → False)
+  (hcloseI : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InIntermediate n → False)
+  (hcloseC : ∀ {n : ℕ}, Lehmer.Basic.LehmerComposite n → Lehmer.Pipeline.InCaseC n → False) {n : ℕ} :
+  Lehmer.Basic.LehmerComposite n → False
+
+'Lehmer.Final.LehmerComposite_implies_false_of_pipeline_closure' depends on axioms:
+[propext, Classical.choice, Quot.sound]
+````
+
+Standalone audit/referee endpoints:
+
+````lean
+#check Lehmer.Audit.pierreDeFermat_of_range_closures
+#print axioms Lehmer.Audit.pierreDeFermat_of_range_closures
+
+#check Lehmer.Audit.no_LehmerComposite_of_range_closures
+#print axioms Lehmer.Audit.no_LehmerComposite_of_range_closures
+
+#check Lehmer.Audit.no_counterexample_of_range_closures
+#print axioms Lehmer.Audit.no_counterexample_of_range_closures
+````
+
+Lean output:
+
+````text
+Lehmer.Audit.pierreDeFermat_of_range_closures
+  (hSmall : ∀ (n : ℕ), Lehmer.Pipeline.InSmallPivotRange n → False)
+  (hCaseC : ∀ (n : ℕ), Lehmer.Pipeline.InCaseC n → False)
+  (hIntermediate : ∀ (n : ℕ), Lehmer.Pipeline.InIntermediate n → False)
+  (hCaseB : ∀ (n : ℕ), Lehmer.Pipeline.InCaseB n → False) :
+  Lehmer.Audit.PierreDeFermatStatement
+
+'Lehmer.Audit.pierreDeFermat_of_range_closures' depends on axioms:
+[propext, Classical.choice, Quot.sound]
+
+Lehmer.Audit.no_LehmerComposite_of_range_closures
+  (hSmall : ∀ (n : ℕ), Lehmer.Pipeline.InSmallPivotRange n → False)
+  (hCaseC : ∀ (n : ℕ), Lehmer.Pipeline.InCaseC n → False)
+  (hIntermediate : ∀ (n : ℕ), Lehmer.Pipeline.InIntermediate n → False)
+  (hCaseB : ∀ (n : ℕ), Lehmer.Pipeline.InCaseB n → False) (n : ℕ) :
+  ¬Lehmer.Basic.LehmerComposite n
+
+'Lehmer.Audit.no_LehmerComposite_of_range_closures' depends on axioms:
+[propext, Classical.choice, Quot.sound]
+
+Lehmer.Audit.no_counterexample_of_range_closures
+  (hSmall : ∀ (n : ℕ), Lehmer.Pipeline.InSmallPivotRange n → False)
+  (hCaseC : ∀ (n : ℕ), Lehmer.Pipeline.InCaseC n → False)
+  (hIntermediate : ∀ (n : ℕ), Lehmer.Pipeline.InIntermediate n → False)
+  (hCaseB : ∀ (n : ℕ), Lehmer.Pipeline.InCaseB n → False) :
+  ¬∃ n, Lehmer.Basic.LehmerComposite n
+
+'Lehmer.Audit.no_counterexample_of_range_closures' depends on axioms:
+[propext, Classical.choice, Quot.sound]
+````
+
+The `#print axioms` outputs above show no `sorryAx` and no project-local axioms for the listed exported endpoints. Only the standard Lean/mathlib axioms `propext`, `Classical.choice`, and `Quot.sound` appear.
+
+### Current verification outputs
+
+The following checks were run successfully on the repository.
+
+Full project build:
+
+````powershell
+lake build
+````
+
+Result:
+
+````text
+Build completed successfully (16806 jobs).
+````
+
+Standalone audit/referee endpoint build:
+
+````powershell
+lake build Lehmer.Audit.PierreDeFermat
+````
+
+Result:
+
+````text
+Build completed successfully (8341 jobs).
+````
+
 Placeholder and project-local axiom scan, excluding AXLE statement files:
 
 ````powershell
