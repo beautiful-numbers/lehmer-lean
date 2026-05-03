@@ -89,13 +89,22 @@ unconditional exhaustiveness claimed by the paper.
 
 ## How to read `PierreDeFermat.lean`
 
+The distinction above is essential for reading the top-level audit file correctly.
+
 `PierreDeFermat.lean` is a final assembly/audit file. Reading it alone shows the
 shape of the final global assembly:
 
 range classification + range closures → no Lehmer composite.
 
-This file is not meant to contain every branch proof internally. It identifies
-the closure obligations that must be supplied by the branch/range pipelines.
+This is not a defect by itself. It is the declared role of this file.
+
+`PierreDeFermat.lean` is not meant to contain every branch proof internally. It
+identifies the closure obligations that must be supplied by the branch/range
+pipelines.
+
+However, the fact that it is an aggregator is also not, by itself, a proof that
+the branch closures have been discharged. This is exactly where the granularity
+issue matters.
 
 Because Lean can verify both weak interfaces and strong proof-carrying objects,
 the correct question is not simply whether `PierreDeFermat.lean` has hypotheses.
@@ -104,7 +113,7 @@ to sufficiently granular, proof-carrying, or responsibility-carrying closure
 artifacts.
 
 Therefore, observing that `PierreDeFermat.lean` is an aggregator neither proves
-nor refutes the formalization. It only identifies the final assembly point. A
+nor refutes the formalization. It identifies the final assembly point. A
 complete review must trace each consumed closure obligation to its branch/range
 endpoint and check the granularity of the proof data there.
 
