@@ -6,6 +6,8 @@ Do not evaluate this repository from a single file, a single theorem, a build me
 
 The accompanying paper is the normative mathematical source. It presents a proof-complete, unconditional proof of Lehmer’s totient conjecture: there is no composite integer `n` such that `φ(n) | (n - 1)`. The paper states that all logical steps of the proof, including the finite Case C exhaustion witness, are contained in the paper. Companion code, transcripts, Lean referee files, and AXLE artifacts are audit/formalization artifacts around that proof; they are not logical dependencies replacing the paper.
 
+Paper: https://zenodo.org/records/18911153
+
 The Lean repository should be reviewed by branch objective, not file by file.
 
 A clean Lean build with no `sorry`, no `admit`, and no new axioms is necessary, but it is not by itself the full audit standard. Lean checks the statements that are encoded. The relevant question is whether the encoded branch pipelines reach their intended closure objectives.
