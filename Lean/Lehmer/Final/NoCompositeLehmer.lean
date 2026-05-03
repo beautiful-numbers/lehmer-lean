@@ -16,13 +16,10 @@ namespace Final
 open Lehmer.Basic
 
 /--
-Readable wrapper theorem: under terminal closure of the remaining range-based
-pipeline branches, there is no composite integer satisfying Lehmer's
-divisibility condition.
+Exported no-composite-Lehmer interface.
 
-At the current refactor stage, Case A is already closed mathematically; the
-exported final interface therefore asks for closure of the legacy small-pivot
-range together with the untouched Case B / intermediate / Case C range branches.
+This theorem records the final assembly form: the range split and the branch
+closure endpoints combine to rule out every Lehmer composite.
 -/
 theorem no_composite_Lehmer_of_pipeline_closure
     (hcloseSmallA : ∀ {n : ℕ}, LehmerComposite n → Pipeline.InSmallPivotRange n → False)
