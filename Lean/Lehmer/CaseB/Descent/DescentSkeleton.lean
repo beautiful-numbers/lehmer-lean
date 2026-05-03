@@ -24,7 +24,7 @@ namespace CaseB
 open Lehmer.Basic
 
 /--
-A context admits a one-step descent if there exists a removable element
+A context has a one-step descent if there exists a removable element
 producing a controlled-removal successor.
 -/
 def HasDescentStep (C : Context) : Prop :=
@@ -91,7 +91,7 @@ theorem exists_removable_of_descentEligible (C : Context)
   exact ⟨p, hp⟩
 
 /--
-A descent-eligible context admits a canonical one-step descent.
+A descent-eligible context has a canonical one-step descent.
 -/
 theorem hasDescentStep_of_descentEligible (C : Context)
     (hC : ContextDescentEligible C) :
@@ -99,7 +99,7 @@ theorem hasDescentStep_of_descentEligible (C : Context)
   exact exists_removable_of_descentEligible C hC
 
 /--
-A descent-eligible context admits a canonical successor with strict
+A descent-eligible context has a canonical successor with strict
 decrease of the Case B potential, provided every removable element satisfies
 the paper-style gain criterion.
 -/
@@ -114,7 +114,7 @@ theorem exists_strictly_decreasing_successor_of_descentEligible
   exact potential_strict_decrease_of_removable C p hp (hgain p hp)
 
 /--
-A descent-eligible context admits a canonical successor with strict
+A descent-eligible context has a canonical successor with strict
 decrease of the discrete descent-length proxy.
 -/
 theorem exists_length_decreasing_successor_of_descentEligible
@@ -160,7 +160,7 @@ theorem descentStepData_of_descentEligible
 
 /--
 Main one-step skeleton statement:
-non-saturated and nonempty supports admit a descent step.
+non-saturated and nonempty supports yield a descent step.
 -/
 theorem descent_skeleton (C : Context)
     (hC : ContextDescentEligible C) :
@@ -169,7 +169,7 @@ theorem descent_skeleton (C : Context)
 
 /--
 Expanded one-step skeleton:
-a descent-eligible context admits a controlled-removal successor with strict
+a descent-eligible context has a controlled-removal successor with strict
 decrease both of the potential and of the discrete descent length, provided
 every removable element satisfies the paper-style gain criterion.
 -/
