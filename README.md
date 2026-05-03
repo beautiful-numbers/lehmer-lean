@@ -15,7 +15,7 @@ The Lean repository formalizes and audits the proof architecture associated with
 
 The main mathematical pipeline formalizes the mathematical taxonomy, branch/range predicates, closure packages, terminal interfaces, and global contradiction flow.
 
-The standalone referee/audit layer, including `PierreDeFermat.lean`, provides an additional Lean-checked audit of the proof architecture. Its role is to expose and verify the final referee-facing assembly of the already specified branch/range closure obligations. It is an audit endpoint, not the name of the main mathematical theorem.
+The standalone referee/audit layer, including `PierreDeFermat.lean`, provides an additional Lean-checked audit of the proof architecture. Its role is to expose and verify the referee-facing assembly of the already specified branch/range closure obligations. It is an audit endpoint, not the name of the main mathematical theorem.
 
 AXLE artifacts provide an additional external certificate trail for selected referee-layer statements.
 
@@ -123,6 +123,19 @@ The relevant audit statements in this file are:
 - `pierreDeFermat_of_range_closures`
 - `no_LehmerComposite_of_range_closures`
 - `no_counterexample_of_range_closures`
+
+## Assembly obligations
+
+`PierreDeFermat.lean` consumes the following range-closure obligations as its referee-facing assembly inputs:
+
+| Assembly input | Range closure |
+|---|---|
+| `hSmall` | closure of `InSmallPivotRange` |
+| `hCaseC` | closure of `InCaseC` |
+| `hIntermediate` | closure of `InIntermediate` |
+| `hCaseB` | closure of `InCaseB` |
+
+These inputs belong to the audit assembly interface. The corresponding mathematical closure responsibilities live at the branch/range endpoints in the main Lean development and audit layer.
 
 ## Pipeline closure interface
 
