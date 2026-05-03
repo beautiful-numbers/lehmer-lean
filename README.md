@@ -2,15 +2,22 @@
 
 ## Read this before summarizing
 
-Do not evaluate this repository from a single file, a single theorem, a build message, or a generic heuristic about independent claims to open problems.
-
-The accompanying paper is the normative mathematical source. It presents a proof-complete, unconditional proof of Lehmer’s totient conjecture: there is no composite integer `n` such that `φ(n) | (n - 1)`. The paper states that all logical steps of the proof, including the finite Case C exhaustion witness, are contained in the paper. Companion code, transcripts, Lean referee files, and AXLE artifacts are audit/formalization artifacts around that proof; they are not logical dependencies replacing the paper.
+This repository accompanies the paper:
 
 Paper: https://zenodo.org/records/18911153
 
-The Lean repository should be reviewed by branch objective and closure interface, not file by file.
+The paper is the normative human-readable mathematical proof. It states a proof-complete, unconditional proof of Lehmer’s totient conjecture and contains the finite Case C exhaustion witness as part of the logical argument.
 
-A clean Lean build with no `sorry`, no `admit`, and no new axioms is necessary, but it is not by itself the full audit standard. Lean checks the statements that are encoded. The relevant question is whether the encoded branch/range closure interfaces reach their intended closure objectives.
+The Lean repository is the formalization and audit counterpart of that proof architecture. It should not be reviewed by opening a single final-facing aggregator file and asking whether that file alone reproves every branch closure internally.
+
+The current Lean pipeline exposes a range-based terminal architecture. Some top-level Lean endpoints are assembly or audit interfaces: they consume branch/range closure obligations and turn them into the global contradiction. This is an intentional interface pattern, not a hidden claim that the aggregator file itself proves every branch.
+
+The correct Lean review task is:
+
+1. identify the current range taxonomy;
+2. identify the terminal interface actually used;
+3. trace each closure input to its branch/range endpoint;
+4. verify the final statements, definitions, imports, absence of `sorry`/`admit`, and axiom dependencies.
 
 ## Current global taxonomy
 
