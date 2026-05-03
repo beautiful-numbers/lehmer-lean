@@ -19,16 +19,10 @@ open Lehmer.Pipeline
 /--
 Main theorem exported from the pipeline layer.
 
-At the current transition stage of the refactor, the final contradiction is
-exposed through the range-based terminal pipeline interface for the still
-untouched branches, together with the already completed mathematical closure of
-Case A.
-
-Concretely, it is enough to know that:
-- the legacy small-pivot range closes;
-- the unchanged Case B range closes;
-- the unchanged intermediate range closes;
-- the unchanged Case C range closes.
+This file exposes the pipeline assembly interface used by the current
+formalization. The branch/range closure arguments correspond to closure
+endpoints established in the mathematical and audit layers, and are assembled
+through the range-based terminal pipeline interface.
 -/
 theorem main_theorem_of_pipeline_closure
     (hcloseSmallA : ∀ {n : ℕ}, LehmerComposite n → InSmallPivotRange n → False)
