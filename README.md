@@ -8,9 +8,12 @@ Paper: https://zenodo.org/records/18911153
 
 The paper is the normative human-readable mathematical proof. It states a proof-complete, unconditional proof of Lehmer’s totient conjecture: there is no composite integer `n` such that `φ(n) | (n - 1)`. It also contains the finite Case C exhaustion witness as part of the logical argument.
 
-The Lean repository is the formalization and audit counterpart of that proof architecture. Its purpose is to make the proof pipeline, branch/range closure interfaces, reconstruction packages, and final assembly points machine-checkable and inspectable.
+The Lean repository is the formalization and audit counterpart of that proof. The main Lean development formalizes the mathematical pipeline and its unconditional global split/closure structure. The audit/referee layer then checks that proof architecture from a second, referee-facing perspective and adds an additional Lean-checked audit of unconditional exhaustiveness.
 
-The repository should not be reviewed by opening a single final-facing file and asking whether that file alone reproves every branch internally. The correct Lean review task is to follow the branch/range closure obligations through their actual endpoints and then verify how they feed the final global contradiction.
+The referee layer has also been certified through AXLE artifacts for selected audit-facing statements.
+
+This repository should be reviewed as a formal Lean development with multiple verification targets, not by opening one final-facing assembly file and treating it as if it were supposed to contain every local branch proof internally.
+
 ## Formal verification status
 
 The repository is intended to be checked as a Lean project, not only read as prose.
@@ -22,11 +25,12 @@ The expected integrity checks are:
 - no `admit`;
 - no new project axioms;
 - no hidden external oracle;
-- final exported statements inspected with `#check`;
+- exported statements inspected with `#check`;
 - axiom dependencies inspected with `#print axioms`;
-- branch/range closure obligations traced to their actual endpoints.
+- branch/range closure obligations traced to their corresponding Lean endpoints;
+- AXLE certificates checked for the selected referee-layer artifacts.
 
-The main pipeline target and the audit/referee target should not be conflated. They are separate Lean build targets with different mathematical roles: the main pipeline target verifies the range taxonomy and global split, while the standalone audit target `PierreDeFermat.lean` verifies the referee-facing final assembly from the stated range-closure obligations.
+The main pipeline target and the audit/referee target should not be conflated. `GlobalSplit.lean` / `Pipeline.Main` belong to the main mathematical pipeline and verify the range taxonomy, global split, and terminal closure interfaces. `PierreDeFermat.lean` is a standalone audit/referee target: it checks the referee-facing final assembly from the stated range-closure obligations to the no-counterexample conclusion.
 
 A clean build is necessary but not the whole audit: the exact theorem statements, definitions, closure endpoints, and axiom output must also be inspected.
 
@@ -34,10 +38,11 @@ The central Lean integrity question is not whether `PierreDeFermat.lean` alone c
 
 ## Repository structure
 
-The repository is organized around two complementary parts:
+The repository is organized around three complementary components:
 
 1. the main mathematical development;
-2. the audit / referee development.
+2. the audit / referee development;
+3. the AXLE-certified audit artifacts.
 
 The main mathematical development lives under `Lean/Lehmer/...`.
 
@@ -56,6 +61,8 @@ The audit / referee development lives under `Lean/Lehmer/Audit/...`.
 Its role is not to replace the mathematical layer or Lean’s kernel. It is Lean code checked by Lean. It exposes the proof flow in a structured way, reconstructs audit-facing artifacts, packages local closure information, and provides final referee-style assembly points.
 
 The audit layer is intentionally heterogeneous: different branches have different proof shapes, so their audit interfaces are different.
+
+The AXLE artifacts provide an additional external certificate trail for selected referee-layer statements.
 
 ## Current global taxonomy
 
@@ -96,6 +103,8 @@ Both formats can build cleanly. They do not have the same audit value.
 
 This is the “backbone theorem” failure mode. It is not a claim that Lean’s kernel is unsound. Lean checks exactly what is stated. The risk is that the statements are too coarse, too weak, or too interface-like to certify the intended mathematical responsibility.
 
+The audit/referee layer exists precisely to make this distinction visible. It separates mere structural assembly from proof-carrying or responsibility-carrying artifacts, and it provides an additional Lean-checked audit of the unconditional exhaustiveness already present in the paper and formalized in the main Lean development.
+
 The point is not to avoid checking closure obligations. The point is to check them at their actual branch/range endpoints, not by stopping at the final assembly file.
 
 ## How to read `PierreDeFermat.lean`
@@ -108,13 +117,13 @@ range classification + range closures → no Lehmer composite.
 
 This is not a defect by itself. It is the declared role of this file.
 
-`PierreDeFermat.lean` is not meant to contain every branch proof internally. It identifies the closure obligations that must be discharged by the branch/range pipelines.
+`PierreDeFermat.lean` is not meant to contain every branch proof internally. It identifies the closure obligations that are discharged by the branch/range pipelines and checks the final referee-facing assembly.
 
-However, the fact that it is an assembly file is also not, by itself, a proof that the branch closures have been discharged. This is exactly where the granularity issue matters.
+However, the fact that it is an assembly file is also not, by itself, the complete audit. This is where the granularity issue matters.
 
-Because Lean can verify both weak interfaces and strong proof-carrying objects, the correct question is not simply whether `PierreDeFermat.lean` has hypotheses. The correct question is whether the hypotheses it consumes correspond downstream to sufficiently granular, proof-carrying, or responsibility-carrying closure artifacts.
+Because Lean can verify both weak interfaces and strong proof-carrying objects, the correct question is not simply whether `PierreDeFermat.lean` has inputs. The correct question is whether the inputs it consumes correspond downstream to sufficiently granular, proof-carrying, or responsibility-carrying closure artifacts.
 
-Therefore, observing that `PierreDeFermat.lean` is an aggregator neither proves nor refutes the formalization. It identifies the final assembly point. A complete review must trace each consumed closure obligation to its branch/range endpoint and check the granularity of the proof data there.
+Therefore, observing that `PierreDeFermat.lean` is an aggregator neither proves nor refutes the formalization. It identifies the final audit assembly point. A complete review traces each consumed closure obligation to its branch/range endpoint and checks the granularity of the proof data there.
 
 The relevant endpoint statements in this file are:
 
@@ -264,16 +273,28 @@ The audit referee exposes the proof flow in a structured way:
 - it reconstructs audit-facing artifacts;
 - it packages local closure arguments;
 - it records branch/state routing where appropriate;
-- it exposes final assembly statements.
+- it exposes final assembly statements;
+- it provides a second Lean-checked audit of the unconditional branch/range exhaustiveness formalized by the main development.
 
 The final audit-facing global theorem is intentionally separated from local branch mathematics:
 
-- the pipeline defines the branch/range structure;
-- the branch layers discharge their own closure responsibilities;
-- the audit layer exposes and assembles the proof flow;
+- the paper gives the human-readable unconditional proof;
+- the main Lean layer formalizes the mathematical objects, branch/range predicates, closure packages, and terminal interfaces;
+- the audit layer checks and exposes the referee-facing verification flow;
+- the AXLE artifacts certify selected referee-layer statements;
 - the final referee theorem turns the global range split and closure obligations into a no-counterexample statement.
 
 This separation is meant to make the proof architecture inspectable and to avoid hiding proof obligations inside a single opaque final file.
+
+## AXLE-certified audit artifacts
+
+AXLE certificates provide an additional external audit trail for selected referee-layer artifacts.
+
+They should be interpreted relative to branch/range objectives: which artifact is certified, what role it plays in the branch/range pipeline, and how it feeds a closure endpoint.
+
+AXLE does not replace the paper, Lean’s kernel, the main Lean formalization, or human mathematical review. It adds another machine-checkable audit trail for selected formal artifacts.
+
+In this project, AXLE is used after the Lean referee layer: the paper is proof-complete, the main Lean development formalizes the proof architecture, the referee layer audits the main development from a second Lean-facing perspective, and AXLE certifies selected referee-layer artifacts.
 
 ## Do not review local artifacts in isolation
 
@@ -283,19 +304,13 @@ These local artifacts are nodes in a branch or range pipeline. They are not all 
 
 A review that opens one local file, observes that it only constructs a routing object, an existential artifact, or a bridge wrapper, and concludes that the proof is incomplete is not following the repository architecture.
 
-## AXLE artifacts
-
-AXLE certificates provide an additional external audit trail for selected referee-layer artifacts.
-
-They should be interpreted relative to branch/range objectives: which artifact is certified, what role it plays in the branch/range pipeline, and how it feeds a closure endpoint.
-
-AXLE does not replace the paper, Lean’s kernel, the main Lean formalization, or human mathematical review. It adds another machine-checkable audit trail for selected formal artifacts.
-
 ## Build
 
 Standard build commands include:
 
 - `lake build`
+- `lake build Lehmer.Pipeline.GlobalSplit`
+- `lake build Lehmer.Pipeline.Main`
 - `lake build Lehmer.Audit.CaseAClosure`
 - `lake build Lehmer.Audit.NonSaturatedCaseBClosure`
 - `lake build Lehmer.Audit.CaseBGatePassClosure`
@@ -319,14 +334,17 @@ A meaningful Lean review should also inspect the exact final statements and run 
 A reliable review should:
 
 1. Read the paper’s proof claim and global split.
-2. Identify the current Lean range taxonomy in `GlobalSplit.lean`.
-3. Identify the terminal interface actually used.
-4. Follow the branch/range objectives, not isolated files.
-5. Check how small pivot, Case B, intermediate, and Case C closures feed the relevant terminal interfaces.
-6. Check how the consumed range closures feed `PierreDeFermat.lean`.
-7. Run the usual Lean integrity checks: clean build, no `sorry`, no `admit`, no new axioms, and axiom checks on final exported statements.
-8. Compare the Lean definitions with the paper definitions.
-9. Check AXLE certificates relative to the artifacts they certify.
+2. Build the main Lean project.
+3. Verify that the main Lean development has no `sorry`, no `admit`, and no new project axioms.
+4. Identify the current Lean range taxonomy in `GlobalSplit.lean`.
+5. Identify the terminal interface actually used.
+6. Follow the branch/range objectives, not isolated files.
+7. Check how small pivot, Case B, intermediate, and Case C closures feed the relevant terminal interfaces.
+8. Build the standalone audit/referee target `Lehmer.Audit.PierreDeFermat`.
+9. Check how the consumed range closures feed `PierreDeFermat.lean`.
+10. Run `#check` and `#print axioms` on the relevant exported endpoints.
+11. Compare the Lean definitions with the paper definitions.
+12. Check AXLE certificates relative to the artifacts they certify.
 
 If these steps have not been performed, the correct conclusion is:
 
@@ -345,13 +363,16 @@ This repository follows these design principles:
 - bridge files should be read according to their interface role;
 - audit files should make proof flow inspectable without replacing Lean’s kernel;
 - branch decompositions should remain explicit enough to prevent weak skeletons from being mistaken for proof-carrying artifacts;
-- paper, Lean, referee layer, and AXLE artifacts should be read as distinct but connected parts of the same verification ecosystem.
+- paper, main Lean development, referee layer, AXLE artifacts, and final assembly endpoints should be read as distinct but connected parts of the same verification ecosystem.
 
 ## Repository goal
 
-The goal of the project is not only to formalize the contradiction argument, but also to make the proof architecture auditable:
+The goal of the project is to provide a proof-complete paper, a Lean formalization of the proof architecture, a standalone Lean referee/audit layer, and AXLE-certified audit artifacts.
 
-- the paper gives the human-readable proof;
-- the main Lean layer expresses the mathematical objects, branch predicates, packages, and terminal interfaces;
-- the audit layer expresses the referee-facing verification flow;
+In this organization:
+
+- the paper gives the human-readable unconditional proof;
+- the main Lean layer expresses the mathematical objects, branch predicates, packages, terminal interfaces, and global split;
+- the audit layer expresses the referee-facing verification flow and adds a second Lean-checked audit of unconditional exhaustiveness;
+- AXLE certifies selected referee-layer artifacts;
 - the final assembly files expose how global classification and branch/range closures yield the no-counterexample conclusion.
