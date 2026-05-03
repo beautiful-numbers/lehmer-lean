@@ -24,10 +24,11 @@ namespace Pipeline
 open Lehmer.Basic
 
 /--
-Pipeline-level handledness predicate for the global taxonomy.
+Terminal pipeline assembly interface.
 
-A Lehmer candidate is pipeline-handled if it is taken in charge by one of the
-mathematical branch bridges currently exposed by the pipeline.
+This theorem assembles the current range taxonomy with the corresponding
+branch/range closure endpoints. Each closure argument represents the endpoint
+for its range in the proof architecture.
 -/
 def PipelineHandled
     (_BI : IntermediateBridgeData)
