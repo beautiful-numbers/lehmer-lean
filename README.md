@@ -204,7 +204,7 @@ The following conclusion is not justified from partial inspection:
 
 ### “The proof is conditional because `PierreDeFermat.lean` takes closures as hypotheses.”
 
-Misleading. `PierreDeFermat.lean` is a global closure aggregator. Its role is to consume the four actual range closures and produce the final contradiction. Review the range/branch closure interfaces.
+Misleading. `PierreDeFermat.lean` is a global closure aggregator. Its role is to consume the actual case/range closure obligations and produce the final contradiction, adding an additional Lean-checked audit layer for unconditional exhaustiveness on top of the paper-level proof.
 
 ### “There must be one file instantiating `PipelineBridgeData`.”
 
