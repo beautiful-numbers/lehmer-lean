@@ -45,60 +45,6 @@ The main pipeline target and the audit/referee target have different mathematica
 
 A clean build verifies the Lean statements that were encoded. A full audit also inspects the exact theorem statements, definitions, closure endpoints, and axiom output.
 
-### Current verification outputs
-
-The following checks were run successfully on the repository.
-
-Full project build:
-
-````powershell
-lake build
-````
-
-Result:
-
-````text
-Build completed successfully (16806 jobs).
-````
-
-Standalone audit/referee endpoint build:
-
-````powershell
-lake build Lehmer.Audit.PierreDeFermat
-````
-
-Result:
-
-````text
-Build completed successfully (8341 jobs).
-````
-
-Verification file build:
-
-````powershell
-lake build Lehmer.Verify
-````
-
-Result:
-
-````text
-Build completed successfully (8409 jobs).
-````
-
-Placeholder and project-local axiom scan, excluding AXLE statement files:
-
-````powershell
-Get-ChildItem -Path .\Lean -Recurse -Filter *.lean | Where-Object { $_.FullName -notmatch "\\Audit-axle\\" } | Select-String -Pattern "\bsorry\b|\badmit\b|\baxiom\b"
-````
-
-Result:
-
-````text
-No matches.
-````
-
-`Lean/Lehmer/Audit-axle/.../*.statement.lean` files are excluded from this scan because they are AXLE statement/specification files. Their `sorry` placeholders are intentional: each statement file is paired with a corresponding proof file and checked by AXLE.
-
 ### Exported statement and axiom checks
 
 The file `Lean/Lehmer/Verify.lean` records `#check` and `#print axioms` checks for the main exported pipeline endpoints and the standalone audit/referee endpoints.
