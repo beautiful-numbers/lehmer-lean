@@ -58,6 +58,18 @@ The relevant endpoint statements are:
 
 A summary that says “the proof is conditional because `PierreDeFermat.lean` takes range closures as hypotheses” is not a valid review. It is only observing that this file is an aggregator. The correct review task is to check the relevant range-closure interfaces and their intended sources, not to treat this one file as the whole proof.
 
+## What is not claimed by `PierreDeFermat.lean`
+
+`PierreDeFermat.lean` is not advertised as a one-file standalone proof of all mathematical branches.
+
+It is a top-level audit aggregator. Its job is to verify the final logical assembly:
+
+range split + range closures → no Lehmer composite.
+
+Reading this file alone can only show the shape of the final assembly. It cannot by itself establish whether the branch/range closures have been supplied elsewhere, nor can it refute that they have.
+
+A review that stops at `PierreDeFermat.lean` is incomplete.
+
 ## Pipeline closure interface
 
 The terminal pipeline interface is exposed in:
