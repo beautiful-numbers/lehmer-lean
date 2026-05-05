@@ -294,37 +294,23 @@ These theorems express that every `LehmerComposite n` is routed into one of the 
 
 This is a range-based pipeline taxonomy. The paper’s mathematical case structure and the current Lean top-level range split should be read with this distinction in mind.
 
-## Build success and proof granularity
+## Referee/audit layer
 
-A clean Lean build means that Lean has checked the statements that were encoded.
+`Lean/Lehmer/Audit/PierreDeFermat.lean` is a standalone referee-facing audit file.
 
-For large formalizations, the strength of the encoded statements matters. A development can build cleanly while some objects are only labels, wrappers, routing objects, or high-level interfaces. Such objects may be useful, but their audit value depends on the proof obligations carried by their types.
+It is not a replacement for the main proof. Its purpose is to provide a shorter and easier-to-audit endpoint for the final assembly of the proof.
 
-A proof-carrying or responsibility-carrying format makes the relevant obligation explicit in the type. For example, an “emptiness” object carries the proof that every admissible object in the relevant domain leads to contradiction. A finite-reduction object carries coverage and descent obligations.
+The mathematical branch proofs and closure packages live in their corresponding main-pipeline or branch/range modules. `PierreDeFermat.lean` checks that the corresponding closure endpoints are present, routed through the global split, and assembled into the no-counterexample conclusion.
 
-This distinction is the motivation for the referee/audit layer. The goal is to check that the paper-to-Lean translation has not reduced mathematical responsibilities to weak structural labels. The referee layer therefore audits whether the global split, branch/range obligations, closure interfaces, reconstruction data, and final assembly are represented in Lean with the intended proof-carrying content.
+In this sense, the file provides an additional Lean-checked audit layer for unconditional exhaustiveness: it verifies that the branch/range closure endpoints fit together according to the proof architecture described in the paper.
 
-In this sense, the referee layer adds a second Lean-checked audit of the unconditional exhaustiveness already present in the paper and formalized in the main Lean development.
+Relevant audit statements:
 
-## How to read `PierreDeFermat.lean`
-
-`Lean/Lehmer/Audit/PierreDeFermat.lean` is a standalone referee/audit file.
-
-Its purpose is to audit the paper-to-Lean translation at the level of proof responsibilities. It checks, through the corresponding Lean endpoints, that the branch/range closure results used by the paper are present, routed, and assembled in the formal development.
-
-The file should be read as an audit endpoint: it checks that the formal proof architecture is complete at the level of branch results, routing, coverage, closure obligations, and final assembly.
-
-The mathematical branch proofs and closure packages live at their corresponding main-pipeline or branch/range endpoints. `PierreDeFermat.lean` audits that these endpoints fit together according to the proof architecture described in the paper.
-
-The file contributes an additional Lean-checked audit layer for unconditional exhaustiveness. It checks that the branch/range closure results, represented by their corresponding endpoints, assemble with the global range split into the no-counterexample conclusion.
-
-The relevant audit statements in this file are:
-
-- `PierreDeFermatStatement`
-- `pierreDeFermat_pointwise_of_range_closures`
-- `pierreDeFermat_of_range_closures`
-- `no_LehmerComposite_of_range_closures`
-- `no_counterexample_of_range_closures`
+- `Lehmer.Audit.PierreDeFermat.PierreDeFermatStatement`
+- `Lehmer.Audit.PierreDeFermat.pierreDeFermat_pointwise_of_range_closures`
+- `Lehmer.Audit.PierreDeFermat.pierreDeFermat_of_range_closures`
+- `Lehmer.Audit.PierreDeFermat.no_LehmerComposite_of_range_closures`
+- `Lehmer.Audit.PierreDeFermat.no_counterexample_of_range_closures`
 
 ## Assembly obligations
 
