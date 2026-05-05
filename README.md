@@ -200,6 +200,49 @@ No matches.
 
 `Lean/Lehmer/Audit-axle/.../*.statement.lean` files are excluded from this scan because they are AXLE statement/specification files. Their `sorry` placeholders are intentional: each statement file is paired with a corresponding proof file and checked by AXLE.
 
+## Paper cases vs Lean pipeline ranges
+
+The final aggregation theorems use the Lean pipeline taxonomy. This taxonomy
+is intentionally not a literal copy of the numerical ranges displayed in the
+paper.
+
+In the paper, the contradiction is organized by proof role, with
+`y = P⁻(n)`:
+
+- Case A: the initial small/structural obstruction, excluded before the main
+  B/C split;
+- Case B: the large-`y` structural regime, closed for `y ≥ Y*`, where `Y*`
+  is the first prime at or above the no-crossing threshold;
+- analytic intermediate range: `Y1 ≤ y < Y0`, with `Y1 = 2000` and
+  `Y0 = 30000`;
+- Case C: the finite residual range `3 ≤ y < Y1`.
+
+The Lean pipeline uses internal routing predicates. In proof-architecture
+order these are:
+
+- `InSmallPivotRange`: `3 ≤ pivotOf n < YA` — the Case A / small-pivot slot;
+- `InCaseB`: `Ystar ≤ pivotOf n`;
+- `InIntermediate`: `YC ≤ pivotOf n < Ystar`;
+- `InCaseC`: `YA ≤ pivotOf n < YC`.
+
+Here `YA`, `YC`, and `YB` are internal pipeline/audit thresholds, not the
+paper thresholds `Y1` and `Y0`. They are fixed small values so that the terminal
+pipeline layer remains lightweight and carries no additional computational
+burden.
+
+Consequently, `InCaseC` and `InIntermediate` should not be read as literal
+synonyms for the paper’s Case C and intermediate analytic range. They are
+pipeline routing predicates. The branch constructions and numerical bounds
+are carried by the corresponding branch modules; the final aggregation
+theorems consume their closure endpoints.
+
+| Paper range | Paper bound | Lean-facing status |
+|---|---:|---|
+| Case C | `3 ≤ y < Y1 = 2000` | finite/certificate material; not identical to `Pipeline.InCaseC` |
+| Analytic intermediate | `Y1 ≤ y < Y0 = 30000` | routed through the Lean intermediate closure interface |
+| No-crossing bridge | `Y0 ≤ y < Ystar` | absorbed into the Lean intermediate-to-Case-B boundary |
+| Case B | `Ystar ≤ y` | matches `Pipeline.InCaseB` |
+
 ## Repository structure
 
 The repository is organized around three complementary components:
