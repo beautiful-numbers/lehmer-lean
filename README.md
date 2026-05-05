@@ -208,13 +208,12 @@ constructions.
 
 The paper organizes the contradiction by proof role, with `y = P⁻(n)`:
 
-| Paper component | Range / trigger | What closes it |
+| Paper component | Range in `y = P⁻(n)` | Role |
 |---|---|---|
-| Case A | initial small/pivot obstruction | Direct contradiction from the initial structural setup / pivot contradiction. |
-| Case B | `y ≥ Ystar` | Structural supply bound `ω(n) ≤ M(y)` from lcm-growth, generic/entangled splitting, and Lock-SS scarcity; contradiction with pivot demand `ω(n) ≥ mreq(y)`. |
-| Intermediate analytic range | `Y1 ≤ y < Y0` | Analytic pivot input only; no pointwise table for this interval. |
-| Case C | `3 ≤ y < Y1` | Rigidity identity plus finite support gap gives `n ≤ N(y,W)`; the resulting finite domain is closed by lexicographic exhaustion / descent. |
-| Final aggregation | all `y` | Exhaustiveness of the range split plus the four closure endpoints. |
+| Case A | initial small/structural obstruction | excluded before the main B/C split |
+| Case B | `Ystar ≤ y` | large-`y` structural regime |
+| Intermediate analytic range | `Y1 ≤ y < Y0` | analytic pivot input, no pointwise table |
+| Case C | `3 ≤ y < Y1` | finite residual exhaustion |
 
 The Lean terminal pipeline uses internal routing predicates:
 
