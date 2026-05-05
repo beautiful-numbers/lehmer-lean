@@ -200,48 +200,48 @@ No matches.
 
 `Lean/Lehmer/Audit-axle/.../*.statement.lean` files are excluded from this scan because they are AXLE statement/specification files. Their `sorry` placeholders are intentional: each statement file is paired with a corresponding proof file and checked by AXLE.
 
-## Paper cases vs Lean pipeline ranges
+### Paper cases vs Lean pipeline routing
 
-The final aggregation theorems use the Lean pipeline taxonomy. This taxonomy
-is intentionally not a literal copy of the numerical ranges displayed in the
-paper.
+The four final theorems displayed above are terminal aggregation theorems.
+They assemble branch closures; they are not the local proofs of the branch
+constructions.
 
-In the paper, the contradiction is organized by proof role, with
-`y = P⁻(n)`:
+The paper organizes the contradiction by proof role, with `y = P⁻(n)`:
 
-- Case A: the initial small/structural obstruction, excluded before the main
-  B/C split;
-- Case B: the large-`y` structural regime, closed for `y ≥ Y*`, where `Y*`
-  is the first prime at or above the no-crossing threshold;
-- analytic intermediate range: `Y1 ≤ y < Y0`, with `Y1 = 2000` and
-  `Y0 = 30000`;
-- Case C: the finite residual range `3 ≤ y < Y1`.
+| Paper component | Range in `y` | Role |
+|---|---|---|
+| Case A | initial small/structural obstruction | excluded before the main B/C split |
+| Case B | `Ystar ≤ y` | large-`y` structural regime |
+| Intermediate analytic range | `Y1 ≤ y < Y0`, with `Y1 = 2000`, `Y0 = 30000` | analytic pivot input |
+| Case C | `3 ≤ y < Y1` | finite residual exhaustion |
 
-The Lean pipeline uses internal routing predicates. In proof-architecture
-order these are:
+The Lean terminal pipeline uses internal routing predicates:
 
-- `InSmallPivotRange`: `3 ≤ pivotOf n < YA` — the Case A / small-pivot slot;
-- `InCaseB`: `Ystar ≤ pivotOf n`;
-- `InIntermediate`: `YC ≤ pivotOf n < Ystar`;
-- `InCaseC`: `YA ≤ pivotOf n < YC`.
+| Lean predicate | Current range | Role in the terminal pipeline |
+|---|---|---|
+| `InSmallPivotRange` | `3 ≤ pivotOf n < YA` | Case A / small-pivot slot |
+| `InCaseB` | `Ystar ≤ pivotOf n` | large-`y` terminal branch |
+| `InIntermediate` | `YC ≤ pivotOf n < Ystar` | intermediate routing branch |
+| `InCaseC` | `YA ≤ pivotOf n < YC` | finite/small routing branch |
 
 Here `YA`, `YC`, and `YB` are internal pipeline/audit thresholds, not the
-paper thresholds `Y1` and `Y0`. They are fixed small values so that the terminal
-pipeline layer remains lightweight and carries no additional computational
-burden.
+paper thresholds `Y1` and `Y0`. They are fixed small concrete values so that
+the terminal pipeline layer remains lightweight and carries no additional
+computational burden.
 
-Consequently, `InCaseC` and `InIntermediate` should not be read as literal
-synonyms for the paper’s Case C and intermediate analytic range. They are
-pipeline routing predicates. The branch constructions and numerical bounds
-are carried by the corresponding branch modules; the final aggregation
-theorems consume their closure endpoints.
+With the current values `YA = 3` and `YC = 4`, the Lean routing is:
 
-| Paper range | Paper bound | Lean-facing status |
-|---|---:|---|
-| Case C | `3 ≤ y < Y1 = 2000` | finite/certificate material; not identical to `Pipeline.InCaseC` |
-| Analytic intermediate | `Y1 ≤ y < Y0 = 30000` | routed through the Lean intermediate closure interface |
-| No-crossing bridge | `Y0 ≤ y < Ystar` | absorbed into the Lean intermediate-to-Case-B boundary |
-| Case B | `Ystar ≤ y` | matches `Pipeline.InCaseB` |
+- `InSmallPivotRange`: `3 ≤ y < 3`, hence empty;
+- `InCaseC`: `3 ≤ y < 4`;
+- `InIntermediate`: `4 ≤ y < Ystar`;
+- `InCaseB`: `Ystar ≤ y`.
+
+Thus `InCaseC` and `InIntermediate` should not be read as literal synonyms
+for the paper’s Case C and intermediate analytic range. They are terminal
+routing predicates. The branch constructions and numerical bounds are carried
+by the corresponding branch modules; the final aggregation theorems consume
+their closure endpoints.
+
 
 ## Repository structure
 
